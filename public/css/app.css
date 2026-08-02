@@ -891,3 +891,33 @@ html, body {
 .signs-empty-icon { font-size: 2rem; margin-bottom: 8px; }
 .signs-empty-title { font-size: 0.95rem; }
 .signs-empty-sub { font-size: 0.78rem; margin-top: 4px; }
+
+/* ── Vocabulary screen ────────────────────────────────────────────────────── */
+.vocab-content { padding: 20px 16px 0; }
+.vocab-title { margin: 0 0 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; }
+.vocab-add-card { margin-bottom: 16px; }
+.vocab-add-label { font-size: 0.8rem; font-weight: 700; margin-bottom: 12px; color: var(--ink-muted); }
+.vocab-input-it, .vocab-input-fa {
+  padding: 10px 12px; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 8px; color: var(--ink); font-size: 0.95rem;
+}
+.vocab-input-it { width: 100%; font-family: 'Public Sans', system-ui, sans-serif; margin-bottom: 8px; }
+.vocab-input-fa-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.vocab-input-fa { flex: 1; font-family: 'Vazirmatn', system-ui, sans-serif; direction: rtl; }
+.vocab-input-it:focus, .vocab-input-fa:focus { outline: none; border-color: var(--amber); }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+
+.vocab-due-section { display: none; margin-bottom: 16px; }
+.vocab-due-heading { font-size: 0.88rem; font-weight: 700; margin: 0 0 10px; }
+.vocab-flip-front-text { font-family: 'Public Sans', system-ui, sans-serif; font-size: 1.3rem; font-weight: 600; direction: ltr; text-align: center; }
+.vocab-flip-hint { font-size: 0.75rem; color: var(--ink-muted); }
+.vocab-flip-back-text { font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 1.3rem; font-weight: 600; direction: rtl; text-align: center; color: var(--ink); }
+.vocab-review-row { display: flex; gap: 10px; margin-top: 10px; }
+
+.vocab-list-heading { font-size: 0.88rem; font-weight: 700; margin: 0 0 10px; }
+.vocab-item-it { font-weight: 600; }
+.vocab-item-fa { color: var(--ink-muted); font-size: 0.9rem; margin-top: 2px; }
+.vocab-empty-note { color: var(--ink-muted); font-size: 0.9rem; padding: 16px 0; text-align: center; }

@@ -836,7 +836,7 @@ App.escapeHtml = function(str) {
       list.innerHTML = '';
 
       if (state.vocabItems.length === 0) {
-        list.innerHTML = '<div style="color:var(--ink-muted);font-size:0.9rem;padding:16px 0;text-align:center;">هنوز لغتی ذخیره نکردی — از یه سؤال شروع کن</div>';
+        list.innerHTML = '<div class="vocab-empty-note">هنوز لغتی ذخیره نکردی — از یه سؤال شروع کن</div>';
         return;
       }
 
@@ -845,8 +845,8 @@ App.escapeHtml = function(str) {
         el.className = 'card-sm';
         el.style.marginBottom = '8px';
         el.innerHTML =
-          '<div class="ltr" style="font-weight:600;">' + item.term_it + '</div>' +
-          '<div class="fa-text" style="color:var(--ink-muted);font-size:0.9rem;margin-top:2px;">' + item.term_fa + '</div>';
+          '<div class="ltr vocab-item-it">' + App.escapeHtml(item.term_it) + '</div>' +
+          '<div class="fa-text vocab-item-fa">' + App.escapeHtml(item.term_fa) + '</div>';
         list.appendChild(el);
       });
     } catch (e) {
