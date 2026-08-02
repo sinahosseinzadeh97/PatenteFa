@@ -1766,15 +1766,8 @@ App.escapeHtml = function(str) {
       stepper.innerHTML = '';
       state.tutorQuestions.forEach(function(item, idx) {
         const pill = document.createElement('button');
-        pill.style.cssText = 'border:none;border-radius:10px;padding:6px 12px;font-size:0.78rem;font-weight:700;cursor:pointer;flex-shrink:0;transition:all 0.2s;';
-        if (idx === state.tutorCurrentIndex) {
-          pill.style.background = '#16a34a';
-          pill.style.color = '#ffffff';
-          pill.style.boxShadow = '0 2px 8px rgba(22,163,74,0.4)';
-        } else {
-          pill.style.background = 'rgba(255,255,255,0.06)';
-          pill.style.color = 'var(--ink-muted)';
-        }
+        pill.className = 'tutor-stepper-pill' + (idx === state.tutorCurrentIndex ? ' active' : '');
+        pill.setAttribute('aria-current', idx === state.tutorCurrentIndex ? 'true' : 'false');
         pill.textContent = 'سوال #' + item.position;
         pill.onclick = function() {
           state.tutorCurrentIndex = idx;
@@ -1889,7 +1882,7 @@ App.escapeHtml = function(str) {
 
     const history = state.tutorChatHistory[questionId] || [];
     if (history.length === 0) {
-      box.innerHTML = '<div style="font-size:0.82rem;color:var(--ink-muted);text-align:center;padding:8px;font-family:Vazirmatn,system-ui,sans-serif;">هر سوال یا ابهامی در مورد این تست داری بنویس تا استاد برات توضیح بده.</div>';
+      box.innerHTML = '<div class="tutor-chat-empty">هر سوال یا ابهامی در مورد این تست داری بنویس تا استاد برات توضیح بده.</div>';
       return;
     }
 
@@ -1897,10 +1890,7 @@ App.escapeHtml = function(str) {
     history.forEach(function(msg) {
       const isUser = msg.role === 'user';
       const msgDiv = document.createElement('div');
-      msgDiv.style.cssText = 'max-width:88%;padding:10px 14px;border-radius:14px;font-size:0.86rem;line-height:1.7;font-family:Vazirmatn,system-ui,sans-serif;direction:rtl;text-align:right;' +
-        (isUser
-          ? 'align-self:flex-end;background:#15803d;color:#ffffff;border-bottom-left-radius:3px;'
-          : 'align-self:flex-start;background:var(--surface);border:1px solid var(--border);color:var(--ink);border-bottom-right-radius:3px;');
+      msgDiv.className = 'tutor-chat-bubble ' + (isUser ? 'user' : 'assistant');
 
       msgDiv.innerHTML = App.formatTutorMarkdown(msg.content);
       box.appendChild(msgDiv);

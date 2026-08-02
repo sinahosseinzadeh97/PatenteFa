@@ -949,3 +949,88 @@ html, body {
 .topic-acc-value.muted { color: var(--ink-muted); }
 .topic-qcount { font-size: 0.7rem; color: var(--ink-muted); margin-top: 3px; }
 .topic-card-actions { display: flex; gap: 8px; margin-top: 4px; }
+
+/* ── AI exam tutor review screen ─────────────────────────────────────────── */
+.tutor-header {
+  position: sticky; top: 0; z-index: 10; background: var(--bg);
+  padding: 14px 16px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.tutor-back-btn {
+  background: none; border: none; color: var(--ink); font-size: 1.2rem; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; min-height: 40px; border-radius: 8px;
+}
+.tutor-back-btn:hover { background: var(--surface-2); }
+.tutor-header-title-wrap { text-align: center; }
+.tutor-header-title { font-size: 1rem; font-weight: 700; margin: 0; color: var(--ink); }
+.tutor-header-spacer { width: 40px; }
+
+.tutor-loading { padding: 60px 20px; text-align: center; }
+.tutor-loading-title { font-size: 0.92rem; font-weight: 600; color: var(--ink); }
+.tutor-loading-sub { font-size: 0.78rem; color: var(--ink-muted); margin-top: 6px; }
+
+.tutor-content { display: none; padding: 16px; }
+.tutor-stepper { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 12px; scroll-behavior: smooth; }
+.tutor-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; margin-bottom: 16px; }
+.tutor-card-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.tutor-q-badge { background: var(--stop-dim); color: var(--stop-light); font-weight: 700; padding: 4px 10px; border-radius: 8px; font-size: 0.78rem; }
+.tutor-q-cmp { font-size: 0.8rem; color: var(--ink-muted); font-family: 'Public Sans', system-ui, sans-serif; }
+.tutor-q-image-wrap { display: none; margin-bottom: 12px; text-align: center; }
+.tutor-q-image { max-height: 160px; border-radius: 8px; object-fit: contain; border: 1px solid var(--border); }
+.tutor-q-text-it {
+  font-family: 'Public Sans', system-ui, sans-serif; font-size: 0.95rem; font-weight: 600;
+  color: var(--ink); line-height: 1.4; margin-bottom: 8px;
+  background: var(--surface-2); padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+}
+.tutor-q-text-fa { font-size: 0.88rem; color: var(--ink-muted); line-height: 1.5; margin-bottom: 14px; padding: 0 4px; }
+.tutor-divider { border: none; border-top: 1px dashed var(--border); margin: 12px 0; }
+
+.tutor-info-block { margin-bottom: 14px; }
+.tutor-info-heading { display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 0.88rem; margin-bottom: 6px; }
+.tutor-info-heading.warn { color: var(--amber); }
+.tutor-info-heading.rule { color: var(--go); }
+.tutor-info-heading.vocab { color: var(--ink-muted); }
+.tutor-info-box {
+  font-size: 0.85rem; color: var(--ink); line-height: 1.6;
+  padding: 10px 12px; border-radius: 6px 10px 10px 6px;
+}
+.tutor-info-box.warn { background: var(--amber-dim); border-right: 3px solid var(--amber); }
+.tutor-info-box.rule { background: var(--go-dim); border-right: 3px solid var(--go); }
+.tutor-vocab-list { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.tutor-nav-row { display: flex; gap: 10px; margin-top: 16px; }
+.tutor-nav-row .btn { flex: 1; }
+
+.tutor-chat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 16px; }
+.tutor-chat-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.tutor-chat-header-label { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 0.9rem; color: var(--ink); }
+.tutor-chat-header-sub { font-size: 0.75rem; color: var(--ink-muted); }
+.tutor-chat-box {
+  max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px;
+  padding: 10px; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid var(--border);
+  margin-bottom: 12px;
+}
+.tutor-chat-empty { font-size: 0.82rem; color: var(--ink-muted); text-align: center; padding: 8px; }
+.tutor-chat-form { display: flex; gap: 8px; }
+.tutor-chat-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--ink);
+  padding: 10px 12px; border-radius: 10px; font-size: 0.85rem; font-family: 'Vazirmatn', system-ui, sans-serif;
+}
+.tutor-chat-input:focus { outline: none; border-color: var(--amber); }
+.tutor-chat-send-btn { padding: 10px 16px; font-size: 0.85rem; }
+.tutor-stepper-pill {
+  border: none; border-radius: 10px; padding: 6px 12px;
+  font-size: 0.78rem; font-weight: 700; cursor: pointer; flex-shrink: 0;
+  transition: background 200ms, color 200ms, box-shadow 200ms;
+  background: rgba(255,255,255,0.06); color: var(--ink-muted);
+  font-family: 'Vazirmatn', system-ui, sans-serif;
+}
+.tutor-stepper-pill.active { background: var(--go); color: #fff; box-shadow: 0 2px 8px var(--go-glow); }
+.tutor-chat-bubble {
+  max-width: 88%; padding: 10px 14px; border-radius: 14px;
+  font-size: 0.86rem; line-height: 1.7; font-family: 'Vazirmatn', system-ui, sans-serif;
+  direction: rtl; text-align: right;
+}
+.tutor-chat-bubble.user { align-self: flex-end; background: var(--go); color: #fff; border-bottom-left-radius: 3px; }
+.tutor-chat-bubble.assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); color: var(--ink); border-bottom-right-radius: 3px; }
