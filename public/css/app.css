@@ -22,6 +22,15 @@
   --stop-dim:  rgba(193,39,45,0.15);
   --go-glow:   rgba(27,122,61,0.4);
   --stop-glow: rgba(193,39,45,0.4);
+  /* Lighter go/stop tints for small text/status dots on the dark surface,
+     where the base --go/--stop read too dark to stay legible at small
+     sizes. Same hue family as --go/--stop (not a new color) — the xp/
+     coverage road-fill gradients already used #4ade80 as this tint before
+     it had a name; formalized here so it's reused deliberately instead of
+     redrawn ad hoc. See design.md for the closed 5-color palette this
+     extends, not replaces. */
+  --go-light:  #4ade80;
+  --stop-light: #f87171;
 }
 
 /* ── Reset ──────────────────────────────────────────────────────────────── */
@@ -686,3 +695,70 @@ html, body {
 .results-actions-row { padding: 16px; display: flex; gap: 10px; }
 .results-list-wrap { padding: 0 16px 16px; }
 .results-list-heading { font-size: 0.9rem; font-weight: 700; margin-bottom: 12px; color: var(--ink-muted); }
+
+/* ── Home / dashboard screen ─────────────────────────────────────────────── */
+.home-content { padding: 20px 16px 0; }
+.home-profile-card {
+  margin-bottom: 20px; padding: 20px;
+  background: linear-gradient(135deg, rgba(31,33,40,0.95), rgba(40,43,53,0.95));
+  border: 1px solid rgba(232,163,61,0.25);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+.home-profile-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+.home-profile-identity { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.home-avatar-wrap { position: relative; flex-shrink: 0; }
+.home-avatar-photo { display: none; width: 54px; height: 54px; border-radius: 50%; object-fit: cover; border: 2px solid var(--amber); box-shadow: 0 4px 14px rgba(232,163,61,0.3); }
+.home-avatar-initials {
+  width: 54px; height: 54px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--go), var(--amber));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 700;
+  border: 2px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 14px rgba(27,122,61,0.4);
+}
+.home-avatar-status-dot { position: absolute; bottom: 0; right: 0; width: 14px; height: 14px; background: var(--go-light); border: 2px solid var(--surface); border-radius: 50%; }
+.home-name-block { min-width: 0; }
+.home-full-name { font-size: 1.1rem; font-weight: 700; color: var(--ink); line-height: 1.2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.home-name-badges { display: flex; align-items: center; gap: 6px; margin-top: 4px; flex-wrap: wrap; }
+.home-username { font-size: 0.75rem; color: var(--amber); font-family: 'Public Sans', sans-serif; direction: ltr; }
+.home-dashboard-badge { font-size: 0.68rem; background: var(--go-dim); color: var(--go-light); border: 1px solid rgba(27,122,61,0.4); padding: 1px 6px; border-radius: 10px; font-weight: 600; }
+.home-guide-btn { font-size: 0.68rem; background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(232,163,61,0.4); padding: 1px 8px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+.home-streak-badge { text-align: center; background: var(--surface-2); border: 1px solid rgba(232,163,61,0.3); border-radius: 14px; padding: 10px 14px; flex-shrink: 0; }
+.home-streak-value { font-size: 1.5rem; font-weight: 700; color: var(--amber); line-height: 1; }
+.home-streak-label { font-size: 0.68rem; color: var(--ink-muted); margin-top: 2px; }
+
+.home-metrics-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 14px; }
+.home-metric-chip { padding: 10px 6px; text-align: center; }
+.home-metric-chip.clickable { cursor: pointer; }
+.home-metric-label { font-size: 0.7rem; color: var(--ink-muted); margin-bottom: 2px; }
+.home-metric-value { font-size: 1.1rem; }
+.home-metric-value.amber { color: var(--amber); }
+.home-metric-value.go { color: var(--go-light); }
+.home-metric-value.stop { color: var(--stop-light); }
+.home-metric-sub { font-size: 0.65rem; margin-top: 2px; }
+.home-metric-sub.amber { color: var(--amber); font-weight: 600; }
+.home-metric-sub.muted { color: var(--ink-muted); }
+
+.home-focus-card-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.home-focus-eyebrow { font-size: 0.72rem; color: var(--go); font-weight: 700; letter-spacing: 0.04em; margin-bottom: 4px; }
+.home-focus-weakest { font-size: 0.95rem; font-weight: 600; color: var(--ink); }
+
+.home-recent-section { margin-bottom: 20px; display: none; }
+.home-recent-heading { font-size: 0.85rem; font-weight: 700; color: var(--ink-muted); margin-bottom: 8px; }
+.home-recent-list { display: flex; flex-direction: column; gap: 8px; }
+.home-recent-row { background: var(--surface-2); border: 1px solid var(--border); padding: 10px 14px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; }
+.home-recent-mode { font-weight: 600; font-size: 0.85rem; }
+.home-recent-score { font-size: 0.72rem; color: var(--ink-muted); }
+.home-recent-badge { font-weight: 700; font-size: 0.75rem; padding: 3px 10px; border-radius: 8px; }
+.home-recent-badge.pass { color: var(--go-light); background: var(--go-dim); }
+.home-recent-badge.fail { color: var(--stop-light); background: var(--stop-dim); }
+
+.home-data-notice { background: var(--amber-dim); border: 1px solid rgba(232,163,61,0.2); border-radius: 10px; padding: 10px 14px; margin-bottom: 16px; font-size: 0.76rem; color: var(--amber); line-height: 1.5; }
+
+.home-actions { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
+.btn-amber-outline { background: var(--amber-dim); border: 1px solid rgba(232,163,61,0.4); color: var(--amber); }
+.btn-profile-entry {
+  background: linear-gradient(135deg, var(--go-dim), var(--amber-dim));
+  border: 1px solid rgba(27,122,61,0.35); color: var(--ink); font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}

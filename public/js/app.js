@@ -759,13 +759,13 @@ App.escapeHtml = function(str) {
           let html = '';
           data.recentSessions.slice(0, 3).forEach(function(s) {
             const isPass = s.passed;
-            const badgeClass = isPass ? 'color:#10b981;background:rgba(16,185,129,0.15);' : 'color:#ef4444;background:rgba(239,68,68,0.15);';
+            const badgeClass = isPass ? 'pass' : 'fail';
             const badgeText = isPass ? 'قبول 🟢' : 'مردود 🔴';
             const modeText = s.mode === 'exam' ? '🚗 شبیه‌ساز ۳۰ سوالی' : '🎯 تمرین موضوعی';
             const scoreText = (s.score !== null ? s.score : (30 - (s.wrongCount || 0))) + ' / ۳۰';
-            html += '<div style="background:var(--surface-2);border:1px solid var(--border);padding:10px 14px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;">' +
-              '<div><div style="font-weight:600;font-size:0.85rem;">' + modeText + '</div><div style="font-size:0.72rem;color:var(--ink-muted);">امتیاز: ' + scoreText + '</div></div>' +
-              '<span style="font-weight:700;font-size:0.75rem;padding:3px 10px;border-radius:8px;' + badgeClass + '">' + badgeText + '</span>' +
+            html += '<div class="home-recent-row">' +
+              '<div><div class="home-recent-mode">' + modeText + '</div><div class="home-recent-score">امتیاز: ' + scoreText + '</div></div>' +
+              '<span class="home-recent-badge ' + badgeClass + '">' + badgeText + '</span>' +
               '</div>';
           });
           list.innerHTML = html;
