@@ -601,7 +601,7 @@ App.escapeHtml = function(str) {
     if (!container) return;
 
     if (!list || list.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--ink-muted);">فصلی یافت نشد.</div>';
+      container.innerHTML = '<div class="topics-empty-note">فصلی یافت نشد.</div>';
       return;
     }
 
@@ -609,28 +609,28 @@ App.escapeHtml = function(str) {
     // Hide topics that have no questions (safety-net placeholders like topic 25/13)
     const visible = list.filter(function(t) { return (t.question_count || 0) > 0; });
     if (visible.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--ink-muted);">فصلی یافت نشد.</div>';
+      container.innerHTML = '<div class="topics-empty-note">فصلی یافت نشد.</div>';
       return;
     }
     visible.forEach(function(t) {
       const accStr = t.accuracy !== null ? (t.accuracy + '% دقت') : 'شروع‌نشده';
-      const accColor = t.accuracy === null ? 'var(--ink-muted)' : (t.accuracy >= 70 ? '#10b981' : '#ef4444');
+      const accClass = t.accuracy === null ? 'muted' : (t.accuracy >= 70 ? 'go' : 'stop');
       const qCount = t.question_count || 0;
 
-      html += '<div class="card" style="background:var(--surface-2); border:1px solid var(--border); border-radius:14px; padding:14px; display:flex; flex-direction:column; gap:10px;">';
-      html += '  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:10px;">';
+      html += '<div class="topic-card">';
+      html += '  <div class="topic-card-row">';
       html += '    <div>';
-      html += '      <span style="font-size:0.72rem; background:rgba(232,163,61,0.18); color:var(--amber); border:1px solid rgba(232,163,61,0.35); padding:2px 8px; border-radius:8px; font-weight:700;">فصل ' + t.sort_order + '</span>';
-      html += '      <div style="font-size:1rem; font-weight:700; color:var(--ink); margin-top:6px; direction:ltr; text-align:right;">' + App.escapeHtml(t.name_it) + '</div>';
-      html += '      <div style="font-size:0.88rem; font-weight:600; color:#60a5fa; margin-top:3px;">' + App.escapeHtml(t.name_fa || '') + '</div>';
+      html += '      <span class="topic-chapter-badge">فصل ' + t.sort_order + '</span>';
+      html += '      <div class="topic-name-it">' + App.escapeHtml(t.name_it) + '</div>';
+      html += '      <div class="topic-name-fa">' + App.escapeHtml(t.name_fa || '') + '</div>';
       html += '    </div>';
-      html += '    <div style="text-align:left; flex-shrink:0;">';
-      html += '      <div style="font-size:0.82rem; font-weight:700; color:' + accColor + ';">' + accStr + '</div>';
-      html += '      <div style="font-size:0.7rem; color:var(--ink-muted); margin-top:3px;">🌐 ' + qCount + ' سوال</div>';
+      html += '    <div class="topic-acc-block">';
+      html += '      <div class="topic-acc-value ' + accClass + '">' + accStr + '</div>';
+      html += '      <div class="topic-qcount">🌐 ' + qCount + ' سوال</div>';
       html += '    </div>';
       html += '  </div>';
 
-      html += '  <div style="display:flex; gap:8px; margin-top:4px;">';
+      html += '  <div class="topic-card-actions">';
       html += '    <button type="button" class="btn btn-primary btn-sm btn-full" onclick="App.startTopicExam(' + t.id + ')">✍️ شروع آزمون این فصل (۱۵ سوال)</button>';
       html += '  </div>';
       html += '</div>';

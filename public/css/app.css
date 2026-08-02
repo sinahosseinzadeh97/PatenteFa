@@ -921,3 +921,31 @@ html, body {
 .vocab-item-it { font-weight: 600; }
 .vocab-item-fa { color: var(--ink-muted); font-size: 0.9rem; margin-top: 2px; }
 .vocab-empty-note { color: var(--ink-muted); font-size: 0.9rem; padding: 16px 0; text-align: center; }
+
+/* ── Topics (Capitoli) screen ────────────────────────────────────────────── */
+.topics-content { padding: 20px 16px 0; }
+.topics-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.topics-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 700; }
+.topics-badge { font-size: 0.78rem; background: var(--amber-dim); color: var(--amber); padding: 3px 8px; border-radius: 10px; font-weight: 700; }
+.topics-intro { font-size: 0.8rem; color: var(--ink-muted); margin: 0 0 16px; line-height: 1.5; }
+.topics-search-input {
+  width: 100%; padding: 10px 14px; background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 12px; color: var(--ink); font-family: 'Vazirmatn', system-ui, sans-serif;
+  font-size: 0.85rem; margin-bottom: 16px; direction: rtl;
+}
+.topics-search-input:focus { outline: none; border-color: var(--amber); }
+.topics-list-container { display: flex; flex-direction: column; gap: 12px; }
+.topics-loading-note, .topics-empty-note { text-align: center; padding: 30px; color: var(--ink-muted); }
+
+.topic-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.topic-card-row { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.topic-chapter-badge { font-size: 0.72rem; background: var(--amber-dim); color: var(--amber); border: 1px solid rgba(232,163,61,0.35); padding: 2px 8px; border-radius: 8px; font-weight: 700; }
+.topic-name-it { font-size: 1rem; font-weight: 700; color: var(--ink); margin-top: 6px; direction: ltr; text-align: right; }
+.topic-name-fa { font-size: 0.88rem; font-weight: 600; color: var(--ink-muted); margin-top: 3px; }
+.topic-acc-block { text-align: left; flex-shrink: 0; }
+.topic-acc-value { font-size: 0.82rem; font-weight: 700; }
+.topic-acc-value.go { color: var(--go-light); }
+.topic-acc-value.stop { color: var(--stop-light); }
+.topic-acc-value.muted { color: var(--ink-muted); }
+.topic-qcount { font-size: 0.7rem; color: var(--ink-muted); margin-top: 3px; }
+.topic-card-actions { display: flex; gap: 8px; margin-top: 4px; }
