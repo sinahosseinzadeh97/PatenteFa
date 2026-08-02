@@ -21,7 +21,7 @@ export function renderResultsScreen(): string {
 
   <div class="results-actions-row">
     <button class="btn btn-primary btn-full" onclick="App.startExam()">🚗 آزمون جدید</button>
-    <button class="btn btn-ghost btn-full" onclick="App.navigateBack()">🏠 خانه</button>
+    <button class="btn btn-ghost btn-full" onclick="App.showScreen('home')">🏠 خانه</button>
   </div>
 
   <div class="results-list-wrap">
