@@ -7,6 +7,12 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	// Static assets (Mini App CSS/JS — public/css/app.css, public/js/*.js).
+	// Requests matching a file under public/ are served directly; everything
+	// else (/app, /api/*, /images/signs/*, /) falls through to this Worker.
+	"assets": {
+		"directory": "./public"
+	},
 	// D1 — primary relational store
 	"d1_databases": [
 		{

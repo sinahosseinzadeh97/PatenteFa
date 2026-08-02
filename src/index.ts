@@ -178,17 +178,10 @@ app.get("/images/signs/:key", async (c) => {
   return new Response(object.body, { headers });
 });
 
-// ── Mini App shell and static assets ──────────────────────────────────────────
-app.get("/app/styles.css", async (c) => {
-  // The CSS is bundled as a text asset via wrangler's static asset handling.
-  // For now we serve a redirect to the inline version. The styles are
-  // already critical-inlined in the <style> block in shell.tsx, so this
-  // route is only a fallback.
-  return new Response(
-    '/* PatenteFa styles — see shell.tsx for inline styles */',
-    { headers: { 'Content-Type': 'text/css' } }
-  );
-});
+// ── Mini App shell ──────────────────────────────────────────────────────────
+// CSS/JS are real static files under public/ (served automatically by
+// wrangler's `assets` binding — see wrangler.jsonc — for paths like
+// /css/app.css and /js/*.js, before any request reaches this Worker).
 app.get("/app", serveApp);
 app.get("/app/*", serveApp);
 app.get("/", serveApp);
