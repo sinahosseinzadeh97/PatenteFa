@@ -762,3 +762,39 @@ html, body {
   border: 1px solid rgba(27,122,61,0.35); color: var(--ink); font-weight: 700;
   display: flex; align-items: center; justify-content: center; gap: 8px;
 }
+
+/* ── Pending-approval screen ──────────────────────────────────────────────── */
+.pending-icon {
+  width: 80px; height: 80px; border-radius: 50%;
+  background: var(--amber-dim); border: 2px solid var(--amber);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 2.5rem; margin-bottom: 20px;
+  box-shadow: 0 0 30px rgba(232,163,61,0.3);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .pending-icon { animation: pulse 2s infinite; }
+}
+.pending-title { font-size: 1.4rem; color: var(--amber); margin: 0 0 10px; font-weight: 700; }
+.pending-message { font-size: 0.9rem; color: var(--ink-muted); max-width: 320px; line-height: 1.6; margin: 0 auto 24px; }
+.pending-value-card {
+  background: linear-gradient(135deg, var(--amber-dim), rgba(232,163,61,0.05));
+  border: 1px solid rgba(232,163,61,0.35);
+  border-radius: 18px; padding: 18px; margin: 0 auto 20px; max-width: 380px;
+  text-align: right; color: var(--ink);
+}
+.pending-value-heading { font-size: 0.98rem; font-weight: 700; color: var(--amber); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.pending-value-body { font-size: 0.82rem; color: var(--ink); line-height: 1.75; margin: 0 0 12px; }
+.pending-value-features { background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; padding: 12px; font-size: 0.78rem; line-height: 1.6; color: var(--ink-muted); margin-bottom: 12px; }
+.pending-fun-input {
+  width: 100%; padding: 10px 12px; background: var(--surface-2);
+  border: 1px solid rgba(232,163,61,0.4); border-radius: 10px; color: var(--ink);
+  font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 0.85rem;
+  margin-bottom: 10px; direction: rtl;
+}
+.pending-fun-input:focus { outline: none; border-color: var(--amber); }
+.pending-reward-box {
+  display: none; margin-top: 10px; background: var(--go-dim);
+  border: 1px solid rgba(27,122,61,0.4); border-radius: 12px; padding: 12px;
+  font-size: 0.82rem; color: var(--go-light); line-height: 1.6; text-align: center;
+}
+.pending-recheck-btn { max-width: 280px; }
