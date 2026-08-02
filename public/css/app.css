@@ -130,6 +130,22 @@ html, body {
   background: var(--go-dim); color: var(--go);
   border: 1px solid var(--go);
 }
+/* Signs flashcard self-assessment buttons (features.md §14.4) — deliberately
+   NOT the exam's go/stop (VERO/FALSO) colors, so this reads as self-
+   assessment, not pass/fail. Referenced by signs.ts but was never actually
+   defined anywhere (verified against the pre-rebuild snapshot commit too —
+   pre-existing gap, not a rebuild regression); the buttons were silently
+   falling back to unstyled .btn (no background at all). */
+.btn-signs-known {
+  background: var(--amber); color: #14151A;
+  box-shadow: 0 4px 20px rgba(232,163,61,0.35);
+}
+.btn-signs-known:hover { box-shadow: 0 6px 28px rgba(232,163,61,0.5); }
+.btn-signs-unknown {
+  background: var(--surface-2); color: var(--ink-muted);
+  border: 1px solid var(--border);
+}
+.btn-signs-unknown:hover { background: var(--border); color: var(--ink); }
 .btn-full { width: 100%; }
 .btn-sm   { padding: 9px 16px; font-size: 0.875rem; border-radius: 8px; }
 .btn-disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
@@ -847,3 +863,31 @@ html, body {
 .profile-trend-heading-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
 .profile-sparkline-footer { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.65rem; color: var(--ink-muted); }
 .profile-sparkline-passline-label { color: rgba(27,122,61,0.8); font-size: 0.62rem; }
+
+/* ── Road-sign flashcard screen ──────────────────────────────────────────── */
+.signs-content { padding: 20px 16px 0; }
+.signs-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.signs-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; }
+.signs-counter { font-size: 0.78rem; color: var(--ink-muted); }
+.signs-study-hint { font-size: 0.78rem; color: var(--ink-muted); margin-bottom: 14px; line-height: 1.5; }
+
+.signs-guide-summary { cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 0.88rem; font-weight: 700; color: var(--ink); user-select: none; }
+.signs-guide-summary-en { font-size: 0.68rem; color: var(--ink-muted); font-weight: 500; }
+.signs-guide-body { padding: 0 14px 14px; font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 0.78rem; line-height: 1.8; color: var(--ink); }
+.signs-guide-section-heading { font-weight: 700; margin-bottom: 6px; font-size: 0.82rem; }
+.signs-guide-section-heading.amber { color: var(--amber); }
+.signs-guide-section-heading.go { color: var(--go); }
+.signs-guide-section-heading-en { font-weight: 500; color: var(--ink-muted); font-size: 0.72rem; }
+.signs-guide-list { list-style: none; padding: 0; margin: 0 0 14px; display: flex; flex-direction: column; gap: 4px; }
+.signs-guide-list.tight { gap: 5px; }
+.signs-guide-en { color: var(--ink-muted); }
+.signs-guide-reading-order { background: var(--go-dim); border: 1px solid rgba(27,122,61,0.25); border-radius: 10px; padding: 10px 12px; font-size: 0.78rem; line-height: 1.7; }
+
+.signs-flip-hint { font-size: 0.72rem; color: var(--ink-muted); margin-top: 8px; }
+.signs-name-it { font-family: 'Public Sans', system-ui, sans-serif; font-size: 1.05rem; font-weight: 700; direction: ltr; text-align: center; color: var(--ink); margin-bottom: 8px; }
+.signs-name-fa { font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 0.95rem; font-weight: 500; direction: rtl; text-align: center; color: var(--ink-muted); min-height: 1.4em; }
+.signs-answer-row { display: flex; gap: 10px; }
+.signs-empty-state { display: none; text-align: center; padding: 40px 0; color: var(--ink-muted); }
+.signs-empty-icon { font-size: 2rem; margin-bottom: 8px; }
+.signs-empty-title { font-size: 0.95rem; }
+.signs-empty-sub { font-size: 0.78rem; margin-top: 4px; }
