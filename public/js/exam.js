@@ -408,7 +408,7 @@
       App.toast('به واژه‌نامه اضافه شد! 📚');
       if (btn) {
         btn.textContent = '✓ اضافه شد';
-        btn.style.color = '#10b981';
+        btn.style.color = 'var(--go-light)';
       }
     } catch (e) {
       App.toast('خطا در ثبت واژه');

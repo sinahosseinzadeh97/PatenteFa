@@ -1138,3 +1138,44 @@ html, body {
 .admin-modal-error { color: var(--stop); padding: 20px; text-align: center; }
 .admin-modal-loading { text-align: center; padding: 30px; }
 .admin-modal-loading-note { margin-top: 10px; font-size: 0.85rem; color: var(--ink-muted); }
+
+/* ── Shared modals: exam-date picker, onboarding guide ──────────────────────── */
+.exam-date-modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.65); backdrop-filter: blur(3px); }
+.exam-date-modal-panel { position: relative; z-index: 1; background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 20px 20px calc(24px + env(safe-area-inset-bottom, 0px)); }
+.exam-date-modal-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+.exam-date-modal-title { margin: 0 0 8px; font-size: 1.1rem; color: var(--ink); }
+.exam-date-modal-sub { margin: 0 0 16px; font-size: 0.8rem; color: var(--ink-muted); }
+.exam-date-input { width: 100%; padding: 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; color: var(--ink); font-family: system-ui, sans-serif; font-size: 1rem; margin-bottom: 16px; }
+.exam-date-actions-row { display: flex; gap: 10px; }
+
+.guide-modal-backdrop { position: fixed; inset: 0; z-index: 9999; display: none; align-items: center; justify-content: center; padding: 16px; background: rgba(0,0,0,0.85); backdrop-filter: blur(10px); }
+.guide-modal-card {
+  max-width: 460px; width: 100%; max-height: 88vh; overflow-y: auto;
+  background: linear-gradient(135deg, var(--surface-2), var(--surface)); border: 1px solid rgba(232,163,61,0.35);
+  border-radius: 24px; padding: 24px; box-shadow: 0 24px 60px rgba(0,0,0,0.8); color: var(--ink);
+}
+.guide-modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px; }
+.guide-modal-header-left { display: flex; align-items: center; gap: 12px; }
+.guide-modal-icon-badge {
+  width: 44px; height: 44px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--amber-dim), var(--go-dim)); border: 1px solid rgba(232,163,61,0.4);
+  display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+}
+.guide-modal-title { font-size: 1.15rem; font-weight: 700; color: var(--amber); margin: 0; }
+.guide-modal-subtitle { font-size: 0.75rem; color: var(--ink-muted); }
+.guide-modal-close-btn { background: none; border: none; color: var(--ink-muted); font-size: 1.4rem; cursor: pointer; padding: 4px; min-width: 40px; min-height: 40px; }
+.guide-modal-body { font-size: 0.88rem; line-height: 1.75; color: var(--ink); }
+.guide-modal-banner {
+  background: linear-gradient(135deg, var(--go-dim), var(--amber-dim)); border: 1px solid rgba(27,122,61,0.35);
+  border-radius: 16px; padding: 16px; margin-bottom: 18px;
+}
+.guide-modal-banner-heading { font-size: 0.95rem; font-weight: 700; color: var(--go-light); margin-bottom: 6px; display: flex; align-items: center; gap: 6px; }
+.guide-modal-banner-body { font-size: 0.83rem; color: var(--ink); line-height: 1.65; }
+.guide-modal-feature-card { background: var(--surface-2); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; margin-bottom: 18px; }
+.guide-modal-feature-text { font-size: 0.78rem; color: var(--ink-muted); line-height: 1.55; }
+.guide-modal-value-badge { background: var(--amber-dim); border: 1px solid rgba(232,163,61,0.3); border-radius: 14px; padding: 12px 14px; margin-bottom: 20px; font-size: 0.8rem; color: var(--amber); line-height: 1.6; }
+.guide-modal-cta {
+  border-radius: 14px; padding: 13px; font-size: 0.95rem; font-weight: 700;
+  background: linear-gradient(135deg, var(--go), #12532b); border: none;
+  box-shadow: 0 6px 20px rgba(27,122,61,0.35); color: #fff;
+}

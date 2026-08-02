@@ -71,13 +71,14 @@ export function renderVocabSheet(): string {
 export function renderExamDateModal(): string {
   return `
 <div id="exam-date-modal" style="position:fixed; inset:0; z-index:350; display:none; flex-direction:column; justify-content:flex-end;">
-  <div style="position:absolute; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(3px);" onclick="App.closeExamDateModal()"></div>
-  <div style="position:relative; z-index:1; background:var(--surface); border-top:1px solid var(--border); border-radius:20px 20px 0 0; padding:20px 20px calc(24px + env(safe-area-inset-bottom, 0px));">
-    <div style="width:36px; height:4px; background:var(--border); border-radius:2px; margin:0 auto 16px;"></div>
-    <h3 style="margin:0 0 8px; font-size:1.1rem; color:var(--ink);">📅 تعیین تاریخ آزمون تئوری</h3>
-    <p style="margin:0 0 16px; font-size:0.8rem; color:var(--ink-muted);">تاریخ آزمون تئوری خود را انتخاب کنید تا روزهای باقی‌مانده در داشبورد محاسبه شوند:</p>
-    <input type="date" id="exam-date-input" style="width:100%; padding:12px; background:var(--surface-2); border:1px solid var(--border); border-radius:12px; color:var(--ink); font-family:sans-serif; font-size:1rem; margin-bottom:16px;" />
-    <div style="display:flex; gap:10px;">
+  <div class="exam-date-modal-overlay" onclick="App.closeExamDateModal()"></div>
+  <div class="exam-date-modal-panel">
+    <div class="exam-date-modal-handle"></div>
+    <h3 class="exam-date-modal-title">📅 تعیین تاریخ آزمون تئوری</h3>
+    <p class="exam-date-modal-sub">تاریخ آزمون تئوری خود را انتخاب کنید تا روزهای باقی‌مانده در داشبورد محاسبه شوند:</p>
+    <label for="exam-date-input" class="visually-hidden">تاریخ آزمون</label>
+    <input type="date" id="exam-date-input" class="exam-date-input" />
+    <div class="exam-date-actions-row">
       <button class="btn btn-primary" style="flex:1;" onclick="App.saveExamTargetDate()">ذخیره تاریخ 💾</button>
       <button class="btn btn-ghost" onclick="App.closeExamDateModal()">انصراف</button>
     </div>
@@ -88,53 +89,52 @@ export function renderExamDateModal(): string {
 
 export function renderGuideModal(): string {
   return `
-<div id="modal-guide" style="position:fixed; inset:0; z-index:9999; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(0,0,0,0.85); backdrop-filter:blur(10px);" onclick="if(event.target===this) App.closeGuideModal()">
-  <div class="card" style="max-width:460px; width:100%; max-height:88vh; overflow-y:auto; background:linear-gradient(135deg, #161820, #202330); border:1px solid rgba(232,163,61,0.35); border-radius:24px; padding:24px; box-shadow:0 24px 60px rgba(0,0,0,0.8); color:var(--ink);">
-    
+<div id="modal-guide" class="guide-modal-backdrop" onclick="if(event.target===this) App.closeGuideModal()">
+  <div class="card guide-modal-card">
+
     <!-- Modal Header -->
-    <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:14px;">
-      <div style="display:flex; align-items:center; gap:12px;">
-        <div style="width:44px; height:44px; border-radius:14px; background:linear-gradient(135deg, rgba(232,163,61,0.2), rgba(37,99,235,0.2)); border:1px solid rgba(232,163,61,0.4); display:flex; align-items:center; justify-content:center; font-size:1.5rem;">
+    <div class="guide-modal-header">
+      <div class="guide-modal-header-left">
+        <div class="guide-modal-icon-badge" aria-hidden="true">
           💎
         </div>
         <div>
-          <h3 style="font-size:1.15rem; font-weight:700; color:var(--amber); margin:0;">راهنما و راز قبولی تضمینی</h3>
-          <span style="font-size:0.75rem; color:var(--ink-muted);">نقشه راه آمادگی کامل در آزمون تئوری Patente B</span>
+          <h3 class="guide-modal-title">راهنما و راز قبولی تضمینی</h3>
+          <span class="guide-modal-subtitle">نقشه راه آمادگی کامل در آزمون تئوری Patente B</span>
         </div>
       </div>
-      <button type="button" onclick="App.closeGuideModal()" style="background:none; border:none; color:var(--ink-muted); font-size:1.4rem; cursor:pointer; padding:4px;">✕</button>
+      <button type="button" onclick="App.closeGuideModal()" class="guide-modal-close-btn" aria-label="بستن راهنما">✕</button>
     </div>
 
     <!-- Content Body -->
-    <div style="font-size:0.88rem; line-height:1.75; color:#d1d5db;">
-      
+    <div class="guide-modal-body">
+
       <!-- Value Proposition Commercial Banner -->
-      <div style="background:linear-gradient(135deg, rgba(37,99,235,0.18), rgba(124,58,237,0.18)); border:1px solid rgba(59,130,246,0.4); border-radius:16px; padding:16px; margin-bottom:18px;">
-        <div style="font-size:0.95rem; font-weight:700; color:#60a5fa; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-          <span>🎯</span> <b>چرا هزینه اضافه بپردازید؟</b>
+      <div class="guide-modal-banner">
+        <div class="guide-modal-banner-heading">
+          <span aria-hidden="true">🎯</span> <b>چرا هزینه اضافه بپردازید؟</b>
         </div>
-        <div style="font-size:0.83rem; color:#e2e8f0; line-height:1.65;">
+        <div class="guide-modal-banner-body">
           با توجه به صعود قیمت یورو و هزینه‌های سنگین <b>۱۵۰ تا ۱۶۰ یورویی</b> پکیج‌های موجود در بازار، سامانه <b>PatenteFa</b> به گونه‌ای هوشمند طراحی شده است که شما را ظرف مدت <b>۳ تا ۴ ماه</b>، با بالاترین کیفیت و تنها با <b>یک‌سوم هزینه پکیج‌های بازار</b>، آماده قبولی قطعی در آزمون اصلی تئوری کند.
         </div>
       </div>
 
       <!-- Translation feature -->
-        <div style="background:rgba(37,99,235,0.12); border:1px solid rgba(59,130,246,0.3); border-radius:14px; padding:12px 14px;">
-          <div style="font-size:0.78rem; color:#cbd5e1; line-height:1.55;">
-            با فعال‌سازی گزینه <b>Traduci (ترجمه)</b> در هر سوال، ترجمه روان فارسی + دلیل درست یا نادرست بودن جواب را می‌بینید. سوالاتی که تابلو دارند، تصویر تابلو هم برای مترجم ارسال می‌شود.
-          </div>
+      <div class="guide-modal-feature-card">
+        <div class="guide-modal-feature-text">
+          با فعال‌سازی گزینه <b>Traduci (ترجمه)</b> در هر سوال، ترجمه روان فارسی + دلیل درست یا نادرست بودن جواب را می‌بینید. سوالاتی که تابلو دارند، تصویر تابلو هم برای مترجم ارسال می‌شود.
         </div>
       </div>
 
       <!-- Additional Value Badge -->
-      <div style="background:rgba(232,163,61,0.1); border:1px solid rgba(232,163,61,0.3); border-radius:14px; padding:12px 14px; margin-bottom:20px; font-size:0.8rem; color:#fde68a; line-height:1.6;">
+      <div class="guide-modal-value-badge">
         ⚡ <b>بانک جامع ۷,۱۳۹ سوال رسمی</b> + ۲۵ فصل آموزشی استاندارد + مرور هوشمند فلش‌کارت‌ها و تابلوها برای قبولی قطعی شما در اولین تلاش!
       </div>
 
     </div>
 
     <!-- Action Button -->
-    <button class="btn btn-primary btn-full" onclick="App.closeGuideModal()" style="border-radius:14px; padding:13px; font-size:0.95rem; font-weight:700; background:linear-gradient(135deg, #16a34a, #15803d); border:none; box-shadow:0 6px 20px rgba(22,163,74,0.35);">
+    <button class="btn btn-full guide-modal-cta" onclick="App.closeGuideModal()">
       شروع تمرین و آمادگی 🚀
     </button>
   </div>

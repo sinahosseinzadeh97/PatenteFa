@@ -1960,8 +1960,8 @@ App.escapeHtml = function(str) {
       });
       if (btn) {
         btn.textContent = '✓ ذخیره شد';
-        btn.style.background = 'rgba(22,163,74,0.3)';
-        btn.style.color = '#86efac';
+        btn.style.background = 'var(--go-dim)';
+        btn.style.color = 'var(--go-light)';
       }
       App.toast('کلمه "' + termIt + '" در لیست لغات ذخیره شد');
     } catch (e) {
