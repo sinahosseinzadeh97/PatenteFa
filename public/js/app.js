@@ -204,8 +204,7 @@ App.escapeHtml = function(str) {
     ['today','week','total'].forEach(function(t) {
       var btn = document.getElementById('cost-tab-' + t);
       if (!btn) return;
-      btn.style.background = t === tab ? 'var(--go)' : 'var(--surface-2)';
-      btn.style.color = t === tab ? '#fff' : 'var(--ink-muted)';
+      btn.classList.toggle('active', t === tab);
     });
     App.renderCostBreakdown(state.costBreakdown);
   };
@@ -214,7 +213,7 @@ App.escapeHtml = function(str) {
     var el = document.getElementById('admin-cost-breakdown');
     if (!el) return;
     if (!breakdown || breakdown.length === 0) {
-      el.innerHTML = '<div style="color:var(--ink-muted); font-size:0.8rem; text-align:center; padding:10px;">هنوز هیچ فراخوانی API ثبت نشده است.</div>';
+      el.innerHTML = '<div class="admin-loading-note">هنوز هیچ فراخوانی API ثبت نشده است.</div>';
       return;
     }
     var tab = state.costTab || 'today';
@@ -240,13 +239,13 @@ App.escapeHtml = function(str) {
       var pct    = maxCost  > 0 ? Math.round((cost / maxCost)  * 100) : 0;
       var tPct   = totalCost > 0 ? Math.round((cost / totalCost) * 100) : 0;
       var label  = actionLabels[r.action] || r.action;
-      html += '<div style="display:flex; flex-direction:column; gap:3px;">' +
-        '<div style="display:flex; justify-content:space-between; font-size:0.78rem;">' +
-          '<span style="color:var(--ink);">' + label + '</span>' +
-          '<span style="color:var(--ink-muted); font-family:monospace;">' + calls + ' calls | <b style="color:#f43f5e;">$' + cost.toFixed(5) + '</b> (' + tPct + '%)</span>' +
+      html += '<div class="admin-cost-row">' +
+        '<div class="admin-cost-row-top">' +
+          '<span class="admin-cost-row-label">' + label + '</span>' +
+          '<span class="admin-cost-row-meta">' + calls + ' calls | <b class="admin-cost-row-cost">$' + cost.toFixed(5) + '</b> (' + tPct + '%)</span>' +
         '</div>' +
-        '<div style="background:var(--surface-2); border-radius:4px; height:5px; overflow:hidden;">' +
-          '<div style="background:linear-gradient(90deg,#f43f5e,#f97316); height:100%; width:' + pct + '%; border-radius:4px; transition:width 0.35s ease;"></div>' +
+        '<div class="admin-cost-bar-track">' +
+          '<div class="admin-cost-bar-fill" style="width:' + pct + '%;"></div>' +
         '</div>' +
       '</div>';
     });
@@ -325,17 +324,17 @@ App.escapeHtml = function(str) {
     if (countEl) countEl.textContent = (users.length) + ' کاربر';
 
     if (!users || users.length === 0) {
-      container.innerHTML = '<div style="text-align:center; padding:30px; color:var(--ink-muted);">هیچ کاربری یافت نشد</div>';
+      container.innerHTML = '<div class="admin-loading-note">هیچ کاربری یافت نشد</div>';
       return;
     }
 
     var html = '';
     users.forEach(function(u) {
       var statusBadge = u.is_approved === 1
-        ? '<span style="background:var(--go-dim); color:var(--go); padding:2px 8px; border-radius:6px; font-size:0.72rem;">✅ تایید</span>'
+        ? '<span class="admin-status-badge approved">✅ تایید</span>'
         : u.is_approved === -1
-        ? '<span style="background:var(--stop-dim); color:var(--stop); padding:2px 8px; border-radius:6px; font-size:0.72rem;">🔴 مسدود</span>'
-        : '<span style="background:rgba(245,158,11,0.15); color:#f59e0b; padding:2px 8px; border-radius:6px; font-size:0.72rem;">⏳ انتظار</span>';
+        ? '<span class="admin-status-badge blocked">🔴 مسدود</span>'
+        : '<span class="admin-status-badge pending">⏳ انتظار</span>';
 
       // §18.3: last_active_at relative time
       var relTime = u.last_active_at ? App.relativeTime(u.last_active_at) : null;
@@ -347,37 +346,37 @@ App.escapeHtml = function(str) {
       var wasteHtml = '';
       if (u.total_exams > 0) {
         var ratio = u.api_per_exam;
-        var wasteColor = ratio > 5 ? '#f43f5e' : ratio > 2 ? '#f59e0b' : '#10b981';
-        wasteHtml = '<span style="font-size:0.68rem; background:rgba(244,63,94,0.1); color:' + wasteColor + '; padding:1px 7px; border-radius:5px; margin-right:4px;">⚡ ' + ratio + ' API/آزمون</span>';
+        var wasteClass = ratio > 5 ? 'high' : ratio > 2 ? 'medium' : 'low';
+        wasteHtml = '<span class="admin-waste-badge ' + wasteClass + '">⚡ ' + ratio + ' API/آزمون</span>';
       }
 
-      html += '<div style="background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:12px; display:flex; flex-direction:column; gap:8px;">' +
+      html += '<div class="admin-user-card">' +
         // Header
-        '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:6px;">' +
+        '<div class="admin-user-card-top">' +
           '<div>' +
-            '<div style="font-weight:700; color:var(--ink); font-size:0.88rem;">' +
+            '<div class="admin-user-name">' +
               App.escapeHtml(u.first_name || 'کاربر') +
-              (u.username ? ' <span style="font-size:0.75rem; color:var(--ink-muted); font-weight:400;">@' + App.escapeHtml(u.username) + '</span>' : '') +
+              (u.username ? ' <span class="admin-user-username">@' + App.escapeHtml(u.username) + '</span>' : '') +
             '</div>' +
-            '<div style="font-size:0.68rem; color:var(--ink-muted); font-family:monospace; margin-top:2px;">🆔 ' + u.telegram_user_id + lastSeenHtml + '</div>' +
+            '<div class="admin-user-meta">🆔 ' + u.telegram_user_id + lastSeenHtml + '</div>' +
           '</div>' +
-          '<div style="display:flex; gap:4px; flex-wrap:wrap; justify-content:flex-end; align-items:center;">' + wasteHtml + statusBadge + '</div>' +
+          '<div class="admin-user-badges">' + wasteHtml + statusBadge + '</div>' +
         '</div>' +
         // Stats grid — §18.5: vocab_count / vocab_due; §18.4: api_per_exam via wasteHtml
-        '<div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:5px; background:var(--surface-2); padding:8px; border-radius:10px; font-size:0.72rem;">' +
-          '<div><div style="color:var(--ink-muted); margin-bottom:1px;">آزمون</div><b>' + u.total_exams + '</b> <span style="color:#10b981;">(' + u.passed_exams + '✓)</span></div>' +
-          '<div><div style="color:var(--ink-muted); margin-bottom:1px;">حضور</div><b>' + u.total_active_minutes + '</b> د</div>' +
-          '<div><div style="color:var(--ink-muted); margin-bottom:1px;">هزینه</div><b style="color:#f43f5e;">$' + (u.total_api_cost_usd || 0).toFixed(4) + '</b></div>' +
-          '<div><div style="color:var(--ink-muted); margin-bottom:1px;">لغات</div><b>' + (u.vocab_count || 0) + '</b></div>' +
-          '<div><div style="color:var(--ink-muted); margin-bottom:1px;">مرور امروز</div><b>' + (u.vocab_due || 0) + '</b></div>' +
-          '<div><div style="color:var(--ink-muted); margin-bottom:1px;">API calls</div><b>' + u.total_api_calls + '</b></div>' +
+        '<div class="admin-user-stats-grid">' +
+          '<div><div class="stat-label">آزمون</div><b>' + u.total_exams + '</b> <span class="stat-value go">(' + u.passed_exams + '✓)</span></div>' +
+          '<div><div class="stat-label">حضور</div><b>' + u.total_active_minutes + '</b> د</div>' +
+          '<div><div class="stat-label">هزینه</div><b class="stat-value stop">$' + (u.total_api_cost_usd || 0).toFixed(4) + '</b></div>' +
+          '<div><div class="stat-label">لغات</div><b>' + (u.vocab_count || 0) + '</b></div>' +
+          '<div><div class="stat-label">مرور امروز</div><b>' + (u.vocab_due || 0) + '</b></div>' +
+          '<div><div class="stat-label">API calls</div><b>' + u.total_api_calls + '</b></div>' +
         '</div>' +
         // Actions
-        '<div style="display:flex; gap:6px; justify-content:flex-end;">' +
-          '<button type="button" class="btn btn-ghost btn-sm" onclick="App.viewAdminUserTimeline(' + u.id + ')" style="font-size:0.75rem; padding:5px 10px;">📊 لاگ</button>' +
+        '<div class="admin-user-actions-row">' +
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="App.viewAdminUserTimeline(' + u.id + ')">📊 لاگ</button>' +
           (u.is_approved === 1
-            ? '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)" style="font-size:0.75rem; padding:5px 10px;">🚫 لغو</button>'
-            : '<button type="button" class="btn btn-vero btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', 1)" style="font-size:0.75rem; padding:5px 10px;">✅ تایید</button>'
+            ? '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)">🚫 لغو</button>'
+            : '<button type="button" class="btn btn-vero btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', 1)">✅ تایید</button>'
           ) +
         '</div>' +
       '</div>';
@@ -391,17 +390,17 @@ App.escapeHtml = function(str) {
     var streamEl = document.getElementById('admin-events-stream');
     if (!streamEl) return;
     if (!events || events.length === 0) {
-      streamEl.innerHTML = '<div style="color:var(--ink-muted); text-align:center; padding:10px;">هیچ رویدادی ثبت نشده.</div>';
+      streamEl.innerHTML = '<div class="admin-loading-note">هیچ رویدادی ثبت نشده.</div>';
       return;
     }
     var html = '<div style="display:flex; flex-direction:column; gap:5px;">';
     events.forEach(function(ev) {
       var name    = ev.first_name ? App.escapeHtml(ev.first_name) : 'کاربر';
-      var details = ev.event_data ? ' <span style="color:var(--ink-muted); font-size:0.7rem;">('+App.escapeHtml(String(ev.event_data).slice(0,60))+')</span>' : '';
-      var dur     = (ev.duration_seconds > 0) ? ' <span style="color:#38bdf8;">+' + ev.duration_seconds + 's</span>' : ''; // §18.3
-      html += '<div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,0.04); padding-bottom:4px;">' +
-        '<div><b>' + name + '</b>: <span style="color:var(--amber);">' + ev.event_type + '</span>' + details + dur + '</div>' +
-        '<div style="color:var(--ink-muted); font-size:0.7rem; white-space:nowrap;">' + String(ev.created_at).slice(11,16) + '</div>' +
+      var details = ev.event_data ? ' <span class="admin-event-meta">('+App.escapeHtml(String(ev.event_data).slice(0,60))+')</span>' : '';
+      var dur     = (ev.duration_seconds > 0) ? ' <span class="admin-event-duration">+' + ev.duration_seconds + 's</span>' : ''; // §18.3
+      html += '<div class="admin-event-row">' +
+        '<div><b>' + name + '</b>: <span class="admin-event-type">' + ev.event_type + '</span>' + details + dur + '</div>' +
+        '<div class="admin-event-time">' + String(ev.created_at).slice(11,16) + '</div>' +
       '</div>';
     });
     html += '</div>';
@@ -426,7 +425,7 @@ App.escapeHtml = function(str) {
     if (!modal || !content) return;
 
     modal.style.display = 'flex';
-    content.innerHTML = '<div style="text-align:center; padding:30px;"><div class="spinner" style="margin:0 auto;"></div><div style="margin-top:10px; font-size:0.85rem; color:var(--ink-muted);">در حال دریافت لاگ کامل کاربر…</div></div>';
+    content.innerHTML = '<div class="admin-modal-loading"><div class="spinner" style="margin:0 auto;"></div><div class="admin-modal-loading-note">در حال دریافت لاگ کامل کاربر…</div></div>';
 
     try {
       const data = await api('GET', '/admin/users/' + userId + '/activity');
@@ -437,65 +436,65 @@ App.escapeHtml = function(str) {
       let html = '<div style="display:flex; flex-direction:column; gap:16px;">';
 
       // User summary info
-      html += '<div style="background:var(--surface-2); padding:12px; border-radius:12px; font-size:0.82rem;">' +
+      html += '<div class="admin-modal-summary-box">' +
         '<div>📅 عضویت: ' + (data.user ? data.user.created_at : '—') + '</div>' +
         '<div>🎯 تاریخ هدف آزمون: ' + (data.user && data.user.target_exam_date ? data.user.target_exam_date : 'تعیین نشده') + '</div>' +
       '</div>';
 
       // Events timeline
-      html += '<div><h4 style="margin:0 0 8px; color:var(--amber); font-size:0.9rem;">📜 کلیک‌ها و فعالیت‌های اخیر</h4>';
+      html += '<div><h4 class="admin-modal-section-heading amber">📜 کلیک‌ها و فعالیت‌های اخیر</h4>';
       if (data.events && data.events.length > 0) {
         html += '<div style="display:flex; flex-direction:column; gap:6px;">';
         data.events.forEach(function(ev) {
           const details = ev.event_data ? ' <span style="color:var(--ink-muted); font-size:0.75rem;">(' + App.escapeHtml(ev.event_data) + ')</span>' : '';
-          html += '<div style="background:var(--bg); border:1px solid var(--border); padding:8px 10px; border-radius:8px; font-size:0.78rem; display:flex; justify-content:space-between; align-items:center;">' +
+          html += '<div class="admin-modal-row">' +
             '<div><b style="color:var(--amber);">' + ev.event_type + '</b>' + details + '</div>' +
             '<div style="font-size:0.7rem; color:var(--ink-muted);">' + ev.created_at + '</div>' +
           '</div>';
         });
         html += '</div>';
       } else {
-        html += '<div style="font-size:0.8rem; color:var(--ink-muted);">هنوز هیچ کلیکی ثبت نشده است.</div>';
+        html += '<div class="admin-modal-empty-note">هنوز هیچ کلیکی ثبت نشده است.</div>';
       }
       html += '</div>';
 
       // Exam sessions history
-      html += '<div><h4 style="margin:0 0 8px; color:#38bdf8; font-size:0.9rem;">📝 آزمون‌های برگزارشده</h4>';
+      html += '<div><h4 class="admin-modal-section-heading ink">📝 آزمون‌های برگزارشده</h4>';
       if (data.sessions && data.sessions.length > 0) {
         html += '<div style="display:flex; flex-direction:column; gap:6px;">';
         data.sessions.forEach(function(s) {
-          const statusStr = s.passed === 1 ? '<span style="color:#10b981;">✅ قبول</span>' : '<span style="color:#ef4444;">❌ مردود</span>';
-          html += '<div style="background:var(--bg); border:1px solid var(--border); padding:8px 10px; border-radius:8px; font-size:0.78rem; display:flex; justify-content:space-between; align-items:center;">' +
+          const statusStr = s.passed === 1 ? '<span style="color:var(--go-light);">✅ قبول</span>' : '<span style="color:var(--stop-light);">❌ مردود</span>';
+          html += '<div class="admin-modal-row">' +
             '<div> حالت <b>' + s.mode + '</b> | نمره: <b>' + (s.score || 0) + '</b> | ' + statusStr + '</div>' +
             '<div style="font-size:0.7rem; color:var(--ink-muted);">' + s.started_at + '</div>' +
           '</div>';
         });
         html += '</div>';
       } else {
-        html += '<div style="font-size:0.8rem; color:var(--ink-muted);">هنوز آزمونی برگزار نشده است.</div>';
+        html += '<div class="admin-modal-empty-note">هنوز آزمونی برگزار نشده است.</div>';
       }
       html += '</div>';
 
       // OpenAI API logs
-      html += '<div><h4 style="margin:0 0 8px; color:#f43f5e; font-size:0.9rem;">💰 فراخوانی‌های API هوش مصنوعی</h4>';
+      html += '<div><h4 class="admin-modal-section-heading stop">💰 فراخوانی‌های API هوش مصنوعی</h4>';
       if (data.apiLogs && data.apiLogs.length > 0) {
         html += '<div style="display:flex; flex-direction:column; gap:6px;">';
         data.apiLogs.forEach(function(apiLog) {
-          html += '<div style="background:var(--bg); border:1px solid var(--border); padding:8px 10px; border-radius:8px; font-size:0.78rem; display:flex; justify-content:space-between; align-items:center;">' +
+          html += '<div class="admin-modal-row">' +
             '<div><b>' + apiLog.action + '</b> <span style="font-size:0.72rem; color:var(--ink-muted);">(' + apiLog.prompt_tokens + ' p / ' + apiLog.completion_tokens + ' c)</span></div>' +
-            '<div style="color:#f43f5e; font-weight:700;">$' + apiLog.estimated_cost_usd.toFixed(4) + '</div>' +
+            '<div style="color:var(--stop-light); font-weight:700;">$' + apiLog.estimated_cost_usd.toFixed(4) + '</div>' +
           '</div>';
         });
         html += '</div>';
       } else {
-        html += '<div style="font-size:0.8rem; color:var(--ink-muted);">فراخوانی API هوش مصنوعی برای این کاربر ثبت نشده است.</div>';
+        html += '<div class="admin-modal-empty-note">فراخوانی API هوش مصنوعی برای این کاربر ثبت نشده است.</div>';
       }
       html += '</div>';
 
       html += '</div>';
       content.innerHTML = html;
     } catch (err) {
-      content.innerHTML = '<div style="color:var(--stop); padding:20px; text-align:center;">خطا در دریافت اطلاعات کاربر</div>';
+      content.innerHTML = '<div class="admin-modal-error">خطا در دریافت اطلاعات کاربر</div>';
     }
   };
 

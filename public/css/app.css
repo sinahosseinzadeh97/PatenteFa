@@ -1034,3 +1034,107 @@ html, body {
 }
 .tutor-chat-bubble.user { align-self: flex-end; background: var(--go); color: #fff; border-bottom-left-radius: 3px; }
 .tutor-chat-bubble.assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); color: var(--ink); border-bottom-right-radius: 3px; }
+
+/* ── Admin dashboard (operator tool — data-dense by design, design.md §18.7) ── */
+.admin-content { padding: 20px 16px 0; }
+.admin-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 10px; }
+.admin-header-left { display: flex; align-items: center; gap: 10px; }
+.admin-header-icon { font-size: 1.8rem; }
+.admin-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; }
+.admin-kpi-sub { font-size: 0.75rem; color: var(--ink-muted); }
+.admin-refresh-btn { border-radius: 10px; }
+
+.admin-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 8px; }
+.admin-kpi-tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 12px; text-align: right; }
+.admin-kpi-label { font-size: 0.7rem; color: var(--ink-muted); }
+.admin-kpi-value { font-size: 1.5rem; font-weight: 700; }
+.admin-kpi-value.amber { color: var(--amber); }
+.admin-kpi-value.go { color: var(--go-light); }
+.admin-kpi-value.ink { color: var(--ink); }
+.admin-kpi-value.stop { color: var(--stop-light); }
+.admin-kpi-sub-value { font-size: 0.68rem; color: var(--ink-muted); }
+.admin-kpi-sub-value.amber { color: var(--amber); }
+.admin-pending-alert { background: var(--amber-dim); border: 1px solid rgba(232,163,61,0.4); border-radius: 12px; padding: 12px; text-align: right; display: none; }
+.admin-pending-alert-label, .admin-pending-alert-value, .admin-pending-alert-sub { color: var(--amber); }
+.admin-pending-alert-value { font-size: 1.5rem; font-weight: 700; }
+.admin-pending-alert-label, .admin-pending-alert-sub { font-size: 0.7rem; }
+
+.admin-section-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 14px; margin-bottom: 16px; }
+.admin-section-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.admin-section-heading { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--ink); }
+.admin-cost-tabs { display: flex; gap: 8px; }
+.admin-cost-tab-btn {
+  font-size: 0.7rem; padding: 3px 10px; border-radius: 6px; border: 1px solid var(--border);
+  background: var(--surface-2); color: var(--ink-muted); cursor: pointer;
+  font-family: 'Vazirmatn', system-ui, sans-serif;
+}
+.admin-cost-tab-btn.active { background: var(--go); color: #fff; }
+.admin-loading-note { color: var(--ink-muted); font-size: 0.8rem; text-align: center; padding: 10px; }
+
+.admin-filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+.admin-search-input {
+  flex: 1; min-width: 170px; padding: 9px 12px; background: var(--surface-2);
+  border: 1px solid var(--border); border-radius: 12px; color: var(--ink); font-size: 0.85rem;
+}
+.admin-status-select { padding: 9px 12px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 12px; color: var(--ink); font-size: 0.85rem; }
+.admin-search-input:focus, .admin-status-select:focus { outline: none; border-color: var(--amber); }
+.admin-list-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+.admin-list-heading { margin: 0; font-size: 0.88rem; font-weight: 700; color: var(--ink); }
+.admin-user-count { font-size: 0.75rem; color: var(--ink-muted); }
+.admin-users-table { display: flex; flex-direction: column; gap: 10px; }
+.admin-events-heading { font-size: 0.88rem; font-weight: 700; margin: 20px 0 8px; color: var(--ink); }
+.admin-events-stream { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; max-height: 280px; overflow-y: auto; font-size: 0.78rem; }
+
+/* Per-user card (App.renderAdminUsers) */
+.admin-user-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+.admin-user-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; }
+.admin-user-name { font-weight: 700; color: var(--ink); font-size: 0.88rem; }
+.admin-user-username { font-size: 0.75rem; color: var(--ink-muted); font-weight: 400; }
+.admin-user-meta { font-size: 0.68rem; color: var(--ink-muted); font-family: monospace; margin-top: 2px; }
+.admin-user-badges { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+.admin-status-badge { padding: 2px 8px; border-radius: 6px; font-size: 0.72rem; }
+.admin-status-badge.approved { background: var(--go-dim); color: var(--go-light); }
+.admin-status-badge.blocked { background: var(--stop-dim); color: var(--stop-light); }
+.admin-status-badge.pending { background: var(--amber-dim); color: var(--amber); }
+.admin-waste-badge { font-size: 0.68rem; padding: 1px 7px; border-radius: 5px; margin-right: 4px; }
+.admin-waste-badge.high { background: var(--stop-dim); color: var(--stop-light); }
+.admin-waste-badge.medium { background: var(--amber-dim); color: var(--amber); }
+.admin-waste-badge.low { background: var(--go-dim); color: var(--go-light); }
+.admin-user-stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 5px; background: var(--surface-2); padding: 8px; border-radius: 10px; font-size: 0.72rem; }
+.admin-user-stats-grid .stat-label { color: var(--ink-muted); margin-bottom: 1px; }
+.admin-user-stats-grid .stat-value.go { color: var(--go-light); }
+.admin-user-stats-grid .stat-value.stop { color: var(--stop-light); }
+.admin-user-actions-row { display: flex; gap: 6px; justify-content: flex-end; }
+.admin-user-actions-row .btn { font-size: 0.75rem; padding: 5px 10px; }
+
+/* Cost breakdown bars */
+.admin-cost-row { display: flex; flex-direction: column; gap: 3px; }
+.admin-cost-row-top { display: flex; justify-content: space-between; font-size: 0.78rem; }
+.admin-cost-row-label { color: var(--ink); }
+.admin-cost-row-meta { color: var(--ink-muted); font-family: monospace; }
+.admin-cost-row-cost { color: var(--stop-light); }
+.admin-cost-bar-track { background: var(--surface-2); border-radius: 4px; height: 5px; overflow: hidden; }
+.admin-cost-bar-fill { background: linear-gradient(90deg, var(--stop), var(--amber)); height: 100%; border-radius: 4px; transition: width 0.35s ease; }
+
+/* Event stream rows */
+.admin-event-row { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 4px; }
+.admin-event-type { color: var(--amber); }
+.admin-event-meta { color: var(--ink-muted); font-size: 0.7rem; }
+.admin-event-duration { color: var(--amber); }
+.admin-event-time { color: var(--ink-muted); font-size: 0.7rem; white-space: nowrap; }
+
+/* User timeline modal */
+.admin-user-modal-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); }
+.admin-user-modal-panel { position: relative; z-index: 1; background: var(--surface); border-top: 1px solid var(--border); border-radius: 20px 20px 0 0; padding: 20px; max-height: 88vh; overflow-y: auto; }
+.admin-user-modal-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+.admin-user-modal-title { margin: 0; font-size: 1.05rem; color: var(--ink); }
+.admin-modal-section-heading { margin: 0 0 8px; font-size: 0.9rem; }
+.admin-modal-section-heading.amber { color: var(--amber); }
+.admin-modal-section-heading.ink { color: var(--ink); }
+.admin-modal-section-heading.stop { color: var(--stop-light); }
+.admin-modal-summary-box { background: var(--surface-2); padding: 12px; border-radius: 12px; font-size: 0.82rem; }
+.admin-modal-row { background: var(--bg); border: 1px solid var(--border); padding: 8px 10px; border-radius: 8px; font-size: 0.78rem; display: flex; justify-content: space-between; align-items: center; }
+.admin-modal-empty-note { font-size: 0.8rem; color: var(--ink-muted); }
+.admin-modal-error { color: var(--stop); padding: 20px; text-align: center; }
+.admin-modal-loading { text-align: center; padding: 30px; }
+.admin-modal-loading-note { margin-top: 10px; font-size: 0.85rem; color: var(--ink-muted); }
