@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh api *)",
+      "Bash(git clone *)",
+      "Read(//Users/sinamohammadhosseinzadeh/.claude/skills/**)",
+      "Bash(mkdir -p ~/.claude/skills)",
+      "Bash(cp -R /private/tmp/claude-501/-Users-sinamohammadhosseinzadeh-Desktop-Patente/b8173d8a-5ae0-41c7-a703-a2250286df04/scratchpad/ui-ux-pro-max-skill/.claude/skills/ui-ux-pro-max ~/.claude/skills/ui-ux-pro-max)",
+      "Bash(claude mcp *)",
+      "WebFetch(domain:github.com)",
+      "Bash(mkdir -p ~/.claude/skills && git clone --single-branch --depth 1 https://github.com/garrytan/gstack.git ~/.claude/skills/gstack 2>&1)",
+      "Bash(bun --version)",
+      "Bash(brew install *)",
+      "Bash(./setup)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "postgresql"
+  ]
+}

@@ -1,0 +1,41 @@
+// wrangler.jsonc — PatenteFa Worker configuration
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"name": "patente-fa",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-07-01",
+	"compatibility_flags": [
+		"nodejs_compat"
+	],
+	// D1 — primary relational store
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "patente-fa-db",
+			"database_id": "b6b6eb87-f9ba-4db3-9882-a0e8cfc8f1bd",
+			"migrations_dir": "./migrations"
+		}
+	],
+	// KV — short-lived cache (initData nonces, rate limiting)
+	"kv_namespaces": [
+		{
+			"binding": "KV",
+			"id": "40a86d4948f24860993a56781decfb2a"
+		}
+	],
+	// R2 — sign images (migrated from raw.githubusercontent.com in §16.7)
+	"r2_buckets": [
+		{
+			"binding": "SIGNS",
+			"bucket_name": "patente-fa-signs",
+			"remote": true
+		}
+	],
+	// Cron triggers
+	"triggers": {
+		"crons": [
+			"0 6 * * *",
+			"0 23 * * *"
+		]
+	}
+}
