@@ -798,3 +798,52 @@ html, body {
   font-size: 0.82rem; color: var(--go-light); line-height: 1.6; text-align: center;
 }
 .pending-recheck-btn { max-width: 280px; }
+
+/* ── Legacy stats screen (no in-app nav entry; only reachable via ?screen=stats,
+   kept rather than deleted per "don't drop features" — see final report) ─── */
+.stats-content { padding: 20px 16px 0; }
+.stats-title { margin: 0 0 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; }
+.stats-chip-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+.stats-section-heading { font-size: 0.88rem; font-weight: 700; margin: 0 0 14px; color: var(--ink-muted); }
+.stats-profile-cta-wrap { margin-top: 20px; }
+
+/* ── Profile & analysis screen ───────────────────────────────────────────── */
+.profile-content { padding: 20px 16px 0; }
+.profile-header-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.profile-back-btn {
+  background: none; border: none; color: var(--ink-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 40px; min-height: 40px; border-radius: 8px;
+  transition: background 150ms, color 150ms;
+}
+.profile-back-btn:hover { background: var(--surface-2); color: var(--ink); }
+.profile-back-icon { width: 22px; height: 22px; }
+.profile-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 700; color: var(--ink); }
+
+.profile-level-card { margin-bottom: 16px; background: linear-gradient(135deg, var(--go-dim), var(--surface)); border-color: rgba(27,122,61,0.3); }
+.profile-level-row { display: flex; align-items: center; gap: 16px; margin-bottom: 14px; }
+.profile-name-block { flex: 1; min-width: 0; }
+.profile-name { font-size: 1.1rem; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.profile-username { font-size: 0.75rem; color: var(--amber); font-family: 'Public Sans', sans-serif; direction: ltr; margin-bottom: 8px; }
+.profile-xp-row { display: flex; align-items: center; gap: 8px; }
+.profile-xp-track-wrap { flex: 1; }
+.profile-xp-label { font-size: 0.72rem; font-weight: 700; color: var(--go); white-space: nowrap; }
+.profile-xp-detail { font-size: 0.62rem; color: var(--ink-muted); margin-top: 3px; }
+
+.profile-stat-row { display: flex; gap: 8px; margin-bottom: 20px; }
+
+.profile-analysis-section { border-top: 1px solid var(--border); padding-top: 20px; }
+.profile-analysis-heading { margin: 0 0 16px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.4rem; font-weight: 700; }
+.profile-card { margin-bottom: 16px; }
+.profile-card-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; }
+.profile-card-row.center { align-items: center; margin-bottom: 12px; }
+.profile-card-label { font-size: 0.82rem; font-weight: 700; color: var(--ink); }
+.profile-card-label.warn { font-size: 0.85rem; color: var(--stop); }
+.profile-card-sub { font-size: 0.7rem; color: var(--ink-muted); }
+.profile-coverage-value { font-size: 0.78rem; color: var(--go); font-weight: 700; }
+.profile-coverage-note { font-size: 0.7rem; color: var(--ink-muted); margin-top: 6px; }
+.profile-loading-note { color: var(--ink-muted); font-size: 0.85rem; text-align: center; padding: 12px 0; }
+.profile-topic-heading { font-size: 0.85rem; font-weight: 700; margin-bottom: 12px; color: var(--ink); }
+.profile-trend-heading-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.profile-sparkline-footer { display: flex; justify-content: space-between; margin-top: 4px; font-size: 0.65rem; color: var(--ink-muted); }
+.profile-sparkline-passline-label { color: rgba(27,122,61,0.8); font-size: 0.62rem; }
