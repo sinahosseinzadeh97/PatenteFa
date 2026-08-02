@@ -126,8 +126,7 @@
       img.style.display = 'none';
     }
 
-    document.getElementById('btn-flag').style.opacity =
-      state.flags.has(q.questionId) ? '1' : '0.4';
+    App._setFlagButtonState(state.flags.has(q.questionId));
 
     // §15.3: reset AI panel on question switch (uses centralized helper)
     App._resetAiPanel();
@@ -177,8 +176,7 @@
     const wasFlagged = state.flags.has(q.questionId);
     if (wasFlagged) state.flags.delete(q.questionId);
     else state.flags.add(q.questionId);
-    document.getElementById('btn-flag').style.opacity =
-      state.flags.has(q.questionId) ? '1' : '0.4';
+    App._setFlagButtonState(state.flags.has(q.questionId));
     App.renderExamTabs();
     try {
       await api('POST', '/exam/' + state.sessionId + '/flag', {
@@ -225,9 +223,8 @@
       const btn = document.getElementById('ai-tab-btn-' + i);
       const content = document.getElementById('ai-tab-' + i);
       if (btn) {
-        btn.style.borderBottom = i === tabIndex ? '2px solid var(--amber)' : '2px solid transparent';
-        btn.style.color = i === tabIndex ? 'var(--ink)' : 'var(--ink-muted)';
-        btn.style.fontWeight = i === tabIndex ? '600' : '500';
+        btn.classList.toggle('active', i === tabIndex);
+        btn.setAttribute('aria-selected', i === tabIndex ? 'true' : 'false');
       }
       if (content) {
         content.style.display = i === tabIndex ? 'block' : 'none';
@@ -369,6 +366,15 @@
   };
 
   // §15: clear AI tab caches when switching question so stale data never shows
+  // Bookmark/flag icon button — toggles both the visual "active" state and
+  // aria-pressed so screen readers announce whether this question is flagged.
+  App._setFlagButtonState = function(flagged) {
+    const btn = document.getElementById('btn-flag');
+    if (!btn) return;
+    btn.classList.toggle('active', flagged);
+    btn.setAttribute('aria-pressed', flagged ? 'true' : 'false');
+  };
+
   App._resetAiPanel = function() {
     state.translateOpen = false;
     const tog = document.getElementById('translate-toggle');
