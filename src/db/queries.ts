@@ -3,6 +3,8 @@
  * Typed D1 query helpers for all tables.
  */
 
+import { addDaysISO, todayLocalISO } from "../lib/srs.js";
+
 export interface DbUser {
   id: number;
   telegram_user_id: number;
@@ -206,24 +208,6 @@ export async function getAllTopicsWithStats(
   return result.results;
 }
 
-export async function drawTopicQuestions(
-  db: D1Database,
-  topicId: number,
-  count = 15
-): Promise<DbQuestion[]> {
-  const result = await db
-    .prepare(
-      `SELECT * FROM questions
-       WHERE topic_id = ?
-       ORDER BY RANDOM()
-       LIMIT ?`
-    )
-    .bind(topicId, count)
-    .all<DbQuestion>();
-
-  return result.results;
-}
-
 // ── Questions ────────────────────────────────────────────────────────────────
 
 export interface QuestionWithTopic extends DbQuestion {
@@ -231,57 +215,72 @@ export interface QuestionWithTopic extends DbQuestion {
   topic_name_fa: string | null;
 }
 
+/** At most this many of the 30 slots go to due review questions. */
+const REVIEW_SLOTS = 8;
+/** A question the user has already seen is not drawn again for this many days. */
+const COOLDOWN_DAYS = 14;
+
 /**
  * Draw 30 questions for a new exam session.
- * Strategy: spread across all topics, lightly weighted toward user's
- * review_queue and high-wrong_rate topics, but majority random.
+ *
+ * Two rules keep the exam from feeling repetitive:
+ *  - review questions only come back once they're *due* (the morning after they
+ *    were missed) — not in every session from the moment you get them wrong;
+ *  - the random fill skips anything answered in the last COOLDOWN_DAYS days.
  */
 export async function drawExamQuestions(
   db: D1Database,
   userId: number,
   count = 30
 ): Promise<DbQuestion[]> {
-  // Get question IDs already in the user's active review queue
-  const reviewResult = await db
+  // Due review questions — oldest due date first, then most-missed.
+  const rq = await db
     .prepare(
-      `SELECT question_id FROM review_queue
-       WHERE user_id = ? AND cleared = 0
-       LIMIT 15`
-    )
-    .bind(userId)
-    .all<{ question_id: number }>();
-  const reviewIds = reviewResult.results.map((r) => r.question_id);
-
-  // Pull review questions first (up to 10 slots)
-  let reviewQuestions: DbQuestion[] = [];
-  if (reviewIds.length > 0) {
-    const placeholders = reviewIds.map(() => "?").join(",");
-    const rq = await db
-      .prepare(
-        `SELECT * FROM questions WHERE id IN (${placeholders}) ORDER BY RANDOM() LIMIT 10`
-      )
-      .bind(...reviewIds)
-      .all<DbQuestion>();
-    reviewQuestions = rq.results;
-  }
-
-  const usedIds = new Set(reviewQuestions.map((q) => q.id));
-  const remaining = count - reviewQuestions.length;
-
-  // Fill the rest randomly from all questions not already used
-  const excludePlaceholders =
-    usedIds.size > 0 ? `AND id NOT IN (${[...usedIds].map(() => "?").join(",")})` : "";
-  const randomResult = await db
-    .prepare(
-      `SELECT * FROM questions
-       WHERE 1=1 ${excludePlaceholders}
-       ORDER BY RANDOM()
+      `SELECT q.* FROM questions q
+       JOIN review_queue rv ON rv.question_id = q.id
+       WHERE rv.user_id = ? AND rv.cleared = 0
+         AND (rv.next_review_at IS NULL OR rv.next_review_at <= ?)
+       ORDER BY rv.next_review_at ASC, rv.wrong_count DESC
        LIMIT ?`
     )
-    .bind(...[...usedIds], remaining)
+    .bind(userId, todayLocalISO(), REVIEW_SLOTS)
     .all<DbQuestion>();
+  const reviewQuestions = rq.results;
 
-  const allQuestions = [...reviewQuestions, ...randomResult.results];
+  const usedIds = new Set(reviewQuestions.map((q) => q.id));
+  const fillRandom = async (respectCooldown: boolean): Promise<DbQuestion[]> => {
+    const remaining = count - usedIds.size;
+    if (remaining <= 0) return [];
+    const exclude =
+      usedIds.size > 0 ? `AND id NOT IN (${[...usedIds].map(() => "?").join(",")})` : "";
+    const cooldown = respectCooldown
+      ? `AND id NOT IN (
+           SELECT ea.question_id FROM exam_answers ea
+           JOIN exam_sessions es ON es.id = ea.session_id
+           WHERE es.user_id = ? AND ea.answered_at >= ?
+         )`
+      : "";
+    const binds: unknown[] = [...usedIds];
+    if (respectCooldown) binds.push(userId, `${addDaysISO(todayLocalISO(), -COOLDOWN_DAYS)} 00:00:00`);
+    const res = await db
+      .prepare(
+        `SELECT * FROM questions
+         WHERE 1=1 ${exclude} ${cooldown}
+         ORDER BY RANDOM()
+         LIMIT ?`
+      )
+      .bind(...binds, remaining)
+      .all<DbQuestion>();
+    for (const q of res.results) usedIds.add(q.id);
+    return res.results;
+  };
+
+  const fresh = await fillRandom(true);
+  // Bank exhausted for this user (small bank / very heavy usage) — top up
+  // without the cooldown rather than serving a short exam.
+  const topUp = usedIds.size < count ? await fillRandom(false) : [];
+
+  const allQuestions = [...reviewQuestions, ...fresh, ...topUp];
 
   // Shuffle so review questions aren't always at the front
   for (let i = allQuestions.length - 1; i > 0; i--) {
@@ -424,7 +423,7 @@ export async function getDueReviewQuestions(
   db: D1Database,
   userId: number
 ): Promise<DbQuestion[]> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalISO();
   const result = await db
     .prepare(
       `SELECT q.* FROM questions q
@@ -441,7 +440,7 @@ export async function getPendingReviewCount(
   db: D1Database,
   userId: number
 ): Promise<number> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalISO();
   const row = await db
     .prepare(
       `SELECT COUNT(*) as cnt FROM review_queue
@@ -452,14 +451,26 @@ export async function getPendingReviewCount(
   return row?.cnt ?? 0;
 }
 
-export async function clearReviewItem(
+/**
+ * Retire questions from the review queue once the user gets them right.
+ * Without this the queue only ever grows and every exam keeps serving the
+ * same old mistakes back.
+ * ponytail: one correct answer retires the item; require two in a row if
+ * users start passing by luck.
+ */
+export async function clearReviewItems(
   db: D1Database,
   userId: number,
-  questionId: number
+  questionIds: number[]
 ): Promise<void> {
+  if (questionIds.length === 0) return;
+  const placeholders = questionIds.map(() => "?").join(",");
   await db
-    .prepare(`UPDATE review_queue SET cleared = 1 WHERE user_id = ? AND question_id = ?`)
-    .bind(userId, questionId)
+    .prepare(
+      `UPDATE review_queue SET cleared = 1
+       WHERE user_id = ? AND question_id IN (${placeholders})`
+    )
+    .bind(userId, ...questionIds)
     .run();
 }
 
@@ -485,8 +496,14 @@ export async function insertTranslation(
 ): Promise<void> {
   await db
     .prepare(
-      `INSERT OR REPLACE INTO translations_cache (question_id, lang, translated_text, explanation)
-       VALUES (?, ?, ?, ?)`
+      // Upsert, not INSERT OR REPLACE: replacing the row would silently drop
+      // the cached theory_text / grammar_analysis / vocab_suggestions columns
+      // and make us pay to regenerate them.
+      `INSERT INTO translations_cache (question_id, lang, translated_text, explanation)
+       VALUES (?, ?, ?, ?)
+       ON CONFLICT(question_id, lang) DO UPDATE SET
+         translated_text = excluded.translated_text,
+         explanation = excluded.explanation`
     )
     .bind(questionId, lang, translatedText, explanation)
     .run();
@@ -554,9 +571,7 @@ export async function insertVocabItem(
   note: string | null,
   sourceQuestionId: number | null
 ): Promise<DbVocabItem> {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  const nextReviewAt = tomorrow.toISOString().slice(0, 10);
+  const nextReviewAt = addDaysISO(todayLocalISO(), 1);
 
   const result = await db
     .prepare(
@@ -584,7 +599,7 @@ export async function getDueVocabItems(
   db: D1Database,
   userId: number
 ): Promise<DbVocabItem[]> {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = todayLocalISO();
   const result = await db
     .prepare(
       `SELECT * FROM vocab_items
@@ -724,10 +739,14 @@ export async function getWorstTopicIds(
 }
 
 /**
- * Draw `count` questions randomly from the given topic IDs.
+ * Draw `count` questions from the given topic IDs, least-recently-seen first.
+ * Topic pools are small (a few hundred questions), so a hard cooldown like the
+ * one in drawExamQuestions would exhaust them — ordering by last-seen gives the
+ * same "stop showing me the same questions" effect without ever running dry.
  */
 export async function drawQuestionsFromTopics(
   db: D1Database,
+  userId: number,
   topicIds: number[],
   count = 30
 ): Promise<DbQuestion[]> {
@@ -735,39 +754,81 @@ export async function drawQuestionsFromTopics(
   const placeholders = topicIds.map(() => "?").join(",");
   const result = await db
     .prepare(
-      `SELECT * FROM questions
-       WHERE topic_id IN (${placeholders})
-       ORDER BY RANDOM()
+      `SELECT q.*, (
+         SELECT MAX(ea.answered_at) FROM exam_answers ea
+         JOIN exam_sessions es ON es.id = ea.session_id
+         WHERE es.user_id = ? AND ea.question_id = q.id
+       ) AS last_seen_at
+       FROM questions q
+       WHERE q.topic_id IN (${placeholders})
+       ORDER BY last_seen_at IS NOT NULL, last_seen_at ASC, RANDOM()
        LIMIT ?`
     )
-    .bind(...topicIds, count)
+    .bind(userId, ...topicIds, count)
     .all<DbQuestion>();
   return result.results;
 }
 
-// ── Sign questions (for road-sign flashcard mode) ─────────────────────────────
+// ── Sign cards (for the تابلوها teaching deck) ────────────────────────────────
 
-export interface SignQuestion {
-  questionId: number;
-  textIt: string;
+export interface SignCard {
   imageUrl: string;
-  topicId: number | null;
+  nameIt: string;
+  nameFa: string;
+  meaningFa: string;
 }
 
 /**
- * Returns all questions that have an associated road-sign image.
- * Used for the sign flashcard SRS mode.
+ * One card per road sign: the sign's official name and what it means.
+ *
+ * تابلوها teaches, it does not quiz. Building the deck from the question bank —
+ * even from only the statements marked VERO — gives true sentences that still
+ * aren't a definition: the tow-away sign's card listed three facts about impound
+ * lots and wheel clamps without ever saying "parking is prohibited". So meanings
+ * live in their own table (migration 0009, seeded and human-reviewed via
+ * scripts/generate-sign-meanings.ts) instead of being derived from exam text.
+ *
+ * The true/false format belongs in the exam, which draws from the full bank
+ * (see drawExamQuestions) and is unaffected by this query.
  */
-export async function getSignQuestions(db: D1Database): Promise<SignQuestion[]> {
+export async function getSignCards(db: D1Database): Promise<SignCard[]> {
   const result = await db
     .prepare(
-      `SELECT q.id AS questionId, q.text_it AS textIt, q.image_url AS imageUrl, q.topic_id AS topicId
-       FROM questions q
-       WHERE q.image_url IS NOT NULL AND q.image_url != ''
-       ORDER BY q.id`
+      `SELECT image_url AS imageUrl, name_it AS nameIt, name_fa AS nameFa,
+              meaning_fa AS meaningFa
+       FROM sign_meanings
+       ORDER BY image_url`
     )
-    .all<SignQuestion>();
+    .all<SignCard>();
   return result.results;
+}
+
+/**
+ * The one sign card for a question's image, used to ground AI explanations.
+ *
+ * gpt-4o reads a sign's *direction* from pixels at ~89% (measured over the nine
+ * destra/sinistra pairs in the bank: it mirrored doppia-curva-destra and
+ * intersezione-T-sinistra, and calls passaggio-veicoli "a sinistra" when the
+ * arrow points right). A wrong left/right in the explanation is not a small
+ * error — it teaches the opposite rule.
+ *
+ * sign_meanings is human-reviewed and covers all 413 images, so the name is a
+ * fact we already hold. Passing it into the prompt turns "read the sign" into
+ * "explain this named sign", which is the same anchoring that makes
+ * scripts/generate-sign-meanings.ts reliable in the first place.
+ */
+export async function getSignCardForImage(
+  db: D1Database,
+  imageUrl: string
+): Promise<SignCard | null> {
+  return await db
+    .prepare(
+      `SELECT image_url AS imageUrl, name_it AS nameIt, name_fa AS nameFa,
+              meaning_fa AS meaningFa
+       FROM sign_meanings WHERE image_url = ?`
+    )
+    .bind(imageUrl)
+    .first<SignCard>();
 }
 
 // ── Reels Feed (Vertical Educational Feed) ──────────────────────────────────

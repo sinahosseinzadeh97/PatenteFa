@@ -10,13 +10,95 @@ export interface TranslationResult {
   explanation: string;
 }
 
+/** The verified identity of the sign in a question's image (see sign_meanings). */
+export interface SignAnchor {
+  nameIt: string;
+  nameFa: string;
+  meaningFa: string;
+}
+
+/**
+ * Ground the explanation in the sign we already know is in the picture.
+ *
+ * Measured over the nine destra/sinistra pairs in the bank, gpt-4o names the
+ * side correctly 16/18 times from pixels alone — and the misses are the worst
+ * kind, since a mirrored left/right teaches the exact opposite rule. The sign's
+ * identity is not something we need the model to guess: sign_meanings holds a
+ * human-reviewed name for all 413 images.
+ *
+ * The image still goes with the request. Intersection figures, vehicle letters
+ * and the "does the picture actually match the text?" check (which is why many
+ * of these questions are FALSO) all still need the model to look.
+ */
+export function signAnchorBlock(sign: SignAnchor | null | undefined): string {
+  if (!sign) return "";
+  return `
+
+تابلوی داخل تصویر از قبل شناسایی و توسط انسان بازبینی شده است — این اطلاعات قطعی است:
+• نام رسمی ایتالیایی: «${sign.nameIt}»
+• معنی: ${sign.meaningFa}
+
+اگر برداشت شما از تصویر با این نام فرق داشت، این نام درست است — مخصوصاً درباره جهت (چپ/راست). نام تابلو را حدس نزنید و آن را عوض نکنید.`;
+}
+
 export interface Env {
   OPENAI_API_KEY: string;
   OPENAI_MODEL?: string;
+  OPENAI_VISION_MODEL?: string;
 }
 
 function model(env: Env): string {
   return env.OPENAI_MODEL ?? "gpt-4o-mini";
+}
+
+/**
+ * §20.1 — Model for calls that carry a sign/diagram image.
+ *
+ * gpt-4o-mini reads these images too poorly to teach from. Measured on the three
+ * questions that motivated this fix, with the image attached in both cases:
+ *   q2224 (red triangle, black X) — mini: "segnale di divieto" (wrong category);
+ *                                     4o: "INTERSEZIONE CON DIRITTO DI PRECEDENZA" ✓
+ *   q4741 (T-junction figure)     — mini: "C is turning left" (it isn't);
+ *                                     4o: "C yields to B coming from the right" ✓
+ *
+ * Text questions stay on mini — they were never the problem, and they're ~3k of
+ * the bank. Falls back to the text model if someone explicitly unsets this.
+ */
+function visionModel(env: Env): string {
+  return env.OPENAI_VISION_MODEL ?? "gpt-4o";
+}
+
+/**
+ * Resolve a stored image_url into something OpenAI's vision endpoint can fetch.
+ *
+ * Stored values are relative (`/images/signs/54.png`), served publicly by the R2
+ * route in src/index.ts. Passing a relative URL straight through makes OpenAI
+ * reject the whole request, which is how sign questions ended up with no
+ * translation at all in the tutor review path.
+ *
+ * MINI_APP_URL carries a path — scripts/repoint-telegram.sh sets it to
+ * `<origin>/app` — so string concatenation produced `<origin>/app/images/signs/54.png`.
+ * That path is caught by the `/app/*` Mini App shell route and answered with the
+ * HTML shell, 200. OpenAI then rejects the request with invalid_image_format and
+ * every image question in the exam panel returned that raw 400 instead of a
+ * translation. Resolve against the origin instead: stored image_urls are
+ * root-absolute, so the base's path is correctly discarded.
+ *
+ * Returns null when it can't build an absolute URL — callers then run text-only
+ * rather than failing outright.
+ */
+export function resolveImageUrl(
+  miniAppUrl: string | undefined,
+  imageUrl: string | null | undefined
+): string | null {
+  if (!imageUrl) return null;
+  if (imageUrl.startsWith("http")) return imageUrl;
+  if (!miniAppUrl) return null;
+  try {
+    return new URL(imageUrl, miniAppUrl).toString();
+  } catch {
+    return null;
+  }
 }
 
 export function calculateCost(model: string, promptTokens: number, completionTokens: number): number {
@@ -40,10 +122,12 @@ export async function translateQuestion(
   correctAnswer: number, // 1 = VERO, 0 = FALSO
   imageUrl?: string | null,
   db?: D1Database,
-  userId?: number
+  userId?: number,
+  sign?: SignAnchor | null
 ): Promise<TranslationResult> {
   const answerIt = correctAnswer === 1 ? "VERO" : "FALSO";
   const currentModel = model(env);
+  const explanationModel = visionModel(env);
 
   // §17.6: Split into two independent parallel calls so correct_answer is
   // structurally absent from the translation call — the model cannot leak the
@@ -79,24 +163,73 @@ export async function translateQuestion(
 فقط ترجمه فارسی روان را برگردانید (بدون توضیح). خروجی دقیقاً به صورت JSON:
 {"translated_text": "ترجمه فارسی روان سوال"}`;
 
-  // §14.2: vision call when image present — translation call only
+  // §14.2 / §20.1: vision when an image is present.
+  // detail "high" for the explanation — these are 400×400 PNGs, so high detail is
+  // still a single tile (255 tokens vs 85, ≈ +$0.000026), and intersection figures
+  // carry vehicle letters and arrow directions that "low" cannot resolve.
+  // Translation stays on "low": it renders "il segnale raffigurato" as "تابلوی
+  // نشان‌داده‌شده" regardless of which sign it is, and translations were never
+  // the broken part.
   type UserMessageContent = string | Array<{ type: string; text?: string; image_url?: { url: string; detail: string } }>;
-  const translationUserMessage: { role: "user"; content: UserMessageContent } = imageUrl
-    ? {
-        role: "user",
-        content: [
-          { type: "text", text: translationUserText },
-          { type: "image_url", image_url: { url: imageUrl, detail: "low" } },
-        ],
-      }
-    : { role: "user", content: translationUserText };
+  const withImage = (
+    text: string,
+    detail: "low" | "high"
+  ): { role: "user"; content: UserMessageContent } =>
+    imageUrl
+      ? {
+          role: "user",
+          content: [
+            { type: "text", text },
+            { type: "image_url", image_url: { url: imageUrl, detail } },
+          ],
+        }
+      : { role: "user", content: text };
+
+  const translationUserMessage = withImage(translationUserText, "low");
 
   // ── Call 2: Explanation only — sees correct_answer, that's its whole job ───
-  const explanationUserText = `سوال ایتالیایی: "${textIt}"
-پاسخ صحیح: ${answerIt}
+  // §20.1: the explanation call gets the image too. It used to be text-only, so
+  // for the ~4k image questions ("Il segnale raffigurato…", intersection figures)
+  // the model was reasoning about a picture it had never seen and confabulated a
+  // rule every time.
+  //
+  // The "deciding word" instruction is conditional for the same reason: image
+  // questions usually have NO deciding word — the deciding factor is which sign
+  // is depicted. Demanding one forced the model to pick an arbitrary word and
+  // invent a justification around it.
+  const explanationSystemPrompt = `شما توضیح‌دهنده قوانین آزمون پاتنته B هستید و برای فارسی‌زبانان توضیح می‌دهید.
+${
+  imageUrl
+    ? `
+این سوال یک تصویر دارد (تابلو یا شکل تقاطع) که برای شما ارسال شده است. تصویر منبع اصلی پاسخ است، نه متن.
 
-دلیل کوتاه پاسخ صحیح را به فارسی بنویسید. خروجی دقیقاً به صورت JSON:
-{"explanation": "دلیل کوتاه به فارسی"}`;
+ساختار پاسخ (۲ تا ۳ جمله، بدون تیتر):
+۱. اول دقیقاً بگویید در تصویر چه چیزی می‌بینید — نام رسمی ایتالیایی تابلو را داخل «» بیاورید (مثلاً «STRADA DEFORMATA»)، یا در شکل‌های تقاطع، موقعیت و مسیر هر وسیله نقلیه با حرف آن.
+۲. چرا با توجه به همین تصویر، پاسخ ${answerIt} است.
+۳. قانون واقعی مربوط به همین تابلو یا همین وضعیت — با عدد و شرط مشخص در صورت وجود.
+
+قانون قطعی درباره تصویر:
+• هرگز فرض نکنید تابلوی داخل تصویر همان چیزی است که در متن سوال ادعا شده — اغلب پاسخ دقیقاً به همین دلیل FALSO است
+• اگر تصویر را با اطمینان تشخیص نمی‌دهید، همین را بنویسید و فقط چیزی را که واقعاً می‌بینید (شکل، رنگ، نماد) توصیف کنید. حدس زدن نام تابلو بدتر از نگفتن آن است
+• درباره «کلمه تعیین‌کننده» در متن حرف نزنید مگر آنکه واقعاً یک کلمه متن پاسخ را عوض کند — در سوال‌های تصویری معمولاً تصویر تعیین‌کننده است، نه کلمه`
+    : `
+ساختار پاسخ (۲ تا ۳ جمله، بدون تیتر):
+۱. کدام کلمه یا شرط دقیق در جمله ایتالیایی، پاسخ را ${answerIt} می‌کند (کلمه ایتالیایی را داخل «» بیاورید).
+۲. قانون واقعی چیست — با عدد و شرط مشخص (سرعت، فاصله، مهلت، نوع جاده، نوع وسیله نقلیه، استثنا).
+۳. اگر جمله ${correctAnswer === 1 ? "FALSO" : "VERO"} می‌بود، چه چیزی باید فرق می‌کرد.`
+}
+
+ممنوع:
+• جمله‌های کلی مثل «طبق قوانین راهنمایی و رانندگی»، «باید احتیاط کرد»، «این یک قانون مهم است» — این‌ها هیچ اطلاعاتی نمی‌دهند
+• تکرار خود سوال به عنوان توضیح
+• ذکر شماره ماده قانونی مگر آنکه مطمئن باشید — در غیر این صورت فقط خود قانون را بنویسید
+• شروع با «پاسخ صحیح ${answerIt} است» — این را کاربر می‌بیند، مستقیم سراغ دلیل بروید`;
+
+  const explanationUserText = `سوال ایتالیایی: "${textIt}"
+پاسخ صحیح: ${answerIt}${imageUrl ? "\n(تصویر این سوال ضمیمه شده است — اول آن را بخوانید.)" : ""}${signAnchorBlock(sign)}
+
+خروجی دقیقاً به صورت JSON:
+{"explanation": "دلیل مشخص و دقیق به فارسی"}`;
 
   const callOpenAI = (body: object) =>
     fetch("https://api.openai.com/v1/chat/completions", {
@@ -121,17 +254,17 @@ export async function translateQuestion(
       max_tokens: 250,
     }),
     callOpenAI({
-      model: currentModel,
+      // §20.1: image questions escalate to the vision model — mini misreads signs.
+      model: imageUrl ? explanationModel : currentModel,
       messages: [
-        {
-          role: "system",
-          content: "شما توضیح‌دهنده قوانین آزمون پاتنته B هستید. دلیل کوتاه و روشن برای پاسخ صحیح سوال را به فارسی بنویسید.",
-        },
-        { role: "user", content: explanationUserText },
+        { role: "system", content: explanationSystemPrompt },
+        withImage(explanationUserText, "high"),
       ],
       response_format: { type: "json_object" },
-      temperature: 0.3,
-      max_tokens: 200,
+      temperature: 0.2,
+      // Image answers must name the sign before reasoning — that costs tokens the
+      // old text-only budget didn't allow for.
+      max_tokens: imageUrl ? 500 : 350,
     }),
   ]);
 
@@ -151,21 +284,28 @@ export async function translateQuestion(
 
   // Log combined usage
   if (db) {
-    const logUsage = (data: typeof translationData, action: string) => {
+    // §20.1: the two calls can now run on different models, so the model has to
+    // be passed in — logging both as `currentModel` would under-report the cost
+    // of every image explanation on the admin dashboard.
+    const logUsage = (data: typeof translationData, action: string, usedModel: string) => {
       if (!data.usage) return;
       const pTokens = data.usage.prompt_tokens || 0;
       const cTokens = data.usage.completion_tokens || 0;
-      const cost = calculateCost(currentModel, pTokens, cTokens);
+      const cost = calculateCost(usedModel, pTokens, cTokens);
       db.prepare(
         `INSERT INTO api_usage_logs (user_id, service, model, action, prompt_tokens, completion_tokens, estimated_cost_usd)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
-        .bind(userId || null, "openai", currentModel, action, pTokens, cTokens, cost)
+        .bind(userId || null, "openai", usedModel, action, pTokens, cTokens, cost)
         .run()
         .catch(() => {});
     };
-    logUsage(translationData, "translate_question_text");
-    logUsage(explanationData, "translate_question_explanation");
+    logUsage(translationData, "translate_question_text", currentModel);
+    logUsage(
+      explanationData,
+      "translate_question_explanation",
+      imageUrl ? explanationModel : currentModel
+    );
   }
 
   const translatedParsed = JSON.parse(translationData.choices[0]?.message?.content ?? "{}") as { translated_text?: string };
@@ -257,37 +397,81 @@ export interface GrammarResult {
  * (Codice della Strada) behind this question, why it's a common mistake, and
  * what mental tip (trucchetto) will help the student remember it.
  * Token budget: 700 (independent — never competes with translation or grammar).
- * §15.4: text-only even for image questions — we're reasoning about the rule, not the sign.
+ * §20.1: vision when the question has an image. This used to be text-only on the
+ * reasoning that we're explaining the rule, not the sign — which is true for text
+ * questions and false for the ~4k image ones, where the sign IS the rule. Blind,
+ * it produced four confidently-structured hallucinated sections at 1100 tokens.
  */
 export async function explainTheory(
   env: Env,
   textIt: string,
   correctAnswer: number,
   db?: D1Database,
-  userId?: number
+  userId?: number,
+  imageUrl?: string | null,
+  sign?: SignAnchor | null
 ): Promise<TheoryResult> {
   const answerIt = correctAnswer === 1 ? "VERO" : "FALSO";
-  const currentModel = model(env);
+  // §20.1: image questions escalate to the vision model — see visionModel().
+  const currentModel = imageUrl ? visionModel(env) : model(env);
 
   const systemPrompt = `شما «مربی تئوری» (مربی آزمون پاتنته B ایتالیا) هستید — یک مربی کارآزموده مدرسه رانندگی که به زبان فارسی روان به دانش‌آموزان ایرانی آموزش می‌دهد.
 
-وظیفه شما: برای هر سوال آزمون، قانون دقیق کدیچه دلا استرادا (Codice della Strada) را به طور کامل توضیح دهید.
+اصل حاکم بر کل پاسخ شما: **مشخص بودن**. هر جمله باید یک اطلاعات قابل استفاده بدهد. اگر جمله‌ای را می‌شود بدون تغییر زیر یک سوال کاملاً متفاوت هم گذاشت، آن جمله بی‌ارزش است و باید حذف شود.
+${
+  imageUrl
+    ? `
+این سوال یک تصویر دارد که برای شما ارسال شده است. تصویر منبع اصلی پاسخ است. قبل از هر چیز آن را بخوانید و هرگز فرض نکنید محتوای تصویر همان چیزی است که متن سوال ادعا می‌کند — اغلب پاسخ دقیقاً به همین دلیل ${answerIt} است. اگر تصویر را با اطمینان تشخیص نمی‌دهید، همین را صادقانه بنویسید و فقط شکل، رنگ و نماد قابل مشاهده را توصیف کنید؛ حدس زدن نام تابلو بدتر از نگفتن آن است.
+`
+    : ""
+}
+ساختار پاسخ شما — دقیقاً همین چهار بخش با همین تیترها:
 
-ساختار پاسخ شما:
-۱. **قانون اصلی**: اصل قانون دقیق ایتالیا که این سوال را پوشش می‌دهد (با ذکر ماده قانونی اگر مرتبط است)
-۲. **چرا اشتباه رایج است**: دقیقاً چه چیزی باعث می‌شود این سوال دانش‌آموزان را گول بزند — تله‌های لغوی، استثناها، یا شرایط خاص
-۳. **نکته طلایی**: یک جمله کوتاه و به‌یادماندنی که کمک می‌کند پاسخ صحیح را حفظ کنند
+${
+  imageUrl
+    ? `**۱. تابلو یا شکل چیست**
+در تصویر دقیقاً چه می‌بینید؟ نام رسمی ایتالیایی تابلو را داخل «» بنویسید (مثلاً «STRADA DEFORMATA») و شکل و رنگ و نماد آن را توصیف کنید. در شکل‌های تقاطع، موقعیت و مسیر هر وسیله نقلیه را با حرف آن بنویسید. سپس بگویید چرا همین تصویر پاسخ را ${answerIt} می‌کند.`
+    : `**۱. کلمه تعیین‌کننده**
+دقیقاً کدام کلمه یا عبارت ایتالیایی در این جمله پاسخ را ${answerIt} می‌کند؟ آن را داخل «» بنویسید و بگویید چرا. (مثلاً «sempre»، «salvo»، «obbligatorio»، «può»، یک عدد، یا نام یک نوع جاده.)`
+}
 
-لحن: گرم، صبور، انگیزشی — مثل یک مربی خوب که واقعاً می‌خواهد شاگردش قبول شود.
-زبان: فارسی روان. کلمات ایتالیایی تخصصی را در متن حفظ کنید.
+**۲. قانون**
+قانون واقعی را با جزئیات عددی و شرطی بنویسید — سرعت مجاز، فاصله بر حسب متر، مهلت زمانی، نوع جاده (autostrada / strada extraurbana / centro abitato)، دسته وسیله نقلیه، و استثناهای قانون. اگر قانون بسته به شرایط فرق می‌کند، همه حالت‌ها را فهرست کنید.
 
-قانون مهم — پرهیز از بویلرپلیت ثابت (§19.1):
-پاسخ را با یک ارجاع کلی به «کدیچه دلا استرادا» شروع نکنید. اسم آیین‌نامه را تنها وقتی بنویسید که یک ماده یا مورد مشخصی را ذکر می‌کنید — نه به عنوان عادت. با متن سوال شروع کنید: مستقیم به نکته اصلی بروید.`;
+**۳. تله سوال**
+دانش‌آموز چه چیزی را اشتباه می‌خواند و چرا؟ و مهم‌تر: ${
+  imageUrl
+    ? `این جمله دقیقاً درباره کدام تابلوی دیگر ${answerIt === "VERO" ? "FALSO" : "VERO"} می‌شد؟ آن تابلو را نام ببرید و بگویید با تابلوی این تصویر چه فرقی دارد (شکل، رنگ، یا نماد).`
+    : `اگر جمله ${answerIt === "VERO" ? "FALSO" : "VERO"} می‌بود، چه کلمه‌ای باید عوض می‌شد؟ نسخه برعکس جمله را بنویسید.`
+}
+
+**۴. نکته طلایی**
+یک جمله کوتاه و مشخص برای حفظ کردن — شامل عدد یا کلمه کلیدی باشد، نه یک توصیه عمومی.
+
+ممنوعیت‌های قطعی:
+• جمله‌های توخالی: «طبق کدیچه دلا استرادا»، «رعایت این قانون برای ایمنی مهم است»، «باید همیشه احتیاط کرد»، «این نکته را به خاطر بسپارید» — هیچ‌کدام را ننویسید
+• بازنویسی صورت سوال به عنوان توضیح
+• شماره ماده قانونی را فقط وقتی بنویسید که واقعاً مطمئن هستید؛ در غیر این صورت اصلاً ماده ذکر نکنید و فقط خود قانون را توضیح دهید. حدس زدن شماره ماده بدتر از ننوشتن آن است
+• مقدمه و نتیجه‌گیری — با بخش ۱ شروع کنید و با بخش ۴ تمام کنید
+
+زبان: فارسی روان و ساده. اصطلاحات ایتالیایی آزمون را عیناً در متن نگه دارید (با ترجمه کوتاه در پرانتز بار اول).`;
 
   const userPrompt = `سوال آزمون: «${textIt}»
-پاسخ صحیح: ${answerIt}
+پاسخ صحیح: ${answerIt}${imageUrl ? "\n(تصویر این سوال ضمیمه شده است — اول آن را بخوانید.)" : ""}${signAnchorBlock(sign)}
 
-توضیح کامل تئوری این سوال را بدهید (بدون JSON — متن آزاد فارسی):`;
+هر چهار بخش را بنویسید (بدون JSON — متن آزاد فارسی):`;
+
+  // §20.1: same high-detail rationale as translateQuestion — 400×400 source images
+  // are one tile either way, and sign/diagram detail is the whole answer here.
+  const userMessage = imageUrl
+    ? {
+        role: "user",
+        content: [
+          { type: "text", text: userPrompt },
+          { type: "image_url", image_url: { url: imageUrl, detail: "high" } },
+        ],
+      }
+    : { role: "user", content: userPrompt };
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -297,12 +481,9 @@ export async function explainTheory(
     },
     body: JSON.stringify({
       model: currentModel,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      temperature: 0.3,
-      max_tokens: 700,
+      messages: [{ role: "system", content: systemPrompt }, userMessage],
+      temperature: 0.2, // lower = fewer invented rules
+      max_tokens: 1100, // four sections need room; truncation is what reads as "vague"
     }),
   });
 

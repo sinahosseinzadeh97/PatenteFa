@@ -11,11 +11,12 @@ import type { AppEnv, AppVariables } from "../types.js";
 import {
   getCachedTranslation,
   getQuestionById,
+  getSignCardForImage,
   insertTranslation,
   updateTheoryCache,
   updateGrammarCache,
 } from "../db/queries.js";
-import { translateQuestion, explainTheory, analyzeGrammar } from "../lib/openai.js";
+import { translateQuestion, explainTheory, analyzeGrammar, resolveImageUrl } from "../lib/openai.js";
 
 const translate = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
@@ -33,8 +34,15 @@ translate.post("/:questionId", async (c) => {
   if (!question) return c.json({ error: "Question not found" }, 404);
 
   // §14.1: cache-first — trust only if translated_text is present and substantial.
+  // The explanation must be present too: migration 0007 nulled explanations
+  // written by the old vague prompt, and those rows must regenerate.
   const cached = await getCachedTranslation(c.env.DB, questionId, lang);
-  if (cached && cached.translated_text && cached.translated_text.length > 10) {
+  if (
+    cached &&
+    cached.translated_text &&
+    cached.translated_text.length > 10 &&
+    cached.explanation
+  ) {
     return c.json({
       questionId,
       lang,
@@ -48,16 +56,14 @@ translate.post("/:questionId", async (c) => {
 
   const userId: number | undefined = c.get("userId" as never);
 
-  // §14.2 / §16.7: resolve image_url to an absolute URL for OpenAI vision.
-  let resolvedImageUrl: string | null = null;
-  if (question.image_url) {
-    if (question.image_url.startsWith("http")) {
-      resolvedImageUrl = question.image_url;
-    } else {
-      const base = (c.env.MINI_APP_URL ?? "").replace(/\/$/, "");
-      resolvedImageUrl = `${base}${question.image_url}`;
-    }
-  }
+  const resolvedImageUrl = resolveImageUrl(c.env.MINI_APP_URL, question.image_url);
+
+  // The sign in the picture is already known — don't make the model read it off
+  // the pixels. See getSignCardForImage: it mirrors left/right often enough that
+  // explanations were teaching the opposite rule.
+  const sign = question.image_url
+    ? await getSignCardForImage(c.env.DB, question.image_url)
+    : null;
 
   try {
     const result = await translateQuestion(
@@ -66,7 +72,8 @@ translate.post("/:questionId", async (c) => {
       question.correct_answer,
       resolvedImageUrl,
       c.env.DB,
-      userId
+      userId,
+      sign
     );
 
     await insertTranslation(c.env.DB, questionId, lang, result.translated_text, result.explanation);
@@ -90,7 +97,7 @@ translate.post("/:questionId", async (c) => {
 // ── POST /api/translate/:questionId/theory ───────────────────────────────────
 // Tab 2 — توضیح کامل تئوری — 🎓 مربی تئوری
 // Lazy: only called when the user taps this tab.
-// Checks theory_text cache column first.  §15.4: text-only, no vision.
+// Checks theory_text cache column first.  §20.1: vision when the question has an image.
 translate.post("/:questionId/theory", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
@@ -108,12 +115,15 @@ translate.post("/:questionId/theory", async (c) => {
   if (!question) return c.json({ error: "Question not found" }, 404);
 
   const userId: number | undefined = c.get("userId" as never);
+  // §20.1: image questions need the picture here too — the sign IS the rule.
   const result = await explainTheory(
     c.env,
     question.text_it,
     question.correct_answer,
     c.env.DB,
-    userId
+    userId,
+    resolveImageUrl(c.env.MINI_APP_URL, question.image_url),
+    question.image_url ? await getSignCardForImage(c.env.DB, question.image_url) : null
   );
 
   await updateTheoryCache(c.env.DB, questionId, lang, result.theory_text);
