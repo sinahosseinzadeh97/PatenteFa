@@ -250,3 +250,14 @@ npx tsx scripts/test-trial.ts          # free-trial window
 
 **30 statements, 20 minutes, ≤ 3 wrong answers = pass.**
 A 4th wrong answer is a fail. This app enforces the same rule.
+
+---
+
+## License
+
+**All rights reserved.** This code is public so it can be read and evaluated —
+not reused. It is not open source, and no permission is granted to deploy it or
+build a product from it. See [LICENSE](LICENSE).
+
+The setup instructions above exist so the project can be understood and verified,
+not as an invitation to run a copy of it.
