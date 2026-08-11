@@ -487,6 +487,60 @@ html, body {
 .result-icon.correct { background: var(--go-dim);  color: var(--go); }
 .result-icon.wrong   { background: var(--stop-dim); color: var(--stop); }
 
+/* Result row contents — text wraps in full, nothing is truncated or clipped */
+.result-question-line {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+.result-answer-line {
+  font-family: 'Public Sans', sans-serif;
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+  margin-top: 4px;
+}
+.result-translate-btn {
+  font-family: Vazirmatn, sans-serif;
+  background: none;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--ink-muted);
+  font-size: 0.78rem;
+  padding: 6px 12px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+.result-translation-block {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--border);
+}
+.result-verdict-row { margin-bottom: 8px; }
+.result-verdict-pill {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 4px 12px; border-radius: 16px;
+  font-size: 0.78rem; font-weight: 700;
+}
+.result-verdict-pill.vero  { background: var(--go-dim);   color: var(--go);   border: 1px solid var(--go); }
+.result-verdict-pill.falso { background: var(--stop-dim); color: var(--stop); border: 1px solid var(--stop); }
+.result-translation-text {
+  color: var(--ink);
+  font-weight: 600;
+  font-size: 0.95rem;
+  line-height: 1.8;
+  margin-bottom: 8px;
+}
+.result-translation-explanation {
+  color: var(--amber);
+  font-size: 0.92rem;
+  line-height: 1.85;
+}
+
+/* Section headings inside AI prose (App.renderRichText) */
+.ai-heading { color: var(--ink); font-weight: 700; }
+
 /* ── Stats bars ─────────────────────────────────────────────────────────── */
 .stat-bar-row {
   display: grid;
@@ -526,10 +580,23 @@ html, body {
 }
 
 /* ── Sign flashcard specific ─────────────────────────────────────────────── */
+/* Height is set per-card by App.showCurrentSign — the back face carries a full
+   exam statement (up to 217 chars; 22% of the deck is over 110) and a fixed
+   height clipped the answer. The faces stay absolutely positioned: the 3D flip
+   needs that, and stacking them in a grid cell instead makes the browser paint
+   the back face over the front regardless of backface-visibility. 260px is the
+   floor, matching the front face's image + hint. */
+/* No height transition: App.fitSignCard measures scrollHeight right after setting
+   the height, and an in-flight animation makes that measurement read the
+   mid-transition value instead of the settled one. */
 .sign-flip-card { perspective: 1000px; height: 260px; cursor: pointer; }
 .sign-flip-card .flip-card-inner { width: 100%; height: 100%; }
 .sign-flip-card .flip-front { justify-content: center; }
-.sign-flip-card .flip-back  { text-align: center; }
+/* Centred is safe again: the back face is now a name plus a sentence or two, so
+   it always fits the 260px card. (It carried up to 26 exam statements before,
+   which overflowed — and a centred flex column that overflows pushes content out
+   of both ends and makes scrollHeight under-report.) */
+.sign-flip-card .flip-back  { text-align: center; justify-content: center; }
 
 /* ── Road signs guide card ──────────────────────────────────────────────── */
 .signs-guide-card {
@@ -652,6 +719,10 @@ html, body {
 .btn-icon:hover { background: var(--surface-2); }
 .btn-icon.active { opacity: 1; }
 
+/* Chapter-practice escape hatch — hidden in the real exam. */
+.exam-exit-btn { opacity: 0.75; }
+.exam-exit-btn[hidden] { display: none; }
+
 .exam-tts-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 0; }
 .exam-timer-inline { font-size: 0.95rem; flex-shrink: 0; }
 
@@ -686,7 +757,8 @@ html, body {
 .ai-agent-sub { font-size: 0.68rem; color: var(--ink-muted); }
 .ai-loading-msg { display: none; color: var(--ink-muted); font-size: 0.85rem; text-align: center; padding: 16px 0; }
 .ai-error-msg { display: none; color: var(--stop); font-size: 0.82rem; text-align: center; padding: 12px 0; }
-.theory-text-body { color: var(--ink); font-size: 0.88rem; line-height: 1.9; white-space: pre-wrap; }
+/* renderRichText emits <br>, so pre-wrap would double every line break */
+.theory-text-body { color: var(--ink); font-size: 0.88rem; line-height: 1.9; }
 .grammar-analysis-body { color: var(--ink); font-size: 0.88rem; line-height: 1.9; margin-bottom: 12px; }
 .vocab-suggestions-list { display: flex; flex-direction: column; gap: 6px; }
 
@@ -884,8 +956,14 @@ html, body {
 .signs-guide-reading-order { background: var(--go-dim); border: 1px solid rgba(27,122,61,0.25); border-radius: 10px; padding: 10px 12px; font-size: 0.78rem; line-height: 1.7; }
 
 .signs-flip-hint { font-size: 0.72rem; color: var(--ink-muted); margin-top: 8px; }
-.signs-name-it { font-family: 'Public Sans', system-ui, sans-serif; font-size: 1.05rem; font-weight: 700; direction: ltr; text-align: center; color: var(--ink); margin-bottom: 8px; }
-.signs-name-fa { font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 0.95rem; font-weight: 500; direction: rtl; text-align: center; color: var(--ink-muted); min-height: 1.4em; }
+/* Verdict badge on the sign card's back face — mirrors .result-badge styling.
+   The card body is a true/false statement, not a sign name; this says which. */
+/* Back face of a sign card: official Italian name, Persian name, then one or two
+   sentences of what the sign actually tells a driver. No verdict styling and no
+   statement list — this deck teaches a meaning, it does not quiz. */
+.signs-name-it { font-family: 'Public Sans', system-ui, sans-serif; font-size: 1.05rem; font-weight: 700; direction: ltr; text-align: center; color: var(--amber); letter-spacing: 0.02em; overflow-wrap: anywhere; }
+.signs-name-fa { font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 1.15rem; font-weight: 700; direction: rtl; text-align: center; color: var(--ink); }
+.signs-meaning-fa { font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 0.92rem; font-weight: 500; line-height: 1.7; direction: rtl; text-align: center; color: var(--ink-muted); max-width: 30ch; }
 .signs-answer-row { display: flex; gap: 10px; }
 .signs-empty-state { display: none; text-align: center; padding: 40px 0; color: var(--ink-muted); }
 .signs-empty-icon { font-size: 2rem; margin-bottom: 8px; }
@@ -948,6 +1026,9 @@ html, body {
 .topic-acc-value.stop { color: var(--stop-light); }
 .topic-acc-value.muted { color: var(--ink-muted); }
 .topic-qcount { font-size: 0.7rem; color: var(--ink-muted); margin-top: 3px; }
+.topic-progress { font-size: 0.72rem; color: var(--ink-muted); margin-top: 6px; }
+.topic-progress-done { color: var(--go-light); font-weight: 700; }
+.topic-progress-left { color: var(--ink-muted); }
 .topic-card-actions { display: flex; gap: 8px; margin-top: 4px; }
 
 /* ── AI exam tutor review screen ─────────────────────────────────────────── */
@@ -1179,3 +1260,18 @@ html, body {
   background: linear-gradient(135deg, var(--go), #12532b); border: none;
   box-shadow: 0 6px 20px rgba(27,122,61,0.35); color: #fff;
 }
+
+/* ── Free-trial countdown banner ───────────────────────────────────────────
+   Injected at the top of #app-root by App.renderTrialBanner() while a trial
+   is active. Static (not fixed) so it never overlaps Telegram's own header. */
+.trial-banner {
+  background: var(--amber-dim);
+  border-bottom: 1px solid rgba(232,163,61,0.3);
+  color: var(--amber);
+  font-size: 0.78rem;
+  font-weight: 500;
+  text-align: center;
+  padding: 9px 14px;
+  line-height: 1.5;
+}
+.trial-banner b { font-weight: 700; }

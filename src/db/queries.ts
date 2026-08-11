@@ -171,7 +171,12 @@ export async function updateUserTargetDate(
 export interface TopicWithStats extends DbTopic {
   question_count: number;
   accuracy: number | null;
+  /** This user's answer attempts in the chapter (a re-answered question counts twice). */
   total_answered: number;
+  /** Distinct questions in the chapter this user has answered at least once. */
+  answered_count: number;
+  /** question_count - answered_count — questions they have never seen. */
+  remaining_count: number;
 }
 
 export async function getAllTopics(db: D1Database): Promise<DbTopic[]> {
@@ -181,24 +186,44 @@ export async function getAllTopics(db: D1Database): Promise<DbTopic[]> {
   return result.results;
 }
 
+/**
+ * Chapter list with this user's own progress.
+ *
+ * The user filter has to sit on the exam_answers join, not on a further LEFT
+ * JOIN to exam_sessions. A condition on the *right* side of a LEFT JOIN cannot
+ * remove rows — it only nulls the joined columns — so the previous shape counted
+ * every user's answers and then divided by every user's answers. With 18 users
+ * in the bank, chapter 1 was aggregating 697 attempts to show a single number
+ * that no one's own performance had produced (283 of those attempts were the
+ * user actually looking at the screen).
+ *
+ * user_answer IS NOT NULL matters too: starting a session pre-inserts one blank
+ * exam_answers row per drawn question (see insertExamAnswer), so an unfiltered
+ * count treats questions merely *dealt* as questions answered.
+ */
 export async function getAllTopicsWithStats(
   db: D1Database,
   userId: number
 ): Promise<TopicWithStats[]> {
   const result = await db
     .prepare(
-      `SELECT 
+      `SELECT
          t.id, t.name_it, t.name_fa, t.sort_order,
-         COUNT(DISTINCT q.id) as question_count,
-         COUNT(ea.id) as total_answered,
-         CASE 
-           WHEN COUNT(ea.id) > 0 THEN ROUND(100.0 * SUM(ea.is_correct) / COUNT(ea.id), 1)
-           ELSE NULL 
-         END as accuracy
+         COUNT(DISTINCT q.id) AS question_count,
+         COUNT(ea.id) AS total_answered,
+         COUNT(DISTINCT ea.question_id) AS answered_count,
+         COUNT(DISTINCT q.id) - COUNT(DISTINCT ea.question_id) AS remaining_count,
+         CASE
+           WHEN COUNT(ea.id) > 0
+           THEN ROUND(100.0 * SUM(COALESCE(ea.is_correct, 0)) / COUNT(ea.id), 1)
+           ELSE NULL
+         END AS accuracy
        FROM topics t
        LEFT JOIN questions q ON q.topic_id = t.id
-       LEFT JOIN exam_answers ea ON ea.question_id = q.id
-       LEFT JOIN exam_sessions es ON es.id = ea.session_id AND es.user_id = ?
+       LEFT JOIN exam_answers ea
+              ON ea.question_id = q.id
+             AND ea.user_answer IS NOT NULL
+             AND ea.session_id IN (SELECT id FROM exam_sessions WHERE user_id = ?)
        GROUP BY t.id, t.name_it, t.name_fa, t.sort_order
        ORDER BY t.sort_order ASC`
     )

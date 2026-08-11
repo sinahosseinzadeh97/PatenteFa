@@ -17,6 +17,9 @@ export function renderExamScreen(): string {
         <div class="question-tabs" id="exam-tabs"></div>
       </details>
       <button id="btn-flag" class="btn-icon" onclick="App.toggleFlag()" aria-label="نشان‌کردن این سوال برای مرور بعدی" aria-pressed="false">🔖</button>
+      <!-- Chapter practice only — App.applyExamMode() unhides it. The real exam
+           has no exit: leaving mid-way is how you'd dodge a failing score. -->
+      <button id="btn-exit-practice" class="btn-icon exam-exit-btn" onclick="App.exitTopicPractice()" aria-label="بازگشت به فهرست فصل‌ها" hidden>✕</button>
     </div>
 
     <!-- Road map progress bar -->

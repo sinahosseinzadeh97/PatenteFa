@@ -19,6 +19,19 @@ App.escapeHtml = function(str) {
     .replace(/'/g, '&#039;');
 };
 
+/**
+ * Render AI prose (**bold** headings + newlines) into `el`.
+ * The theory/grammar/tutor prompts all answer in bold-headed sections;
+ * textContent rendered the asterisks literally and turned the explanation
+ * into an unreadable wall. Escapes first, so this stays XSS-safe.
+ */
+App.renderRichText = function(el, text) {
+  if (!el) return;
+  el.innerHTML = App.escapeHtml(text)
+    .replace(/\*\*(.+?)\*\*/g, '<strong class="ai-heading">$1</strong>')
+    .replace(/\n/g, '<br>');
+};
+
   'use strict';
 
 
@@ -58,6 +71,8 @@ App.escapeHtml = function(str) {
       }
       throw new Error(err.error || 'درخواست ناموفق بود');
     }
+    // Trial clock rides along on every API response; absent for paid/admin users.
+    App.renderTrialBanner(res.headers.get('X-Trial-Ms-Left'));
     return res.json();
   }
 
@@ -87,8 +102,7 @@ App.escapeHtml = function(str) {
     signsQueue: [],
     signsIndex: 0,
     signsFlipped: false,
-    allSignQuestions: [],
-    signsTranslationCache: {}, // §12.1: lazy Farsi translations for sign cards
+    allSigns: [],
     // Long-press vocab (§12.2)
     longPressTimer: null,
     longPressWord: null,
@@ -503,6 +517,40 @@ App.escapeHtml = function(str) {
     if (modal) modal.style.display = 'none';
   };
 
+  /**
+   * Free-trial countdown. Driven by the X-Trial-Ms-Left response header, which
+   * the API sets only while a trial is running — approved/paid users get no
+   * header and therefore no banner. Passing null removes it.
+   */
+  App.renderTrialBanner = function(msLeftRaw) {
+    var el = document.getElementById('trial-banner');
+    var ms = msLeftRaw === null || msLeftRaw === undefined ? NaN : Number(msLeftRaw);
+
+    if (!isFinite(ms) || ms <= 0) {
+      if (el) el.remove();
+      return;
+    }
+
+    if (!el) {
+      var root = document.getElementById('app-root');
+      if (!root) return;
+      el = document.createElement('div');
+      el.id = 'trial-banner';
+      el.className = 'trial-banner';
+      root.insertBefore(el, root.firstChild);
+    }
+
+    // Under an hour, minutes are the honest unit — "۱ ساعت" for 3 minutes left
+    // reads as more runway than the user actually has.
+    var hours = Math.ceil(ms / 3600000);
+    var label = hours > 1
+      ? hours.toLocaleString('fa-IR') + ' ساعت'
+      : Math.max(1, Math.ceil(ms / 60000)).toLocaleString('fa-IR') + ' دقیقه';
+
+    el.innerHTML = '<span aria-hidden="true">🎁</span> دوره آزمایشی رایگان — <b>' +
+      label + '</b> باقی مانده';
+  };
+
   App.showPendingScreen = function(msg) {
     document.querySelectorAll('.screen').forEach(function(s) {
       s.classList.remove('active');
@@ -615,6 +663,10 @@ App.escapeHtml = function(str) {
       const accStr = t.accuracy !== null ? (t.accuracy + '% دقت') : 'شروع‌نشده';
       const accClass = t.accuracy === null ? 'muted' : (t.accuracy >= 70 ? 'go' : 'stop');
       const qCount = t.question_count || 0;
+      // Distinct questions seen, not attempts — re-answering one shouldn't look
+      // like progress through the chapter.
+      const answered = t.answered_count || 0;
+      const remaining = t.remaining_count != null ? t.remaining_count : Math.max(0, qCount - answered);
 
       html += '<div class="topic-card">';
       html += '  <div class="topic-card-row">';
@@ -622,6 +674,10 @@ App.escapeHtml = function(str) {
       html += '      <span class="topic-chapter-badge">فصل ' + t.sort_order + '</span>';
       html += '      <div class="topic-name-it">' + App.escapeHtml(t.name_it) + '</div>';
       html += '      <div class="topic-name-fa">' + App.escapeHtml(t.name_fa || '') + '</div>';
+      html += '      <div class="topic-progress">';
+      html += '        <span class="topic-progress-done">✅ ' + answered + ' پاسخ‌داده</span>';
+      html += '        <span class="topic-progress-left"> • ⏳ ' + remaining + ' باقی‌مانده</span>';
+      html += '      </div>';
       html += '    </div>';
       html += '    <div class="topic-acc-block">';
       html += '      <div class="topic-acc-value ' + accClass + '">' + accStr + '</div>';
@@ -665,10 +721,12 @@ App.escapeHtml = function(str) {
       state.flags = new Set();
       state.startedAt = Date.now();
       state.secondsLeft = 600; // 10 minutes for 15 chapter questions
+      state.examMode = 'topic_practice';
 
       App.showScreen('exam');
       const nav = document.getElementById('bottom-nav');
       if (nav) nav.style.display = 'none';
+      App.applyExamMode();
       App.renderExamTabs();
       App.renderQuestion();
       App.startTimer();
@@ -1098,14 +1156,16 @@ App.escapeHtml = function(str) {
   };
 
   // ── Road-sign flashcard mode ─────────────────────────────────────────────────
-  // SRS state stored in localStorage: key = 'signs_srs', value = JSON map of questionId → {interval, nextDate}
-
-
+  // SRS state in localStorage: JSON map of imageUrl → {interval, nextDate}.
+  // §20.2: keyed by sign, not by question. The old 'signs_srs' key mapped
+  // questionId → schedule back when the deck was one card per exam statement;
+  // those keys mean nothing now that a card is a sign, so this uses a new key
+  // rather than silently misreading the old schedule.
   function getSignsSRS() {
-    try { return JSON.parse(localStorage.getItem('signs_srs') || '{}'); } catch (e) { return {}; }
+    try { return JSON.parse(localStorage.getItem('signs_srs_v2') || '{}'); } catch (e) { return {}; }
   }
   function saveSignsSRS(srs) {
-    try { localStorage.setItem('signs_srs', JSON.stringify(srs)); } catch (e) {}
+    try { localStorage.setItem('signs_srs_v2', JSON.stringify(srs)); } catch (e) {}
   }
   function todayISO() {
     return new Date().toISOString().slice(0, 10);
@@ -1122,16 +1182,11 @@ App.escapeHtml = function(str) {
       };
     }
 
-    // Fetch sign questions if not yet loaded
-    if (state.allSignQuestions.length === 0) {
+    // Fetch the sign deck if not yet loaded
+    if (state.allSigns.length === 0) {
       try {
-        // We reuse the stats endpoint to get question bank, but we need sign questions.
-        // Use a dedicated endpoint if available, otherwise draw a fresh exam and keep image questions.
-        // Since there's no dedicated sign listing endpoint, we call the exam start with mode=exam
-        // and filter for imageUrl questions from the bank.
-        // Better: fetch via /api/signs if available, else show a loading state.
         const data = await api('GET', '/signs');
-        state.allSignQuestions = data.questions || [];
+        state.allSigns = data.signs || [];
       } catch (e) {
         // Fallback: show a helpful message
         document.getElementById('signs-empty').style.display = '';
@@ -1146,9 +1201,9 @@ App.escapeHtml = function(str) {
     const srs = getSignsSRS();
     const today = todayISO();
 
-    // Queue: questions due today (nextDate <= today or not set)
-    const due = state.allSignQuestions.filter(function(q) {
-      const entry = srs[q.questionId];
+    // Queue: signs due today (nextDate <= today or not set)
+    const due = state.allSigns.filter(function(s) {
+      const entry = srs[s.imageUrl];
       if (!entry) return true; // never seen
       return entry.nextDate <= today;
     });
@@ -1176,21 +1231,22 @@ App.escapeHtml = function(str) {
   };
 
   App.showCurrentSign = function() {
-    const q = state.signsQueue[state.signsIndex];
-    if (!q) return;
+    const sign = state.signsQueue[state.signsIndex];
+    if (!sign) return;
 
     state.signsFlipped = false;
     document.getElementById('signs-flip-card').classList.remove('flipped');
 
     const img = document.getElementById('signs-img');
-    img.src = q.imageUrl || '';
+    img.src = sign.imageUrl || '';
 
-    // Italian name — always shown on back face, primary
-    document.getElementById('signs-name-it').textContent = q.textIt || '';
-    // Farsi — clear until flipped (lazy-fetch on first flip)
-    const faEl = document.getElementById('signs-name-fa');
-    faEl.textContent = '';
-    faEl.removeAttribute('data-loaded');
+    // Back face: the sign's name and what it means. Comes straight from the
+    // reviewed sign_meanings table — no translation call, nothing lazy (§20.3).
+    document.getElementById('signs-name-it').textContent = sign.nameIt || '';
+    document.getElementById('signs-name-fa').textContent = sign.nameFa || '';
+    document.getElementById('signs-meaning-fa').textContent = sign.meaningFa || '';
+
+    App.fitSignCard();
 
     const total = state.signsQueue.length;
     const idx = state.signsIndex + 1;
@@ -1201,44 +1257,42 @@ App.escapeHtml = function(str) {
     document.getElementById('signs-srs-bar').style.width = pct + '%';
   };
 
-  App.flipSign = function() {
-    state.signsFlipped = !state.signsFlipped;
-    document.getElementById('signs-flip-card').classList.toggle('flipped', state.signsFlipped);
-
-    // §12.1: lazy-fetch Farsi translation on first flip of this sign
-    if (state.signsFlipped) {
-      const q = state.signsQueue[state.signsIndex];
-      if (!q) return;
-      const faEl = document.getElementById('signs-name-fa');
-      if (faEl.getAttribute('data-loaded') === 'true') return; // already loaded
-
-      if (state.signsTranslationCache[q.questionId]) {
-        faEl.textContent = state.signsTranslationCache[q.questionId];
-        faEl.setAttribute('data-loaded', 'true');
-        return;
-      }
-
-      // Show loading indicator
-      faEl.textContent = '⧗';
-      api('POST', '/translate/' + q.questionId)
-        .then(function(data) {
-          const text = data.translatedText || '';
-          state.signsTranslationCache[q.questionId] = text;
-          faEl.textContent = text;
-          faEl.setAttribute('data-loaded', 'true');
-        })
-        .catch(function() {
-          faEl.textContent = '';
-        });
+  // Grow the card to fit the back face. The faces are absolutely positioned (the
+  // 3D flip needs that), so a fixed height clipped the content — a card carries
+  // up to 26 true statements. Called again after each lazy Farsi translation
+  // lands, since that changes the height.
+  App.fitSignCard = function() {
+    const card = document.getElementById('signs-flip-card');
+    const back = card && card.querySelector('.flip-back');
+    if (!back) return;
+    // scrollHeight leaves out the bottom padding when the content overflows, so
+    // add it back — otherwise the last statement sits on the card's border.
+    const padBottom = parseFloat(getComputedStyle(back).paddingBottom) || 0;
+    // Reset to the floor first: the back face is inset:0, so its scrollHeight can
+    // never report less than the card's current height — without this, a card
+    // that grew for a long sign would stay tall for every short one after.
+    card.style.height = '260px';
+    // Then two passes: applying a height re-lays out the flex column and changes
+    // what it reports, so one pass left the tallest cards short.
+    // Reading scrollHeight flushes layout, so the second pass sees the new value.
+    for (var i = 0; i < 2; i++) {
+      card.style.height = Math.max(260, back.scrollHeight + padBottom) + 'px';
     }
   };
 
+  // §20.3: no lazy fetch here any more. The name and meaning ship with the deck
+  // from /api/signs, so flipping is instant and costs nothing.
+  App.flipSign = function() {
+    state.signsFlipped = !state.signsFlipped;
+    document.getElementById('signs-flip-card').classList.toggle('flipped', state.signsFlipped);
+  };
+
   App.signsReview = function(correct) {
-    const q = state.signsQueue[state.signsIndex];
-    if (!q) return;
+    const sign = state.signsQueue[state.signsIndex];
+    if (!sign) return;
 
     const srs = getSignsSRS();
-    const entry = srs[q.questionId] || { interval: 1 };
+    const entry = srs[sign.imageUrl] || { interval: 1 };
 
     const newInterval = correct
       ? Math.min(entry.interval * 2, 64) // double, cap at 64 days
@@ -1247,7 +1301,7 @@ App.escapeHtml = function(str) {
     const nextDate = new Date();
     nextDate.setDate(nextDate.getDate() + newInterval);
 
-    srs[q.questionId] = {
+    srs[sign.imageUrl] = {
       interval: newInterval,
       nextDate: nextDate.toISOString().slice(0, 10),
     };
@@ -1809,8 +1863,10 @@ App.escapeHtml = function(str) {
     // Trap Box (§14.1: simplified — use explanation only)
     const trapBox = document.getElementById('tutor-trap-box');
     if (trapBox) {
-      let text = q.explanation || 'این سوال به دلیل دقت در قیدها یا کلمات حساس آیین‌نامه مطرح شده است.';
-      trapBox.innerHTML = App.escapeHtml(text);
+      App.renderRichText(
+        trapBox,
+        q.explanation || 'این سوال به دلیل دقت در قیدها یا کلمات حساس آیین‌نامه مطرح شده است.'
+      );
     }
 
     // Rule Box (§14.1: driving_explanation removed — show generic guidance)
@@ -1860,21 +1916,6 @@ App.escapeHtml = function(str) {
     }
   };
 
-  App.formatTutorMarkdown = function(text) {
-    if (!text) return '';
-    var escaped = App.escapeHtml(text);
-    var parts = escaped.split('**');
-    var res = '';
-    for (var i = 0; i < parts.length; i++) {
-      if (i % 2 === 1) {
-        res += '<b style="color:#ffffff;font-weight:700;">' + parts[i] + '</b>';
-      } else {
-        res += parts[i];
-      }
-    }
-    return res.split(String.fromCharCode(10)).join('<br/>');
-  };
-
   App.renderTutorChatHistory = function(questionId) {
     const box = document.getElementById('tutor-chat-box');
     if (!box) return;
@@ -1891,7 +1932,7 @@ App.escapeHtml = function(str) {
       const msgDiv = document.createElement('div');
       msgDiv.className = 'tutor-chat-bubble ' + (isUser ? 'user' : 'assistant');
 
-      msgDiv.innerHTML = App.formatTutorMarkdown(msg.content);
+      App.renderRichText(msgDiv, msg.content);
       box.appendChild(msgDiv);
     });
 

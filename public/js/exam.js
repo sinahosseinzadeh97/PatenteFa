@@ -22,9 +22,11 @@
       state.translateOpen = false;
       state.translationCache = {};
       state.secondsLeft = 1200;
+      state.examMode = mode;
 
       App.showScreen('exam');
       document.getElementById('bottom-nav').style.display = 'none';
+      App.applyExamMode();
       App.renderExamTabs();
       App.renderQuestion();
       App.startTimer();
@@ -39,6 +41,42 @@
 
   App.startTopicPractice = function() {
     App.startExam('topic_practice');
+  };
+
+  // ── Chapter practice: leave without finishing ───────────────────────────────
+  // Only 'topic_practice' gets an exit. The real exam must not be abandonable —
+  // walking out of a session you're failing and starting a fresh one would make
+  // the pass rate meaningless.
+  App.applyExamMode = function() {
+    const btn = document.getElementById('btn-exit-practice');
+    if (!btn) return;
+    btn.hidden = state.examMode !== 'topic_practice';
+  };
+
+  App.exitTopicPractice = function() {
+    if (state.examMode !== 'topic_practice') return;
+
+    const answered = Object.keys(state.answers).length;
+    const total = state.questions.length;
+    if (answered > 0 && answered < total) {
+      const ok = window.confirm(
+        'از این فصل خارج می‌شوید؟\n' +
+        answered + ' سوال از ' + total + ' را پاسخ داده‌اید. پاسخ‌های داده‌شده ذخیره می‌مانند و در آمار فصل حساب می‌شوند.'
+      );
+      if (!ok) return;
+    }
+
+    // Each answer was already POSTed as it was given (see App.answer), so the
+    // session is left unfinished on purpose — nothing to submit, nothing lost.
+    clearInterval(state.timerInterval);
+    state.examMode = null;
+    App.applyExamMode();
+
+    const nav = document.getElementById('bottom-nav');
+    if (nav) nav.style.display = '';
+    // showScreen('topics') re-runs loadTopics, so the card the user just
+    // practised picks up its new counts on the way back.
+    App.showScreen('topics');
   };
 
   // ── Timer ───────────────────────────────────────────────────────────────────
@@ -281,7 +319,7 @@
   // loadTheoryTab: fetches theory once per question, caches in state.theoryCache
   App.loadTheoryTab = async function(questionId) {
     if (state.theoryCache && state.theoryCache[questionId]) {
-      document.getElementById('theory-text').textContent = state.theoryCache[questionId];
+      App.renderRichText(document.getElementById('theory-text'), state.theoryCache[questionId]);
       return;
     }
     const loadingEl = document.getElementById('theory-loading');
@@ -294,7 +332,7 @@
       const data = await api('POST', '/translate/' + questionId + '/theory');
       if (!state.theoryCache) state.theoryCache = {};
       state.theoryCache[questionId] = data.theoryText || '';
-      textEl.textContent = data.theoryText || '';
+      App.renderRichText(textEl, data.theoryText || '');
     } catch (e) {
       errorEl.textContent = 'مربی تئوری در دسترس نیست — دوباره تلاش کنید';
       errorEl.style.display = 'block';
@@ -307,7 +345,7 @@
   App.loadGrammarTab = async function(questionId) {
     if (state.grammarCache && state.grammarCache[questionId]) {
       const cached = state.grammarCache[questionId];
-      document.getElementById('grammar-analysis').textContent = cached.grammarAnalysis || '';
+      App.renderRichText(document.getElementById('grammar-analysis'), cached.grammarAnalysis || '');
       App.renderVocabSuggestions(cached.vocabSuggestions || [], questionId);
       return;
     }
@@ -323,7 +361,7 @@
       const data = await api('POST', '/translate/' + questionId + '/grammar');
       if (!state.grammarCache) state.grammarCache = {};
       state.grammarCache[questionId] = { grammarAnalysis: data.grammarAnalysis, vocabSuggestions: data.vocabSuggestions };
-      analysisEl.textContent = data.grammarAnalysis || '';
+      App.renderRichText(analysisEl, data.grammarAnalysis || '');
       App.renderVocabSuggestions(data.vocabSuggestions || [], questionId);
     } catch (e) {
       errorEl.textContent = 'معلم گرامر در دسترس نیست — دوباره تلاش کنید';
@@ -432,6 +470,8 @@
       return;
     }
     document.getElementById('bottom-nav').style.display = '';
+    state.examMode = null;
+    App.applyExamMode();
     App.renderResults(data);
     App.showScreen('results');
   };
@@ -499,21 +539,20 @@
 
       const questionLine = document.createElement('div');
       questionLine.dir = 'ltr';
-      questionLine.style.cssText = 'font-size:0.83rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--ink);';
-      questionLine.style.fontFamily = 'Public Sans, sans-serif';
+      // Full text, wrapped — truncating to one line hid the question the
+      // translation below it is explaining.
+      questionLine.className = 'result-question-line';
       questionLine.textContent = a.position + '. ' + a.textIt;
 
       const answerLine = document.createElement('div');
-      answerLine.style.cssText = 'font-size:0.72rem;color:var(--ink-muted);margin-top:3px;';
-      answerLine.style.fontFamily = 'Public Sans, sans-serif';
+      answerLine.className = 'result-answer-line';
       answerLine.dir = 'ltr';
       answerLine.textContent =
         'Risposta: ' + (a.correctAnswer === 1 ? 'VERO' : 'FALSO') +
         (a.userAnswer !== null ? ' · Tu: ' + (a.userAnswer === 1 ? 'VERO' : 'FALSO') : ' · Saltato');
 
       const translateBtn = document.createElement('button');
-      translateBtn.style.cssText = 'background:none;border:1px solid var(--border);border-radius:6px;color:var(--ink-muted);font-size:0.68rem;padding:3px 7px;cursor:pointer;margin-top:4px;';
-      translateBtn.style.fontFamily = 'Vazirmatn, sans-serif';
+      translateBtn.className = 'result-translate-btn';
       translateBtn.textContent = 'ترجمه';
       translateBtn.onclick = function() { App.translateResult(a.questionId, translateBtn); };
 
@@ -544,27 +583,25 @@
       const container = btn.parentElement;
 
       const block = document.createElement('div');
-      block.className = 'fa-text';
-      block.style.cssText = 'font-size:0.8rem;color:var(--ink-muted);padding-top:6px;border-top:1px dashed var(--border);margin-top:6px;';
+      block.className = 'fa-text result-translation-block';
 
       // §19.2: verdict badge first, then translation, then explanation
       const isVero = data.verdictVero === true;
       const label = isVero ? 'VERO' : 'FALSO';
       let content =
-        '<div style="margin-bottom:6px;">' +
-        '<span style="display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:16px;font-size:0.72rem;font-weight:700;' +
-        (isVero
-          ? 'background:rgba(22,163,74,0.15);color:var(--go);border:1px solid rgba(22,163,74,0.3);'
-          : 'background:rgba(220,38,38,0.12);color:var(--stop);border:1px solid rgba(220,38,38,0.25);') +
-        '">' + (isVero ? '✅' : '❌') + ' پاسخ: ' + label + '</span></div>';
-      content += '<div style="color:var(--ink);font-weight:600;margin-bottom:4px;">🌐 ' + App.escapeHtml(data.translatedText) + '</div>';
+        '<div class="result-verdict-row">' +
+        '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">' +
+        (isVero ? '✅' : '❌') + ' پاسخ: ' + label + '</span></div>';
+      content += '<div class="result-translation-text">🌐 ' + App.escapeHtml(data.translatedText) + '</div>';
       if (data.explanation) {
-        content += '<div style="color:var(--amber);">💡 ' + App.escapeHtml(data.explanation) + '</div>';
+        content += '<div class="result-translation-explanation">💡 ' + App.escapeHtml(data.explanation) + '</div>';
       }
 
       block.innerHTML = content;
       container.insertBefore(block, btn);
       btn.style.display = 'none';
+      // The row grows a lot when the explanation lands — bring it into view.
+      block.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     } catch (e) {
       btn.textContent = '⟳ دوباره';
       btn.disabled = false;
