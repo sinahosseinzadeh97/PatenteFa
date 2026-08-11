@@ -5,6 +5,8 @@ TELEGRAM_BOT_TOKEN=123456:ABC-your-bot-token-here
 TELEGRAM_WEBHOOK_SECRET=some-random-secret-string
 OPENAI_API_KEY=sk-...
 OPENAI_MODEL=gpt-4o-mini
+# Image (sign/diagram) questions only — mini misreads road signs. Default: gpt-4o
+OPENAI_VISION_MODEL=gpt-4o
 ALLOWED_TELEGRAM_USER_IDS=123456789,987654321
 LOG_CHANNEL_ID=-1001234567890
 MINI_APP_URL=https://your-worker.your-account.workers.dev

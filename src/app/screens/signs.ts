@@ -17,8 +17,9 @@ export function renderSignsScreen(): string {
       <h1 class="signs-title">🚦 تابلوها</h1>
       <div id="signs-counter" class="signs-counter"></div>
     </div>
-    <!-- §14.4: study-mode framing text -->
-    <div class="signs-study-hint">📖 تابلو رو ببین، بگردون، خودتو بسنج</div>
+    <!-- §14.4 / §20.2: study-mode framing. This deck teaches meanings; the
+         true/false drilling happens in the exam. -->
+    <div class="signs-study-hint">📖 تابلو رو ببین، حدس بزن، بگردون و معنیش رو یاد بگیر</div>
 
     <!-- Road signs introductory guide (collapsible) -->
     <details id="signs-guide-details" class="signs-guide-card" open>
@@ -74,18 +75,19 @@ export function renderSignsScreen(): string {
 
     <div class="srs-track"><div class="srs-fill" id="signs-srs-bar" style="width:0%;"></div></div>
 
-    <!-- Flip card: front = sign image, back = name + translation -->
-    <div id="signs-flip-card" class="flip-card sign-flip-card" onclick="App.flipSign()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();App.flipSign();}" style="margin-bottom:14px;" role="button" tabindex="0" aria-label="تابلو را بگردان تا نام و ترجمه را ببینی">
+    <!-- Flip card: front = sign image, back = verdict + statement + translation -->
+    <div id="signs-flip-card" class="flip-card sign-flip-card" onclick="App.flipSign()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();App.flipSign();}" style="margin-bottom:14px;" role="button" tabindex="0" aria-label="کارت را بگردان تا جمله، درست یا نادرست بودنش و ترجمه را ببینی">
       <div class="flip-card-inner">
         <div class="flip-front">
           <img id="signs-img" style="max-width:150px;max-height:150px;object-fit:contain;" alt="تابلوی راهنمایی و رانندگی" />
           <div class="signs-flip-hint">برگردان</div>
         </div>
         <div class="flip-back">
-          <!-- Italian name — primary, always shown -->
+          <!-- The sign's official name and what it tells a driver. Served from the
+               reviewed sign_meanings table — no per-card AI call, nothing lazy. -->
           <div id="signs-name-it" class="signs-name-it"></div>
-          <!-- Farsi translation — loaded lazily on first flip -->
           <div id="signs-name-fa" class="signs-name-fa"></div>
+          <div id="signs-meaning-fa" class="signs-meaning-fa"></div>
         </div>
       </div>
     </div>

@@ -26,6 +26,7 @@ const handleWebhook = async (c: any) => {
       allowedIds: c.env.ALLOWED_TELEGRAM_USER_IDS,
       logChannelId: c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
       miniAppUrl: c.env.MINI_APP_URL,
+      kv: c.env.KV,
     })
   );
 

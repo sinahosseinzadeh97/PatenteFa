@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import type { AppEnv, AppVariables } from "../types.js";
 import {
   getAllTopicsWithStats,
-  drawTopicQuestions,
+  drawQuestionsFromTopics,
   createExamSession,
   insertExamAnswer,
 } from "../db/queries.js";
@@ -44,7 +44,7 @@ topics.post("/:topicId/exam", async (c) => {
     return c.json({ error: "آیدی فصل نامعتبر است." }, 400);
   }
 
-  const questions = await drawTopicQuestions(c.env.DB, topicId, 15);
+  const questions = await drawQuestionsFromTopics(c.env.DB, userId, [topicId], 15);
   if (!questions || questions.length === 0) {
     return c.json({ error: "هیچ سوالی برای این فصل یافت نشد." }, 404);
   }

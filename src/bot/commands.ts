@@ -28,6 +28,58 @@ export interface BotContext {
   allowedIds: string;
   logChannelId?: string;
   miniAppUrl: string;
+  /** Used to park the "admin is replying to user X" state between two updates. */
+  kv: KVNamespace;
+}
+
+/** Escape text that gets interpolated into parse_mode: "HTML" messages. */
+function esc(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
+/**
+ * Support relay state. When an admin taps "reply" on a user card we remember
+ * the target for a short window; their next plain-text post in the log channel
+ * is then forwarded to that user. Key is per-chat so two admins in the same
+ * channel don't clobber each other's target any worse than last-write-wins.
+ */
+const REPLY_TTL_SECONDS = 900; // 15 min — long enough to type, short enough to forget
+const replyKey = (chatId: number | string) => `support:reply:${chatId}`;
+
+/**
+ * Is this chat the admin side of the relay (the log channel, or an admin's DM)?
+ *
+ * Deliberately does not use checkAllowList(): that helper throws rather than
+ * returning, and honours a "*" wildcard — which here would classify every
+ * customer as an admin and silently disable the inbound leg of the relay.
+ * Numeric id match only, fail-closed on an empty allow-list.
+ */
+export function isAdminChat(
+  chatId: number | string,
+  telegramUserId: number,
+  ctx: Pick<BotContext, "logChannelId" | "allowedIds">
+): boolean {
+  const channel = ctx.logChannelId || "@patente_fa_logs";
+  if (String(chatId) === String(channel)) return true;
+
+  return (ctx.allowedIds || "")
+    .split(",")
+    .map((s) => Number(s.trim()))
+    .filter(Boolean)
+    .includes(telegramUserId);
+}
+
+/** Inline keyboard shown on an inbound customer message in the log channel. */
+function supportCardKeyboard(targetUserId: number) {
+  return {
+    inline_keyboard: [
+      [{ text: "💬 پاسخ به کاربر", callback_data: `reply_user:${targetUserId}` }],
+      [
+        { text: "✅ تایید دسترسی", callback_data: `approve_user:${targetUserId}` },
+        { text: "❌ رد درخواست", callback_data: `reject_user:${targetUserId}` },
+      ],
+    ],
+  };
 }
 
 interface TelegramUpdate {
@@ -73,6 +125,35 @@ export async function handleUpdate(
       if (cb.message) {
         await handleListUsers(cb.message.chat.id, ctx, cb.message.message_id);
       }
+      return;
+    }
+
+    if (data.startsWith("reply_user:")) {
+      const targetUserId = Number(data.split(":")[1]);
+      const chatId = cb.message?.chat.id;
+
+      if (!chatId) {
+        await answerCallbackQuery(ctx.token, cb.id, "این دکمه فقط داخل کانال کار می‌کند.");
+        return;
+      }
+
+      await ctx.kv.put(replyKey(chatId), String(targetUserId), {
+        expirationTtl: REPLY_TTL_SECONDS,
+      });
+      await answerCallbackQuery(ctx.token, cb.id, "پیام بعدی شما برای این کاربر ارسال می‌شود ✍️");
+
+      const target = await getUserByTelegramId(ctx.db, targetUserId);
+      const who = target?.first_name ? esc(target.first_name) : `کاربر ${targetUserId}`;
+      await sendMessage(ctx.token, {
+        chat_id: chatId,
+        text:
+          `✍️ <b>حالت پاسخ فعال شد</b>\n\n` +
+          `پیام بعدی که در این کانال بنویسید، به‌صورت ناشناس از طرف ربات برای ` +
+          `<b>${who}</b> (<code>${targetUserId}</code>) ارسال می‌شود.\n\n` +
+          `<i>هویت شما برای کاربر نمایش داده نمی‌شود.</i>\n` +
+          `⏱ این حالت تا ۱۵ دقیقه دیگر معتبر است. برای لغو: /cancel`,
+        parse_mode: "HTML",
+      });
       return;
     }
 
@@ -180,7 +261,79 @@ export async function handleUpdate(
     await handleVocab(telegramUserId, chatId, ctx);
   } else if (text.startsWith("/stats")) {
     await handleStats(telegramUserId, chatId, ctx);
+  } else if (text.startsWith("/cancel")) {
+    await ctx.kv.delete(replyKey(chatId));
+    await sendMessage(ctx.token, {
+      chat_id: chatId,
+      text: "حالت پاسخ لغو شد. ✅",
+    });
+  } else if (!text.startsWith("/")) {
+    // Plain text — the two directions of the anonymous support relay.
+    await relayPlainText(text, telegramUserId, firstName, username, chatId, ctx);
   }
+}
+
+/**
+ * Two-way support relay, both legs anonymised by going through the bot:
+ *  - admin side: a queued reply target turns the next channel post into a DM
+ *  - user side:  any plain message to the bot surfaces in the log channel
+ * The admin's own Telegram account is never exposed to the customer.
+ */
+async function relayPlainText(
+  text: string,
+  telegramUserId: number,
+  firstName: string,
+  username: string | undefined,
+  chatId: number | string,
+  ctx: BotContext
+): Promise<void> {
+  const channel = ctx.logChannelId || "@patente_fa_logs";
+
+  if (isAdminChat(chatId, telegramUserId, ctx)) {
+    const pending = await ctx.kv.get(replyKey(chatId));
+    if (!pending) return; // idle chatter in the channel — not a reply, ignore
+
+    const targetUserId = Number(pending);
+    await ctx.kv.delete(replyKey(chatId));
+
+    const delivered = await sendMessage(ctx.token, {
+      chat_id: targetUserId,
+      text:
+        `💬 <b>پیام از پشتیبانی PatenteFa</b>\n\n` +
+        `${esc(text)}\n\n` +
+        `<i>برای پاسخ، همین‌جا بنویسید.</i>`,
+      parse_mode: "HTML",
+    });
+
+    await sendMessage(ctx.token, {
+      chat_id: chatId,
+      text: delivered
+        ? `✅ پیام برای <code>${targetUserId}</code> ارسال شد.`
+        : `⚠️ ارسال پیام به <code>${targetUserId}</code> ناموفق بود. ممکن است کاربر ربات را بلاک کرده باشد یا هرگز /start نزده باشد.`,
+      parse_mode: "HTML",
+      reply_markup: { inline_keyboard: [[{ text: "💬 ارسال پیام دیگر", callback_data: `reply_user:${targetUserId}` }]] },
+    });
+    return;
+  }
+
+  // Customer side — forward into the log channel with a reply affordance.
+  const usernameSafe = username ? "@" + esc(username) : "ندارد";
+  await sendMessage(ctx.token, {
+    chat_id: channel,
+    text:
+      `📨 <b>پیام جدید از کاربر</b>\n\n` +
+      `👤 <b>نام</b>: ${esc(firstName)}\n` +
+      `🏷️ <b>نام کاربری</b>: ${usernameSafe}\n` +
+      `🆔 <b>آیدی</b>: <code>${telegramUserId}</code>\n\n` +
+      `💬 «<i>${esc(text)}</i>»`,
+    parse_mode: "HTML",
+    reply_markup: supportCardKeyboard(telegramUserId),
+  });
+
+  await sendMessage(ctx.token, {
+    chat_id: chatId,
+    text: "پیام شما برای پشتیبانی ارسال شد. به‌زودی پاسخ می‌دهیم. 🙏",
+  });
 }
 
 async function handleListUsers(

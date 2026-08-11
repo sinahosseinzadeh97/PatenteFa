@@ -15,6 +15,7 @@ import {
   insertExamAnswer,
   updateAnswerFlag,
   upsertReviewQueue,
+  clearReviewItems,
   getQuestionById,
   getDueReviewQuestions,
   getWorstTopicIds,
@@ -46,7 +47,7 @@ exam.post("/start", async (c) => {
       // No answer history yet — fall back to normal random draw
       questions = await drawExamQuestions(c.env.DB, userId, 30);
     } else {
-      questions = await drawQuestionsFromTopics(c.env.DB, worstTopicIds, 30);
+      questions = await drawQuestionsFromTopics(c.env.DB, userId, worstTopicIds, 30);
       if (questions.length === 0) {
         // Topics exist but no questions (shouldn't happen) — fall back
         questions = await drawExamQuestions(c.env.DB, userId, 30);
@@ -149,10 +150,12 @@ exam.post("/:sessionId/finish", async (c) => {
   let correctCount = 0;
   let wrongCount = 0;
   const wrongQuestionIds: number[] = [];
+  const correctQuestionIds: number[] = [];
 
   for (const a of answers) {
     if (a.is_correct === 1) {
       correctCount++;
+      correctQuestionIds.push(a.question_id);
     } else {
       wrongCount++;
       wrongQuestionIds.push(a.question_id);
@@ -173,11 +176,13 @@ exam.post("/:sessionId/finish", async (c) => {
     durationSeconds
   );
 
-  // Push wrong questions into review_queue
+  // Wrong questions come back tomorrow; questions the user finally got right
+  // leave the queue so it stops replaying the same mistakes forever.
   const nextReview = nextMorningISO();
   for (const qId of wrongQuestionIds) {
     await upsertReviewQueue(c.env.DB, userId, qId, nextReview);
   }
+  await clearReviewItems(c.env.DB, userId, correctQuestionIds);
 
 
 

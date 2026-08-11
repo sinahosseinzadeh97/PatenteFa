@@ -18,10 +18,11 @@ export interface InlineKeyboardButton {
   web_app?: { url: string };
 }
 
+/** Returns whether Telegram accepted the message. Existing callers may ignore it. */
 export async function sendMessage(
   token: string,
   opts: SendMessageOpts
-): Promise<void> {
+): Promise<boolean> {
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,7 +31,9 @@ export async function sendMessage(
   if (!res.ok) {
     const body = await res.text();
     console.error("Telegram sendMessage failed:", res.status, body);
+    return false;
   }
+  return true;
 }
 
 export async function editMessageText(
@@ -81,6 +84,9 @@ export async function notifyAdminNewUserRequest(
       [
         { text: "✅ تایید دسترسی", callback_data: `approve_user:${user.telegramUserId}` },
         { text: "❌ رد درخواست", callback_data: `reject_user:${user.telegramUserId}` },
+      ],
+      [
+        { text: "💬 پاسخ به کاربر", callback_data: `reply_user:${user.telegramUserId}` },
       ],
       [
         { text: "👥 لیست و مدیریت کاربران", callback_data: "admin_list_users" },

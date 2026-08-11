@@ -8,6 +8,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { AppEnv, AppVariables } from "./types.js";
 import { verifyInitData, checkAllowList } from "./lib/auth.js";
+import { TRIAL_HOURS, trialMsLeft } from "./lib/trial.js";
 import { upsertUser, setUserApproval } from "./db/queries.js";
 import { webhook } from "./bot/webhook.js";
 import { exam } from "./api/exam.js";
@@ -111,35 +112,56 @@ api.use("*", async (c, next) => {
 
   // If user is not approved yet (is_approved !== 1)
   if (dbUser.is_approved !== 1) {
-    // Notify admin channel if pending approval
-    if (dbUser.is_approved === 0) {
-      c.executionCtx.waitUntil(
-        notifyAdminNewUserRequest(
-          c.env.TELEGRAM_BOT_TOKEN,
-          c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
-          {
-            telegramUserId: user.id,
-            firstName: user.first_name,
-            username: user.username,
-          }
-        )
+    // Every new account gets a TRIAL_HOURS free trial from registration.
+    // Rejected users (-1) are excluded — a rejection must not be undone by
+    // the clock. The trial window is derived from users.created_at.
+    const msLeft = dbUser.is_approved === 0 ? trialMsLeft(dbUser.created_at) : 0;
+
+    if (msLeft <= 0) {
+      // Notify admin channel if pending approval
+      if (dbUser.is_approved === 0) {
+        c.executionCtx.waitUntil(
+          notifyAdminNewUserRequest(
+            c.env.TELEGRAM_BOT_TOKEN,
+            c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+            {
+              telegramUserId: user.id,
+              firstName: user.first_name,
+              username: user.username,
+            }
+          )
+        );
+      }
+
+      const trialExpired = dbUser.is_approved === 0 && !!dbUser.created_at;
+      return c.json(
+        {
+          error: trialExpired
+            ? `دوره آزمایشی ${TRIAL_HOURS.toLocaleString("fa-IR")} ساعته شما به پایان رسید. برای ادامه، اشتراک تهیه کنید.`
+            : "درخواست دسترسی شما در انتظار تایید مدیریت است.",
+          isApproved: false,
+          status: dbUser.is_approved === -1 ? "rejected" : "pending",
+          trialExpired,
+        },
+        403
       );
     }
 
-    return c.json(
-      {
-        error: "درخواست دسترسی شما در انتظار تایید مدیریت است.",
-        isApproved: false,
-        status: dbUser.is_approved === -1 ? "rejected" : "pending",
-      },
-      403
-    );
+    // Inside the trial window — fall through with full access.
+    c.set("trialMsLeft", msLeft);
   }
 
   c.set("userId", dbUser.id);
   c.set("telegramUserId", user.id);
 
   await next();
+
+  // Surface the trial clock to the Mini App on every API response, so the
+  // banner stays accurate without needing a dedicated polling endpoint.
+  const msLeft = c.get("trialMsLeft");
+  if (msLeft !== undefined) {
+    c.header("X-Trial-Ms-Left", String(msLeft));
+  }
 });
 
 import { topics } from "./api/topics.js";
@@ -182,9 +204,10 @@ app.get("/images/signs/:key", async (c) => {
 // CSS/JS are real static files under public/ (served automatically by
 // wrangler's `assets` binding — see wrangler.jsonc — for paths like
 // /css/app.css and /js/*.js, before any request reaches this Worker).
+// "/" is the public landing page — a static file (public/index.html) served by
+// the assets binding before the request ever reaches this Worker.
 app.get("/app", serveApp);
 app.get("/app/*", serveApp);
-app.get("/", serveApp);
 
 // ── Scheduled (cron) handler ─────────────────────────────────────────────────
 const scheduled: ExportedHandlerScheduledHandler<AppEnv> = async (event, env) => {

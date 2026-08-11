@@ -40,10 +40,51 @@
       "Bash(git submodule *)",
       "Bash(git config *)",
       "Bash(curl -sI -m 10 https://github.com/pbakaus/impeccable)",
-      "Bash(npx impeccable *)"
+      "Bash(npx impeccable *)",
+      "Bash(cd /Users/sinamohammadhosseinzadeh/.npm/_npx/1a4eb60c8f6b0f89/node_modules/impeccable *)",
+      "Read(//Users/sinamohammadhosseinzadeh/**)",
+      "Read(//Users/sinamohammadhosseinzadeh/.cursor/**)",
+      "Bash(python3 -c \"import json; d=json.load\\(open\\('/Users/sinamohammadhosseinzadeh/.claude/settings.json'\\)\\); print\\(json.dumps\\(d.get\\('hooks',{}\\), indent=2\\)\\)\")",
+      "Bash(npx tsx *)",
+      "Bash(rm -f patente_test.db)",
+      "Bash(sqlite3 patente_test.db)",
+      "Bash(git diff *)",
+      "Bash(curl -s -o /dev/null -w \"GET /app -> %{http_code}\\\\n\" https://patente-fa.sinahosseinzadeh20.workers.dev/app)",
+      "Bash(curl -s -o /dev/null -w \"GET /css/app.css -> %{http_code}\\\\n\" https://patente-fa.sinahosseinzadeh20.workers.dev/css/app.css)",
+      "Bash(curl -s https://patente-fa.sinahosseinzadeh20.workers.dev/css/app.css)",
+      "Bash(curl -s https://patente-fa.sinahosseinzadeh20.workers.dev/js/app.js)",
+      "Bash(curl -s https://patente-fa.sinahosseinzadeh20.workers.dev/app)"
     ]
   },
   "enabledMcpjsonServers": [
     "postgresql"
-  ]
+  ],
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f \"/Users/sinamohammadhosseinzadeh/.claude/skills/impeccable/scripts/hook.mjs\" ] || node \"/Users/sinamohammadhosseinzadeh/.claude/skills/impeccable/scripts/hook.mjs\"",
+            "timeout": 5,
+            "statusMessage": "Checking UI changes"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f \"/Users/sinamohammadhosseinzadeh/.claude/skills/impeccable/scripts/hook.mjs\" ] || node \"/Users/sinamohammadhosseinzadeh/.claude/skills/impeccable/scripts/hook.mjs\"",
+            "timeout": 30,
+            "statusMessage": "Design deep pass"
+          }
+        ]
+      }
+    ]
+  },
+  "description": "Impeccable design detector: immediate-tier checks after Edit/Write/MultiEdit on UI files, full-rule deep pass on Stop."
 }

@@ -5,3 +5,17 @@ data/
 .dev.vars
 *.local
 .DS_Store
+
+# Local scratch — one-off scripts, never part of the app. Held a hardcoded bot
+# token once; keep it out of the repo rather than trusting review to catch the
+# next one.
+scratch/
+
+# Editor / tooling state — personal, not project.
+.obsidian/
+.cursor/
+graphify-out/
+Untitled.*
+
+# Stray tool output
+docs/

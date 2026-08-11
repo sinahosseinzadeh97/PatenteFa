@@ -13,7 +13,7 @@ import {
   getCachedTranslation,
   insertTranslation,
 } from "../db/queries.js";
-import { translateQuestion, chatWithTutor, type TutorChatMessage } from "../lib/openai.js";
+import { translateQuestion, chatWithTutor, resolveImageUrl, type TutorChatMessage } from "../lib/openai.js";
 
 const tutor = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
@@ -51,14 +51,19 @@ tutor.post("/explain-wrong", async (c) => {
     if (!q) continue;
 
     // Check cached translation / explanation
+    // Regenerate when the explanation is missing too — migration 0007 cleared
+    // explanations produced by the old vague prompt.
     let trans = await getCachedTranslation(c.env.DB, q.id, "fa");
-    if (!trans) {
+    if (!trans || !trans.explanation) {
       try {
+        // §20.1: must be absolute — passing the stored relative path made OpenAI
+        // reject the request, so every sign question silently fell into the catch
+        // below and rendered with an empty translation.
         const generated = await translateQuestion(
           c.env,
           q.text_it,
           q.correct_answer,
-          q.image_url,
+          resolveImageUrl(c.env.MINI_APP_URL, q.image_url),
           c.env.DB,
           userId
         );

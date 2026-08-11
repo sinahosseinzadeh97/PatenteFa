@@ -4,7 +4,7 @@
  */
 export function renderResultsScreen(): string {
   return `
-<div id="screen-results" class="screen" style="padding:0 0 80px;">
+<div id="screen-results" class="screen" style="padding:0 0 110px;">
   <div class="results-header">
     <div id="results-badge" class="result-badge pass"></div>
     <div class="results-score-value" id="results-score"></div>

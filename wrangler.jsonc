@@ -7,6 +7,17 @@
 	"compatibility_flags": [
 		"nodejs_compat"
 	],
+	// Keep the old workers.dev host alive: Telegram messages sent before the
+	// domain move still carry patente-fa.<subdomain>.workers.dev buttons.
+	"workers_dev": true,
+	// Custom domain — Cloudflare provisions DNS + cert automatically.
+	// Requires the patentefarsi.online zone to be active in this account first.
+	"routes": [
+		{
+			"pattern": "patentefarsi.online",
+			"custom_domain": true
+		}
+	],
 	// Static assets (Mini App CSS/JS — public/css/app.css, public/js/*.js).
 	// Requests matching a file under public/ are served directly; everything
 	// else (/app, /api/*, /images/signs/*, /) falls through to this Worker.

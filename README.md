@@ -66,6 +66,7 @@ cp .dev.vars.example .dev.vars
 | `TELEGRAM_WEBHOOK_SECRET` | Any random string (e.g. `openssl rand -hex 32`) |
 | `OPENAI_API_KEY` | [platform.openai.com/api-keys](https://platform.openai.com/api-keys) |
 | `OPENAI_MODEL` | Recommended: `gpt-4o-mini` |
+| `OPENAI_VISION_MODEL` | Optional. Used only for questions with a sign/diagram image, where `gpt-4o-mini` misreads the picture. Default: `gpt-4o` |
 | `ALLOWED_TELEGRAM_USER_IDS` | Your numeric Telegram ID (get it from @userinfobot) |
 | `LOG_CHANNEL_ID` | Create a private channel, add the bot as admin, get the channel ID |
 | `MINI_APP_URL` | Your deployed Worker URL (see step 7) |

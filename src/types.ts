@@ -13,6 +13,8 @@ export interface AppEnv {
   TELEGRAM_WEBHOOK_SECRET: string;
   OPENAI_API_KEY: string;
   OPENAI_MODEL: string;
+  /** §20.1: model for image (sign/diagram) questions. Default gpt-4o — mini misreads signs. */
+  OPENAI_VISION_MODEL?: string;
   ALLOWED_TELEGRAM_USER_IDS: string;
   LOG_CHANNEL_ID: string;
   MINI_APP_URL: string;
@@ -23,4 +25,6 @@ export interface AppEnv {
 export interface AppVariables {
   userId: number;
   telegramUserId: number;
+  /** Milliseconds left in the free trial; unset for approved (paid/admin) users. */
+  trialMsLeft?: number;
 }

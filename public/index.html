@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<!-- Opened inside Telegram (old bot buttons point at the bare host, not /app) -->
+<script>if(location.hash.includes('tgWebApp'))location.replace('/app'+location.search+location.hash)</script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>PatenteFa — Italian driving theory, in Persian</title>
+<meta name="description" content="An AI-assisted Telegram Mini App that teaches the Italian patente B theory exam to Persian speakers. 7,139 questions, agentic translation and tutoring, running entirely on Cloudflare's edge." />
+<meta property="og:title" content="PatenteFa — Italian driving theory, in Persian" />
+<meta property="og:description" content="7,139 official-style questions, agentic Persian translation, and a spaced-repetition tutor — delivered inside Telegram, running on Cloudflare Workers." />
+<meta property="og:type" content="website" />
+<meta property="og:url" content="https://patentefarsi.online" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<style>
+:root{
+  --bg:#14151A; --surface:#1F2128; --surface-2:#282B35; --border:#2E3142;
+  --ink:#F2F0EB; --ink-muted:#8A8FA8;
+  --go:#1B7A3D; --stop:#C1272D; --amber:#E8A33D;
+  --amber-dim:rgba(232,163,61,.15); --go-light:#4ade80; --stop-light:#f87171;
+  --maxw:1120px;
+  --font-en:'Public Sans',system-ui,sans-serif;
+  --font-fa:'Vazirmatn',system-ui,sans-serif;
+  --font-display:'Barlow Condensed','Public Sans',system-ui,sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--bg);color:var(--ink);
+  font-family:var(--font-en);font-size:16px;line-height:1.65;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;
+}
+html[lang="fa"] body{font-family:var(--font-fa);line-height:1.85}
+img{max-width:100%;display:block}
+a{color:inherit;text-decoration:none}
+
+/* ── Ambient road glow ─────────────────────────────────────────────── */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(900px 500px at 78% -8%,rgba(232,163,61,.13),transparent 62%),
+    radial-gradient(700px 460px at 8% 8%,rgba(27,122,61,.10),transparent 60%);
+}
+.wrap{position:relative;z-index:1;max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+/* ── Nav ───────────────────────────────────────────────────────────── */
+nav{
+  position:sticky;top:0;z-index:50;
+  background:rgba(20,21,26,.78);backdrop-filter:blur(14px);
+  border-bottom:1px solid var(--border);
+}
+.nav-in{max-width:var(--maxw);margin:0 auto;padding:14px 24px;display:flex;align-items:center;gap:16px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--font-display);font-size:21px;font-weight:800;letter-spacing:.02em}
+.brand-mark{
+  width:32px;height:32px;border-radius:9px;flex:none;
+  background:linear-gradient(145deg,var(--amber),#c9822a);
+  color:#14151A;display:grid;place-items:center;
+  font-family:var(--font-display);font-weight:800;font-size:17px;
+  box-shadow:0 2px 6px rgba(0,0,0,.4);
+}
+.nav-links{display:flex;gap:26px;margin-inline-start:auto;align-items:center}
+.nav-links a{color:var(--ink-muted);font-size:14.5px;font-weight:500;transition:color .18s}
+.nav-links a:hover{color:var(--ink)}
+.lang{
+  display:flex;border:1px solid var(--border);border-radius:99px;overflow:hidden;background:var(--surface);flex:none
+}
+.lang button{
+  background:none;border:0;color:var(--ink-muted);cursor:pointer;
+  padding:6px 14px;font:inherit;font-size:13px;font-weight:700;letter-spacing:.04em;transition:.18s
+}
+.lang button[aria-pressed="true"]{background:var(--amber);color:#14151A}
+
+/* ── Buttons ───────────────────────────────────────────────────────── */
+.btn{
+  display:inline-flex;align-items:center;gap:9px;justify-content:center;
+  padding:14px 28px;border-radius:12px;font-weight:700;font-size:15.5px;
+  border:1px solid transparent;cursor:pointer;transition:transform .16s,box-shadow .16s,background .16s;
+}
+.btn-primary{background:var(--amber);color:#14151A;box-shadow:0 2px 6px rgba(0,0,0,.4)}
+.btn-primary:hover{transform:translateY(-2px);background:#f0b357;box-shadow:0 6px 16px rgba(0,0,0,.5)}
+.btn-ghost{background:transparent;border-color:var(--border);color:var(--ink)}
+.btn-ghost:hover{background:var(--surface);border-color:var(--amber)}
+
+/* ── Sections ──────────────────────────────────────────────────────── */
+section{padding:104px 0;position:relative}
+.eyebrow{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--font-display);font-size:12.5px;font-weight:700;
+  letter-spacing:.19em;text-transform:uppercase;color:var(--amber);margin-bottom:18px;
+}
+html[lang="fa"] .eyebrow{font-family:var(--font-fa);letter-spacing:0;font-size:13px}
+h1,h2,h3{margin:0 0 18px;line-height:1.18;letter-spacing:-.02em}
+h1{font-size:clamp(2.5rem,6.2vw,4.3rem);font-weight:800}
+h2{font-size:clamp(1.85rem,3.7vw,2.65rem);font-weight:800}
+h3{font-size:1.16rem;font-weight:700;letter-spacing:-.01em}
+html[lang="fa"] h1,html[lang="fa"] h2,html[lang="fa"] h3{letter-spacing:0;line-height:1.4}
+.lede{font-size:1.14rem;color:var(--ink-muted);max-width:62ch;margin:0 0 34px}
+.section-head{max-width:70ch;margin-bottom:56px}
+
+/* ── Hero ──────────────────────────────────────────────────────────── */
+.hero{padding:96px 0 72px;text-align:center}
+.hero .lede{margin-inline:auto;font-size:1.2rem}
+.hero h1 .hl{
+  background:linear-gradient(115deg,var(--amber),#f5c877);
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.badge{
+  display:inline-flex;align-items:center;gap:9px;
+  background:var(--amber-dim);border:1px solid rgba(232,163,61,.34);
+  color:var(--amber);border-radius:99px;padding:7px 17px;
+  font-size:13.5px;font-weight:700;margin-bottom:26px;
+}
+.pulse{width:7px;height:7px;border-radius:99px;background:var(--go-light);box-shadow:0 0 0 0 rgba(74,222,128,.6);animation:pulse 2.2s infinite}
+@keyframes pulse{70%{box-shadow:0 0 0 9px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
+.cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
+.micro{font-size:13.5px;color:var(--ink-muted);margin:0 0 58px}
+
+/* ── Stat strip ────────────────────────────────────────────────────── */
+.stats{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
+  background:var(--border);border:1px solid var(--border);border-radius:18px;overflow:hidden;
+}
+.stat{background:var(--surface);padding:28px 18px;text-align:center}
+.stat .n{
+  font-family:var(--font-display);font-size:2.5rem;font-weight:800;
+  color:var(--amber);line-height:1;display:block;margin-bottom:7px;direction:ltr;
+}
+.stat .l{font-size:12.5px;color:var(--ink-muted);letter-spacing:.05em;text-transform:uppercase;font-weight:600}
+html[lang="fa"] .stat .l{letter-spacing:0;text-transform:none;font-size:13.5px}
+
+/* ── Cards ─────────────────────────────────────────────────────────── */
+.grid{display:grid;gap:20px}
+.g2{grid-template-columns:repeat(2,1fr)}
+.g3{grid-template-columns:repeat(3,1fr)}
+.card{
+  background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:30px;
+  transition:transform .2s,border-color .2s;
+}
+.card:hover{transform:translateY(-3px);border-color:rgba(232,163,61,.42)}
+.card p{color:var(--ink-muted);margin:0;font-size:15px}
+.ico{
+  width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
+  font-size:21px;margin-bottom:18px;background:var(--amber-dim);border:1px solid rgba(232,163,61,.26);
+}
+
+/* ── Problem / split ───────────────────────────────────────────────── */
+.split{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
+.pain{list-style:none;padding:0;margin:0;display:grid;gap:13px}
+.pain li{
+  display:flex;gap:13px;align-items:flex-start;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:16px 19px;font-size:15px;color:var(--ink-muted);
+}
+.pain li b{color:var(--ink);font-weight:700}
+.tick{color:var(--stop-light);flex:none;font-weight:800;line-height:1.5}
+
+/* ── Pipeline ──────────────────────────────────────────────────────── */
+.pipe{display:grid;gap:14px;counter-reset:step}
+.step{
+  display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 26px;
+  transition:border-color .2s;
+}
+.step:hover{border-color:rgba(232,163,61,.42)}
+.step .num{
+  counter-increment:step;width:38px;height:38px;border-radius:11px;flex:none;
+  background:var(--surface-2);border:1px solid var(--border);
+  display:grid;place-items:center;font-family:var(--font-display);
+  font-weight:800;font-size:16px;color:var(--amber);direction:ltr;
+}
+.step .num::before{content:counter(step,decimal-leading-zero)}
+.step h3{margin-bottom:6px}
+.step p{color:var(--ink-muted);margin:0;font-size:14.7px}
+.tag{
+  display:inline-block;margin-top:11px;font-family:var(--font-display);
+  font-size:11.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--ink-muted);background:var(--surface-2);border:1px solid var(--border);
+  border-radius:6px;padding:4px 10px;direction:ltr;
+}
+
+/* ── Stack ─────────────────────────────────────────────────────────── */
+.stack{display:flex;flex-wrap:wrap;gap:11px}
+.chip{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:11px 17px;font-size:14px;font-weight:600;color:var(--ink-muted);direction:ltr;
+  font-family:var(--font-en);transition:.18s;
+}
+.chip:hover{color:var(--ink);border-color:rgba(232,163,61,.42)}
+.chip b{color:var(--amber);font-weight:700}
+
+/* ── Pricing ───────────────────────────────────────────────────────── */
+.trial-line{
+  display:inline-block;background:var(--surface);border:1px solid rgba(232,163,61,.34);
+  border-radius:12px;padding:13px 22px;margin:0 auto 40px;font-size:14.6px;color:var(--ink-muted);max-width:66ch;
+}
+.trial-line b{color:var(--amber);font-weight:700}
+.price-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;max-width:760px;margin:0 auto}
+.plan{
+  background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;
+  position:relative;display:flex;flex-direction:column;
+}
+.plan.best{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 12px 32px rgba(0,0,0,.45)}
+.plan-flag{
+  position:absolute;top:-12px;inset-inline-start:32px;background:var(--amber);color:#14151A;
+  font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  padding:5px 13px;border-radius:99px;
+}
+html[lang="fa"] .plan-flag{letter-spacing:0;text-transform:none}
+.plan .name{font-size:15px;font-weight:700;color:var(--ink-muted);margin-bottom:14px}
+.plan .amount{font-family:var(--font-display);font-size:3.4rem;font-weight:800;line-height:1;color:var(--ink);direction:ltr;display:inline-block}
+.plan .per{color:var(--ink-muted);font-size:14.5px;margin:9px 0 22px}
+.plan .save{color:var(--go-light);font-weight:700;font-size:13.5px}
+.plan ul{list-style:none;padding:0;margin:0 0 28px;display:grid;gap:11px;flex:1}
+.plan li{display:flex;gap:11px;align-items:flex-start;font-size:14.6px;color:var(--ink-muted)}
+.plan li::before{content:"✓";color:var(--go-light);font-weight:800;flex:none}
+
+/* ── Quote / traction ──────────────────────────────────────────────── */
+.traction{
+  background:linear-gradient(140deg,rgba(232,163,61,.11),rgba(27,122,61,.08));
+  border:1px solid rgba(232,163,61,.28);border-radius:22px;padding:48px 44px;text-align:center;
+}
+.traction .big{font-family:var(--font-display);font-size:clamp(2.6rem,6vw,4rem);font-weight:800;color:var(--amber);line-height:1;direction:ltr}
+.traction p{color:var(--ink-muted);max-width:52ch;margin:14px auto 0;font-size:1.03rem}
+
+/* ── Footer ────────────────────────────────────────────────────────── */
+footer{border-top:1px solid var(--border);padding:44px 0;color:var(--ink-muted);font-size:14px}
+.foot-in{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+.note{
+  margin-top:26px;font-size:13px;color:var(--ink-muted);
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;padding:14px 18px;
+}
+
+/* ── i18n visibility ───────────────────────────────────────────────── */
+html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
+
+/* ── Responsive ────────────────────────────────────────────────────── */
+@media(max-width:900px){
+  section{padding:76px 0}
+  .split{grid-template-columns:1fr;gap:38px}
+  .g3,.g2{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .price-grid{grid-template-columns:1fr}
+  .nav-links a{display:none}
+  .traction{padding:36px 24px}
+}
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-in">
+    <a href="#top" class="brand"><span class="brand-mark">P</span><span>PatenteFa</span></a>
+    <div class="nav-links">
+      <a href="#problem" data-en="The problem" data-fa="مسئله">The problem</a>
+      <a href="#why-telegram" data-en="Why Telegram" data-fa="چرا تلگرام">Why Telegram</a>
+      <a href="#agentic" data-en="How it works" data-fa="معماری">How it works</a>
+      <a href="#pricing" data-en="Pricing" data-fa="قیمت">Pricing</a>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button id="btn-en" aria-pressed="true" onclick="setLang('en')">EN</button>
+      <button id="btn-fa" aria-pressed="false" onclick="setLang('fa')">فا</button>
+    </div>
+  </div>
+</nav>
+
+<!-- ── HERO ────────────────────────────────────────────────────────── -->
+<header class="hero wrap" id="top">
+  <span class="badge"><span class="pulse"></span><span data-en="Live · 30 active users in week one" data-fa="فعال · ۳۰ کاربر فعال در هفته‌ی اول">Live · 30 active users in week one</span></span>
+
+  <h1>
+    <span data-en="Passing an Italian exam" data-fa="قبولی در آزمون ایتالیایی">Passing an Italian exam</span><br>
+    <span class="hl" data-en="shouldn't require Italian." data-fa="نباید به ایتالیایی بودن نیاز داشته باشد.">shouldn't require Italian.</span>
+  </h1>
+
+  <p class="lede" data-en="PatenteFa teaches the Italian patente B driving theory exam to Persian speakers — 7,139 official-style questions, translated and explained by an AI tutor that knows why an answer is wrong, not just that it is. It lives inside Telegram. There is nothing to install." data-fa="پاتنته‌فا آزمون تئوری گواهینامه‌ی ایتالیا (patente B) را به فارسی‌زبان‌ها آموزش می‌دهد — ۷۱۳۹ سوال رسمی، ترجمه‌شده و توضیح‌داده‌شده توسط یک مربی هوش مصنوعی که می‌داند چرا یک جواب غلط است، نه فقط اینکه غلط است. کاملاً داخل تلگرام اجرا می‌شود. چیزی برای نصب کردن وجود ندارد.">PatenteFa teaches the Italian patente B driving theory exam to Persian speakers.</p>
+
+  <div class="cta-row">
+    <a class="btn btn-primary" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener"><span aria-hidden="true">✈</span> <span data-en="Start 72 hours free" data-fa="شروع ۷۲ ساعت رایگان">Start 72 hours free</span></a>
+    <a class="btn btn-ghost" href="#agentic" data-en="See the architecture" data-fa="مشاهده معماری">See the architecture</a>
+  </div>
+  <p class="micro" data-en="Opens in Telegram · No card, no signup form · Full access for 72 hours" data-fa="در تلگرام باز می‌شود · بدون کارت بانکی، بدون فرم ثبت‌نام · دسترسی کامل به‌مدت ۷۲ ساعت">Opens in Telegram · No card, no signup form · Full access for 72 hours</p>
+
+  <div class="stats">
+    <div class="stat"><span class="n">7,139</span><span class="l" data-en="Exam questions" data-fa="سوال آزمون">Exam questions</span></div>
+    <div class="stat"><span class="n">27</span><span class="l" data-en="Official chapters" data-fa="فصل رسمی">Official chapters</span></div>
+    <div class="stat"><span class="n">3,983</span><span class="l" data-en="Sign &amp; diagram items" data-fa="سوال تصویری">Sign &amp; diagram items</span></div>
+    <div class="stat"><span class="n">0</span><span class="l" data-en="Servers to manage" data-fa="سرور برای نگهداری">Servers to manage</span></div>
+  </div>
+</header>
+
+<!-- ── PROBLEM ─────────────────────────────────────────────────────── -->
+<section id="problem" class="wrap">
+  <div class="split">
+    <div>
+      <span class="eyebrow" data-en="The problem" data-fa="مسئله">The problem</span>
+      <h2 data-en="The exam is a language test wearing a driving test's clothes." data-fa="این آزمون در واقع یک امتحان زبان است که لباس آزمون رانندگی پوشیده.">The exam is a language test wearing a driving test's clothes.</h2>
+      <p class="lede" data-en="Italy's patente B theory exam is 30 true/false statements in 20 minutes. Four wrong answers and you fail. The statements are written in dense legal-administrative Italian — deliberately ambiguous phrasing, double negatives, and terms that never appear in ordinary conversation. For a newcomer from Iran or Afghanistan, the road rules are the easy half. Parsing the sentence is the hard half." data-fa="آزمون تئوری patente B ایتالیا ۳۰ جمله‌ی درست/غلط در ۲۰ دقیقه است. چهار جواب اشتباه یعنی مردود. جمله‌ها به ایتالیاییِ حقوقی-اداریِ سنگین نوشته شده‌اند — عبارت‌های عمداً مبهم، منفی‌های دوگانه، و اصطلاحاتی که هرگز در مکالمه‌ی روزمره شنیده نمی‌شوند. برای یک تازه‌وارد از ایران یا افغانستان، قوانین راهنمایی و رانندگی نصف آسانِ کار است. فهمیدن خودِ جمله نصف سختِ آن است.">Italy's patente B theory exam is 30 true/false statements in 20 minutes.</p>
+    </div>
+    <ul class="pain">
+      <li><span class="tick">✕</span><span data-en="<b>Generic translation fails.</b> Machine-translating a legal Italian statement into Persian often flips its meaning — and on a true/false exam, a flipped meaning is a wrong answer." data-fa="<b>ترجمه‌ی عمومی جواب نمی‌دهد.</b> ترجمه‌ی ماشینی یک جمله‌ی حقوقی ایتالیایی به فارسی اغلب معنای آن را برعکس می‌کند — و در آزمون درست/غلط، معنای برعکس یعنی جواب غلط."><b>Generic translation fails.</b></span></li>
+      <li><span class="tick">✕</span><span data-en="<b>Existing apps are Italian-only.</b> They assume you already read the language well enough to study in it." data-fa="<b>اپلیکیشن‌های موجود فقط ایتالیایی هستند.</b> فرض می‌کنند شما آنقدر ایتالیایی بلدید که بتوانید با آن درس بخوانید."><b>Existing apps are Italian-only.</b></span></li>
+      <li><span class="tick">✕</span><span data-en="<b>Driving schools cost hundreds of euros</b> and teach in Italian, at a fixed pace, on someone else's schedule." data-fa="<b>آموزشگاه‌های رانندگی صدها یورو هزینه دارند</b> و به ایتالیایی، با سرعت ثابت و طبق برنامه‌ی دیگران تدریس می‌کنند."><b>Driving schools cost hundreds of euros.</b></span></li>
+      <li><span class="tick">✕</span><span data-en="<b>Wrong answers teach nothing.</b> Most quiz apps show a red X. They never explain the rule behind it, so the same mistake repeats for weeks." data-fa="<b>جواب غلط چیزی یاد نمی‌دهد.</b> بیشتر اپ‌های تست فقط یک ضربدر قرمز نشان می‌دهند. هرگز قانون پشت آن را توضیح نمی‌دهند، برای همین همان اشتباه هفته‌ها تکرار می‌شود."><b>Wrong answers teach nothing.</b></span></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ── WHY TELEGRAM ────────────────────────────────────────────────── -->
+<section id="why-telegram" class="wrap">
+  <div class="section-head">
+    <span class="eyebrow" data-en="Distribution" data-fa="چرا تلگرام">Distribution</span>
+    <h2 data-en="Why Telegram, and not an app store" data-fa="چرا تلگرام، و نه اپ استور">Why Telegram, and not an app store</h2>
+    <p class="lede" data-en="This wasn't a technical shortcut. It was the only channel where the audience already was." data-fa="این یک میان‌بر فنی نبود. تنها کانالی بود که مخاطب از قبل در آن حضور داشت.">This wasn't a technical shortcut.</p>
+  </div>
+  <div class="grid g3">
+    <div class="card">
+      <div class="ico" aria-hidden="true">📍</div>
+      <h3 data-en="The users are already there" data-fa="کاربران از قبل آنجا هستند">The users are already there</h3>
+      <p data-en="Telegram is the default messenger for Persian-speaking communities. Asking someone to find, download, and trust a new app is a funnel with a hole at every step. A link in a group chat is not." data-fa="تلگرام پیام‌رسان پیش‌فرض جامعه‌ی فارسی‌زبان است. اینکه از کسی بخواهید یک اپ جدید را پیدا کند، دانلود کند و به آن اعتماد کند، قیفی است که در هر مرحله سوراخ دارد. یک لینک در گروه چت این‌طور نیست.">Telegram is the default messenger for Persian-speaking communities.</p>
+    </div>
+    <div class="card">
+      <div class="ico" aria-hidden="true">🔑</div>
+      <h3 data-en="Identity is solved on arrival" data-fa="هویت از همان ابتدا حل است">Identity is solved on arrival</h3>
+      <p data-en="No signup form, no password, no email verification. Telegram signs a payload the server verifies with an HMAC against the bot token. The user is authenticated before they see the first screen." data-fa="بدون فرم ثبت‌نام، بدون رمز عبور، بدون تایید ایمیل. تلگرام یک payload امضا می‌کند که سرور آن را با HMAC و توکن بات تایید می‌کند. کاربر پیش از دیدن اولین صفحه احراز هویت شده است.">No signup form, no password, no email verification.</p>
+    </div>
+    <div class="card">
+      <div class="ico" aria-hidden="true">🔔</div>
+      <h3 data-en="Retention without notification permission" data-fa="بازگشت کاربر بدون مجوز نوتیفیکیشن">Retention without notification permission</h3>
+      <p data-en="Studying for an exam fails on consistency, not comprehension. A scheduled job messages each learner at 08:00 Rome time with the questions they got wrong. It arrives as a chat message — no push permission to beg for, nothing to opt into." data-fa="مطالعه برای آزمون به‌خاطر بی‌نظمی شکست می‌خورد، نه به‌خاطر نفهمیدن. یک job زمان‌بندی‌شده هر روز ساعت ۸ صبح به وقت رم، سوال‌هایی را که اشتباه زده‌اید برایتان می‌فرستد. به شکل یک پیام چت می‌رسد — نه مجوز پوشی لازم است، نه چیزی برای فعال‌کردن.">Studying for an exam fails on consistency, not comprehension.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ── AGENTIC ─────────────────────────────────────────────────────── -->
+<section id="agentic" class="wrap">
+  <div class="section-head">
+    <span class="eyebrow" data-en="Agentic architecture" data-fa="معماری عامل‌محور">Agentic architecture</span>
+    <h2 data-en="Not one prompt. A pipeline of narrow agents." data-fa="نه یک پرامپت. یک زنجیره از عامل‌های تخصصی.">Not one prompt. A pipeline of narrow agents.</h2>
+    <p class="lede" data-en="Every question passes through a chain of single-purpose model calls, each with its own prompt, its own model tier, and its own cached result in D1. A question is translated and explained once — then served from the database forever after." data-fa="هر سوال از زنجیره‌ای از فراخوانی‌های تک‌منظوره‌ی مدل عبور می‌کند؛ هرکدام با پرامپت خودش، سطح مدل خودش، و نتیجه‌ی کش‌شده‌ی خودش در D1. هر سوال یک‌بار ترجمه و توضیح داده می‌شود — و از آن پس همیشه از دیتابیس سرو می‌شود.">Every question passes through a chain of single-purpose model calls.</p>
+  </div>
+
+  <div class="pipe">
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h3 data-en="Translation agent" data-fa="عامل ترجمه">Translation agent</h3>
+        <p data-en="Converts the Italian statement into Persian while preserving legal precision — negations, modal verbs, and scope qualifiers are the difference between VERO and FALSO, so they are handled explicitly rather than left to a general translation model." data-fa="جمله‌ی ایتالیایی را به فارسی برمی‌گرداند و در عین حال دقت حقوقی را حفظ می‌کند — منفی‌ها، افعال وجهی و قیدهای محدودکننده تفاوت بین VERO و FALSO هستند، بنابراین صریحاً مدیریت می‌شوند نه اینکه به یک مدل ترجمه‌ی عمومی سپرده شوند.">Converts the Italian statement into Persian while preserving legal precision.</p>
+        <span class="tag">cached in D1</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h3 data-en="Vision agent" data-fa="عامل بینایی">Vision agent</h3>
+        <p data-en="3,983 of the questions hinge on a road sign or an intersection diagram. When a question carries an image, the request is escalated to a vision-capable model that reads the picture — because a text-only model confidently invents what the sign says." data-fa="۳۹۸۳ سوال به یک تابلو یا نمودار تقاطع وابسته‌اند. وقتی سوالی تصویر دارد، درخواست به یک مدل دارای قابلیت بینایی ارتقا داده می‌شود که تصویر را می‌خواند — چون مدل متنی با اطمینان کامل از خودش می‌سازد که تابلو چه می‌گوید.">3,983 of the questions hinge on a road sign or an intersection diagram.</p>
+        <span class="tag">model escalation</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h3 data-en="Theory explainer" data-fa="عامل توضیح تئوری">Theory explainer</h3>
+        <p data-en="Answers the question the red X never answers: which article of the Codice della Strada makes this true or false, and what the trap in the phrasing was." data-fa="به سوالی جواب می‌دهد که ضربدر قرمز هرگز جواب نمی‌دهد: کدام ماده از Codice della Strada این جمله را درست یا غلط می‌کند، و تله‌ی موجود در عبارت‌بندی چه بود.">Answers the question the red X never answers.</p>
+        <span class="tag">grounded rationale</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h3 data-en="Grammar analyst" data-fa="عامل تحلیل گرامر">Grammar analyst</h3>
+        <p data-en="Decomposes the Italian sentence word by word. Learners stop memorising answers and start reading the language — which is what actually transfers to the unseen questions on exam day." data-fa="جمله‌ی ایتالیایی را کلمه به کلمه تجزیه می‌کند. کاربر از حفظ‌کردن جواب‌ها دست می‌کشد و شروع به خواندن زبان می‌کند — چیزی که در روز آزمون واقعاً به سوال‌های ندیده منتقل می‌شود.">Decomposes the Italian sentence word by word.</p>
+        <span class="tag">language transfer</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h3 data-en="Conversational tutor" data-fa="مربی گفتگویی">Conversational tutor</h3>
+        <p data-en="A follow-up chat scoped to the question in front of you, image included. &quot;Why is this one false but the last one true?&quot; is the question a static explanation can never anticipate." data-fa="یک گفتگوی تکمیلی محدود به همان سوالی که پیش رو دارید، همراه با تصویر. «چرا این یکی غلط است ولی قبلی درست بود؟» سوالی است که یک توضیح ثابت هرگز نمی‌تواند پیش‌بینی‌اش کند.">A follow-up chat scoped to the question in front of you.</p>
+        <span class="tag">context-aware</span>
+      </div>
+    </div>
+    <div class="step">
+      <div class="num" aria-hidden="true"></div>
+      <div>
+        <h3 data-en="Spaced-repetition scheduler" data-fa="زمان‌بند تکرار فاصله‌دار">Spaced-repetition scheduler</h3>
+        <p data-en="Every miss re-enters a review queue. Recall it correctly and the interval doubles, up to a 90-day ceiling; miss it and it resets to tomorrow. Day boundaries are computed in Europe/Rome, because that is the clock the exam runs on." data-fa="هر اشتباه دوباره وارد صف مرور می‌شود. اگر درست به‌یاد بیاورید فاصله دوبرابر می‌شود تا سقف ۹۰ روز؛ اگر اشتباه کنید به فردا برمی‌گردد. مرز روزها بر اساس Europe/Rome حساب می‌شود، چون آزمون با همان ساعت برگزار می‌شود.">Every miss re-enters a review queue.</p>
+        <span class="tag">SRS · Europe/Rome</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="note" data-en="Cost discipline is part of the design: every model call's token usage is priced and recorded, and results are cached in D1 so the same question is never paid for twice." data-fa="کنترل هزینه بخشی از طراحی است: مصرف توکن هر فراخوانی مدل قیمت‌گذاری و ثبت می‌شود، و نتایج در D1 کش می‌شوند تا هرگز برای یک سوال دوبار هزینه پرداخت نشود.">Cost discipline is part of the design.</div>
+</section>
+
+<!-- ── FEATURES ────────────────────────────────────────────────────── -->
+<section class="wrap">
+  <div class="section-head">
+    <span class="eyebrow" data-en="What's inside" data-fa="امکانات">What's inside</span>
+    <h2 data-en="Everything the exam asks of you" data-fa="هرچه آزمون از شما می‌خواهد">Everything the exam asks of you</h2>
+  </div>
+  <div class="grid g3">
+    <div class="card"><div class="ico" aria-hidden="true">🚦</div>
+      <h3 data-en="Real exam simulation" data-fa="شبیه‌سازی آزمون واقعی">Real exam simulation</h3>
+      <p data-en="30 statements, 20 minutes, a fourth wrong answer ends it. The same rule the examiner applies, enforced identically — so your practice score means something." data-fa="۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان. دقیقاً همان قانونی که ممتحن اعمال می‌کند — بنابراین نمره‌ی تمرینی شما معنا دارد.">30 statements, 20 minutes.</p></div>
+    <div class="card"><div class="ico" aria-hidden="true">📚</div>
+      <h3 data-en="27 official chapters" data-fa="۲۷ فصل رسمی">27 official chapters</h3>
+      <p data-en="Study by Capitolo instead of shuffling blindly — right of way, signage, speed limits, documents, insurance, first aid, and the rest of the syllabus." data-fa="به‌جای زدن تست‌های تصادفی، بر اساس Capitolo مطالعه کنید — حق تقدم، تابلوها، محدودیت سرعت، مدارک، بیمه، کمک‌های اولیه و بقیه‌ی سرفصل‌ها.">Study by Capitolo instead of shuffling blindly.</p></div>
+    <div class="card"><div class="ico" aria-hidden="true">🛑</div>
+      <h3 data-en="Road sign trainer" data-fa="تمرین تابلوها">Road sign trainer</h3>
+      <p data-en="A dedicated drill for the signage that carries the most exam weight, with images served from object storage at the edge." data-fa="یک تمرین اختصاصی برای تابلوهایی که بیشترین وزن را در آزمون دارند، با تصاویری که از object storage روی لبه‌ی شبکه سرو می‌شوند.">A dedicated drill for the signage that carries the most exam weight.</p></div>
+    <div class="card"><div class="ico" aria-hidden="true">🔁</div>
+      <h3 data-en="Mistake review queue" data-fa="صف مرور اشتباهات">Mistake review queue</h3>
+      <p data-en="Wrong answers don't disappear. They come back on a schedule until you get them right twice — the single highest-leverage feature for actually passing." data-fa="جواب‌های غلط ناپدید نمی‌شوند. طبق برنامه برمی‌گردند تا دوبار درست جوابشان بدهید — مؤثرترین قابلیت برای قبول‌شدن واقعی.">Wrong answers don't disappear.</p></div>
+    <div class="card"><div class="ico" aria-hidden="true">📖</div>
+      <h3 data-en="Vocabulary builder" data-fa="واژه‌نامه">Vocabulary builder</h3>
+      <p data-en="Save the Italian terms that keep tripping you up. They enter the same spaced-repetition loop as your wrong answers." data-fa="اصطلاحات ایتالیایی که مدام گیرتان می‌اندازند را ذخیره کنید. وارد همان چرخه‌ی تکرار فاصله‌دار جواب‌های غلط می‌شوند.">Save the Italian terms that keep tripping you up.</p></div>
+    <div class="card"><div class="ico" aria-hidden="true">📊</div>
+      <h3 data-en="Readiness tracking" data-fa="سنجش آمادگی">Readiness tracking</h3>
+      <p data-en="Pass rate, streak, chapter coverage, and days until your exam date — so you know whether you're actually ready or just busy." data-fa="درصد قبولی، استریک، پوشش فصل‌ها و روزهای باقی‌مانده تا تاریخ آزمون — تا بدانید واقعاً آماده‌اید یا فقط مشغولید.">Pass rate, streak, chapter coverage, and days until your exam date.</p></div>
+  </div>
+</section>
+
+<!-- ── STACK ───────────────────────────────────────────────────────── -->
+<section class="wrap">
+  <div class="split">
+    <div>
+      <span class="eyebrow" data-en="Engineering" data-fa="مهندسی">Engineering</span>
+      <h2 data-en="One Worker. No servers. Global by default." data-fa="یک Worker. بدون سرور. سراسری از ابتدا.">One Worker. No servers. Global by default.</h2>
+      <p class="lede" data-en="The entire product — bot webhook, REST API, Mini App shell, image delivery, and scheduled jobs — is a single Cloudflare Worker. There is no container to patch, no instance to scale, and no region to pick. It runs in the datacenter closest to whoever opened it, which for a user base split between Italy and Iran matters more than it sounds." data-fa="کل محصول — وب‌هوک بات، REST API، پوسته‌ی مینی‌اپ، تحویل تصاویر و jobهای زمان‌بندی‌شده — یک Cloudflare Worker واحد است. نه کانتینری برای وصله‌کردن، نه اینستنسی برای مقیاس‌دادن، نه منطقه‌ای برای انتخاب. در نزدیک‌ترین دیتاسنتر به کاربر اجرا می‌شود، و برای کاربرانی که بین ایتالیا و ایران پخش‌اند این خیلی مهم‌تر از آن است که به‌نظر می‌رسد.">The entire product is a single Cloudflare Worker.</p>
+      <div class="stack">
+        <span class="chip"><b>Cloudflare</b> Workers</span>
+        <span class="chip"><b>Hono</b> · TypeScript</span>
+        <span class="chip"><b>D1</b> SQLite</span>
+        <span class="chip"><b>R2</b> object storage</span>
+        <span class="chip"><b>KV</b> cache</span>
+        <span class="chip"><b>Cron</b> triggers</span>
+        <span class="chip"><b>Telegram</b> Mini App</span>
+        <span class="chip"><b>OpenAI</b> GPT + vision</span>
+      </div>
+    </div>
+    <div class="grid" style="gap:16px">
+      <div class="card">
+        <h3 data-en="Verified identity, gated access" data-fa="هویت تاییدشده، دسترسی کنترل‌شده">Verified identity, gated access</h3>
+        <p data-en="Every API request carries a Telegram-signed payload validated server-side before it touches the database. New accounts land in a pending state and an admin approves them — deliberate, while the product is small and the AI bill is real." data-fa="هر درخواست API یک payload امضاشده توسط تلگرام دارد که پیش از رسیدن به دیتابیس در سمت سرور اعتبارسنجی می‌شود. حساب‌های جدید در وضعیت «در انتظار» قرار می‌گیرند و مدیر آن‌ها را تایید می‌کند — عمدی، تا وقتی محصول کوچک است و هزینه‌ی هوش مصنوعی واقعی.">Every API request carries a Telegram-signed payload.</p>
+      </div>
+      <div class="card">
+        <h3 data-en="Scheduled without a scheduler" data-fa="زمان‌بندی بدون scheduler">Scheduled without a scheduler</h3>
+        <p data-en="Two cron triggers run on the edge: the morning review nudge, and a nightly database backup written to object storage. No queue service, no worker dyno, no cron box to forget about." data-fa="دو cron trigger روی لبه اجرا می‌شوند: یادآور مرور صبحگاهی، و پشتیبان‌گیری شبانه‌ی دیتابیس روی object storage. نه سرویس صف، نه worker dyno، نه سرور cronی که فراموشش کنید.">Two cron triggers run on the edge.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ── TRACTION ────────────────────────────────────────────────────── -->
+<section class="wrap">
+  <div class="traction">
+    <span class="eyebrow" data-en="Traction" data-fa="نتیجه">Traction</span>
+    <div class="big">30</div>
+    <h2 style="font-size:1.5rem;margin-top:12px" data-en="active users in the first week" data-fa="کاربر فعال در هفته‌ی اول">active users in the first week</h2>
+    <p data-en="No ads, no launch post, no app store listing. Shared into Persian-speaking community groups in Italy, where the people taking this exam already talk to each other." data-fa="بدون تبلیغات، بدون پست معرفی، بدون لیست‌شدن در اپ استور. فقط در گروه‌های جامعه‌ی فارسی‌زبان در ایتالیا به اشتراک گذاشته شد — جایی که کسانی که این آزمون را می‌دهند از قبل با هم در ارتباط‌اند.">No ads, no launch post, no app store listing.</p>
+  </div>
+</section>
+
+<!-- ── PRICING ─────────────────────────────────────────────────────── -->
+<section id="pricing" class="wrap">
+  <div class="section-head" style="text-align:center;margin-inline:auto">
+    <span class="eyebrow" data-en="Pricing" data-fa="قیمت">Pricing</span>
+    <h2 data-en="Less than one hour at a driving school" data-fa="کمتر از یک جلسه در آموزشگاه رانندگی">Less than one hour at a driving school</h2>
+    <p class="lede" style="margin-inline:auto" data-en="Full access to every question, every AI explanation, and the review system. One learner, one exam, one price." data-fa="دسترسی کامل به همه‌ی سوال‌ها، همه‌ی توضیح‌های هوش مصنوعی و سیستم مرور. یک کاربر، یک آزمون، یک قیمت.">Full access to every question, every AI explanation, and the review system.</p>
+    <p class="trial-line"><span aria-hidden="true">🎁</span> <b data-en="Every account starts with 72 hours free." data-fa="هر حساب با ۷۲ ساعت رایگان شروع می‌شود.">Every account starts with 72 hours free.</b> <span data-en="Everything unlocked, no card required. Decide after you've used it." data-fa="همه‌چیز باز است، بدون نیاز به کارت بانکی. بعد از استفاده تصمیم بگیرید.">Everything unlocked, no card required. Decide after you've used it.</span></p>
+  </div>
+
+  <div class="price-grid">
+    <div class="plan">
+      <div class="name" data-en="Monthly" data-fa="یک ماهه">Monthly</div>
+      <div><span class="amount">€20</span></div>
+      <div class="per" data-en="per month" data-fa="در ماه">per month</div>
+      <ul>
+        <li data-en="All 7,139 questions" data-fa="هر ۷۱۳۹ سوال">All 7,139 questions</li>
+        <li data-en="Persian translation + AI explanations" data-fa="ترجمه فارسی + توضیح هوش مصنوعی">Persian translation + AI explanations</li>
+        <li data-en="Full exam simulation" data-fa="شبیه‌سازی کامل آزمون">Full exam simulation</li>
+        <li data-en="Mistake review + vocabulary" data-fa="مرور اشتباهات + واژه‌نامه">Mistake review + vocabulary</li>
+        <li data-en="Daily study reminder" data-fa="یادآور روزانه مطالعه">Daily study reminder</li>
+        <li data-en="First 72 hours free" data-fa="۷۲ ساعت اول رایگان">First 72 hours free</li>
+      </ul>
+      <a class="btn btn-ghost" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener" data-en="Try free for 72h" data-fa="۷۲ ساعت رایگان امتحان کنید">Try free for 72h</a>
+    </div>
+
+    <div class="plan best">
+      <span class="plan-flag" data-en="Best value" data-fa="به‌صرفه‌ترین">Best value</span>
+      <div class="name" data-en="3 months" data-fa="سه ماهه">3 months</div>
+      <div><span class="amount">€54</span></div>
+      <div class="per"><span data-en="for 3 months —" data-fa="برای سه ماه —">for 3 months —</span> <span class="save" data-en="save €6" data-fa="۶ یورو تخفیف">save €6</span></div>
+      <ul>
+        <li data-en="Everything in Monthly" data-fa="همه‌ی امکانات پلن ماهانه">Everything in Monthly</li>
+        <li data-en="Covers a realistic study period" data-fa="پوشش یک دوره‌ی مطالعه‌ی واقع‌بینانه">Covers a realistic study period</li>
+        <li data-en="Conversational AI tutor" data-fa="مربی گفتگویی هوش مصنوعی">Conversational AI tutor</li>
+        <li data-en="Grammar breakdown per question" data-fa="تحلیل گرامری هر سوال">Grammar breakdown per question</li>
+        <li data-en="Readiness &amp; progress analytics" data-fa="تحلیل آمادگی و پیشرفت">Readiness &amp; progress analytics</li>
+        <li data-en="First 72 hours free" data-fa="۷۲ ساعت اول رایگان">First 72 hours free</li>
+      </ul>
+      <a class="btn btn-primary" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener" data-en="Try free, then €54" data-fa="رایگان امتحان کنید، سپس ۵۴ یورو">Try free, then €54</a>
+    </div>
+  </div>
+
+  <div class="note" data-en="Question bank sourced from the open QuizPatenteB dataset (MIT), last updated 2023. Always spot-check against ilportaledellautomobilista.it before your exam date." data-fa="بانک سوال از مجموعه‌داده‌ی متن‌باز QuizPatenteB (لایسنس MIT) گرفته شده و آخرین بروزرسانی آن ۲۰۲۳ است. همیشه پیش از تاریخ آزمون با سایت رسمی ilportaledellautomobilista.it مطابقت بدهید.">Question bank sourced from the open QuizPatenteB dataset (MIT), last updated 2023.</div>
+</section>
+
+<!-- ── CTA ─────────────────────────────────────────────────────────── -->
+<section class="wrap" style="text-align:center;padding-top:0">
+  <h2 data-en="Ready when you are." data-fa="هر وقت آماده بودید.">Ready when you are.</h2>
+  <p class="lede" style="margin-inline:auto" data-en="72 hours of full access, free. Opens inside Telegram — no download, no signup form, no password." data-fa="۷۲ ساعت دسترسی کامل، رایگان. داخل تلگرام باز می‌شود — بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.">72 hours of full access, free.</p>
+  <a class="btn btn-primary" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener"><span aria-hidden="true">✈</span> <span data-en="Start your free trial" data-fa="شروع دوره آزمایشی رایگان">Start your free trial</span></a>
+</section>
+
+<footer>
+  <div class="wrap foot-in">
+    <div class="brand" style="font-size:17px"><span class="brand-mark" style="width:27px;height:27px;font-size:14px">P</span> PatenteFa</div>
+    <div data-en="Built on Cloudflare Workers · D1 · R2 · KV" data-fa="ساخته‌شده روی Cloudflare Workers · D1 · R2 · KV">Built on Cloudflare Workers · D1 · R2 · KV</div>
+  </div>
+</footer>
+
+<script>
+function setLang(l){
+  var h=document.documentElement;
+  h.lang=l; h.dir = l==='fa' ? 'rtl' : 'ltr';
+  document.querySelectorAll('[data-'+l+']').forEach(function(el){
+    el.innerHTML = el.getAttribute('data-'+l);
+  });
+  document.getElementById('btn-en').setAttribute('aria-pressed', l==='en');
+  document.getElementById('btn-fa').setAttribute('aria-pressed', l==='fa');
+  try{ localStorage.setItem('pf-lang', l); }catch(e){}
+}
+// Persist choice; default to Persian for fa-* browsers.
+var saved;
+try{ saved = localStorage.getItem('pf-lang'); }catch(e){}
+setLang(saved || ((navigator.language||'').toLowerCase().startsWith('fa') ? 'fa' : 'en'));
+</script>
+</body>
+</html>
