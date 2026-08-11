@@ -1,10 +1,81 @@
 # PatenteFa 🇮🇹🇮🇷
 
+> **Pass the Italian driving theory exam when Italian isn't your first language.**
 > تمرین آزمون تئوری پاتنته ایتالیا — به فارسی
-> Italian driving theory exam trainer with Persian language support.
 
-A Telegram Bot + Mini App for studying the Italian *patente B* theory exam.
-Runs entirely on **Cloudflare Workers** (Hono + D1 + R2 + KV + Cron) — no separate hosting needed.
+A Telegram bot + Mini App that teaches the Italian *patente B* theory exam to Persian
+speakers. **7,139 official questions**, every one translated and explained in Persian by
+an AI layer that is grounded in the database rather than trusted blind.
+
+Runs entirely on one **Cloudflare Worker** — no servers, no containers, no separate
+frontend host. In production with daily users.
+
+**→ [patentefarsi.online](https://patentefarsi.online)**
+
+<p align="center">
+  <img src=".github/assets/chapters.png" alt="Chapter list showing per-user accuracy and progress" width="31%">
+  <img src=".github/assets/ai-panel.png" alt="An exam question with the Persian translation panel open" width="31%">
+  <img src=".github/assets/exam.png" alt="The exam runner with a road-sign question" width="31%">
+</p>
+
+---
+
+## What's interesting in here
+
+**Authentication with no signup, no password, no email.**
+Telegram signs a payload with the bot token; the Worker verifies it with an HMAC
+(`src/lib/auth.ts`) and derives the user from the signature. There is no login screen —
+the user is authenticated before the first frame renders.
+
+**The AI is grounded in the database, not trusted.**
+Vision models read road signs confidently and get them *backwards*: asked about sign 279
+(arrow pointing right), GPT-4o answered "PASSAGGIO OBBLIGATORIO A SINISTRA" on three runs
+out of three. A mirrored left/right doesn't just look wrong — it teaches the opposite
+traffic rule. So the sign's verified name is read from a reviewed `sign_meanings` table
+covering all 413 images and passed *into* the prompt. The model explains a named sign
+instead of guessing which sign it is.
+
+**Everything on the edge, one deploy.**
+Hono routes, D1 for relational data, R2 for the 413 sign images, KV for nonces and rate
+limiting, and cron triggers for the morning reminder and nightly backup. `npm run deploy`
+ships the API, the Mini App, and the static assets together.
+
+**Spaced repetition built on real mistakes.**
+Wrong answers enter a review queue with an interval schedule; they come back when they're
+*due*, not on every session, and the random fill skips anything seen in the last 14 days
+so practice doesn't turn into recall of the same 30 questions.
+
+**Trilingual, RTL-first UI.** Persian interface, Italian exam text, English/Italian
+technical vocabulary — laid out RTL without a UI framework.
+
+---
+
+## Architecture
+
+```
+Telegram client
+   ├── Bot chat  → Cloudflare Worker (Hono)
+   │                  ├── /webhook/telegram   (bot updates)
+   │                  ├── /api/*              (Mini App REST API, HMAC-authenticated)
+   │                  └── /app                (Mini App HTML shell)
+   └── Mini App (WebView) → same Worker
+
+Cloudflare:
+   D1    → 7,139 questions, sessions, answers, review queue, vocab, users
+   R2    → 413 road-sign images, nightly backups
+   KV    → rate limiting / nonce cache
+   Cron  → 06:00 review reminder, 23:00 nightly backup
+```
+
+| | |
+|---|---|
+| **Runtime** | Cloudflare Workers |
+| **Language** | TypeScript (strict) |
+| **Routing** | Hono |
+| **Data** | D1 (SQLite), R2, KV |
+| **Frontend** | Vanilla JS + CSS, no framework, no build step |
+| **AI** | OpenAI — `gpt-4o-mini` for text, `gpt-4o` for sign images |
+| **Scale** | 7,139 questions · 3,983 with images · 25 chapters |
 
 ---
 
@@ -152,21 +223,13 @@ npx wrangler dev --test-scheduled
 
 ---
 
-## Architecture
+## Tests
 
-```
-Telegram client
-   ├── Bot chat  → Cloudflare Worker (Hono)
-   │                  ├── /webhook/telegram   (bot updates)
-   │                  ├── /api/*              (Mini App REST API)
-   │                  └── /app               (Mini App HTML shell)
-   └── Mini App (WebView) → same Worker
-
-Cloudflare:
-   D1    → questions, sessions, vocab, users
-   R2    → road-sign images, nightly backups
-   KV    → rate limiting / nonce cache
-   Cron  → 08:00 review reminder, 01:00 nightly backup
+```bash
+npx tsc --noEmit                       # strict type check
+npx tsx scripts/test-sign-grounding.ts # sign-image URL resolution + AI grounding
+npx tsx scripts/test-srs.ts            # spaced-repetition scheduling
+npx tsx scripts/test-trial.ts          # free-trial window
 ```
 
 ---
