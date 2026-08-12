@@ -9,6 +9,7 @@
     "db:migrate:local": "wrangler d1 migrations apply patente-fa-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply patente-fa-db --remote",
     "db:schema:local": "wrangler d1 execute patente-fa-db --local --file ./src/db/schema.sql",
+    "vendor:motion": "esbuild scripts/motion.entry.js --bundle --format=esm --minify --target=es2020 --outfile=public/js/vendor/motion.js",
     "import": "tsx scripts/import-question-bank.ts",
     "migrate:signs": "tsx scripts/migrate-signs-to-r2.ts"
   },
@@ -17,6 +18,7 @@
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
+    "motion": "^13.1.0",
     "tailwindcss": "^4.3.3",
     "tsx": "^4.19.4",
     "typescript": "^5.8.3",

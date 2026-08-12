@@ -14,6 +14,27 @@
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Public+Sans:wght@400;500;600;700&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
+<!-- Hero 3D scene — warm up both hops before the gated loader fires (see bottom of file) -->
+<link rel="preconnect" href="https://unpkg.com" crossorigin />
+<link rel="preconnect" href="https://prod.spline.design" crossorigin />
+<script>
+/* Arm the scroll reveals before first paint, so marked content never flashes in
+   then jumps back to hidden. Released automatically if the animation module has
+   not taken over in time — a blocked or broken script must not leave the page
+   with invisible sections. */
+(function(){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var html = document.documentElement;
+  html.classList.add('anim');
+  /* __motionReady is set by the FIRST reveal that actually fires — not merely by
+     the module loading. A page in a background tab, or any browser where the
+     observer never fires, would otherwise sit here holding its content at
+     opacity 0 forever with the safety net already stood down. */
+  setTimeout(function(){
+    if (!window.__motionReady) html.classList.remove('anim');
+  }, 3000);
+})();
+</script>
 <style>
 :root{
   --bg:#14151A; --surface:#1F2128; --surface-2:#282B35; --border:#2E3142;
@@ -24,6 +45,29 @@
   --font-en:'Public Sans',system-ui,sans-serif;
   --font-fa:'Vazirmatn',system-ui,sans-serif;
   --font-display:'Barlow Condensed','Public Sans',system-ui,sans-serif;
+  /* Glass material — ONE recipe, shared by every raised surface on the page and
+     in the cinematic footer, so the two read as a single system. Blur is applied
+     only to small pill-shaped controls: a backdrop-filter layer behind ~30 cards
+     costs real frames and buys nothing over an opaque background. */
+  --glass-bg:linear-gradient(145deg,rgba(242,240,235,.045) 0%,rgba(242,240,235,.014) 100%);
+  --glass-bg-hi:linear-gradient(145deg,rgba(242,240,235,.09) 0%,rgba(242,240,235,.022) 100%);
+  --glass-line:rgba(242,240,235,.09);
+  --glass-line-hi:rgba(232,163,61,.38);
+  --glass-lift:0 10px 30px -10px rgba(0,0,0,.5),inset 0 1px 1px rgba(242,240,235,.10),inset 0 -1px 2px rgba(0,0,0,.55);
+  --glass-lift-hi:0 20px 40px -10px rgba(0,0,0,.6),inset 0 1px 1px rgba(242,240,235,.2);
+  --ease-glass:cubic-bezier(.16,1,.3,1);
+  --nav-h:65px;   /* measured, so the hero can be exactly one viewport tall */
+}
+
+/* Reusable ambient glow, same recipe as the footer's aurora. */
+.aurora-bg::before{
+  content:"";position:absolute;left:50%;top:10%;transform:translateX(-50%);
+  /* -1, not 0: .wrap sets z-index:1 and so forms a stacking context, in which a
+     positioned z-index:0 pseudo-element would paint over the section's text. */
+  width:72vw;height:48vh;border-radius:50%;pointer-events:none;z-index:-1;
+  background:radial-gradient(circle at 50% 50%,
+    rgba(232,163,61,.11) 0%,rgba(27,122,61,.07) 42%,transparent 70%);
+  filter:blur(90px);
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth}
@@ -75,13 +119,17 @@ nav{
 /* ── Buttons ───────────────────────────────────────────────────────── */
 .btn{
   display:inline-flex;align-items:center;gap:9px;justify-content:center;
-  padding:14px 28px;border-radius:12px;font-weight:700;font-size:15.5px;
-  border:1px solid transparent;cursor:pointer;transition:transform .16s,box-shadow .16s,background .16s;
+  padding:15px 30px;border-radius:999px;font-weight:700;font-size:15.5px;
+  border:1px solid transparent;cursor:pointer;
+  transition:transform .16s,box-shadow .3s var(--ease-glass),background .3s var(--ease-glass),border-color .3s;
 }
-.btn-primary{background:var(--amber);color:#14151A;box-shadow:0 2px 6px rgba(0,0,0,.4)}
-.btn-primary:hover{transform:translateY(-2px);background:#f0b357;box-shadow:0 6px 16px rgba(0,0,0,.5)}
-.btn-ghost{background:transparent;border-color:var(--border);color:var(--ink)}
-.btn-ghost:hover{background:var(--surface);border-color:var(--amber)}
+.btn-primary{background:var(--amber);color:#14151A;
+  box-shadow:0 14px 34px -10px rgba(0,0,0,.65),inset 0 1px 1px rgba(255,255,255,.25)}
+.btn-primary:hover{transform:translateY(-2px);background:#f0b357;
+  box-shadow:0 18px 40px -10px rgba(0,0,0,.7),inset 0 1px 1px rgba(255,255,255,.3)}
+.btn-ghost{background:var(--glass-bg);border-color:var(--glass-line);color:var(--ink);
+  box-shadow:var(--glass-lift);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px)}
+.btn-ghost:hover{background:var(--glass-bg-hi);border-color:var(--glass-line-hi);box-shadow:var(--glass-lift-hi)}
 
 /* ── Sections ──────────────────────────────────────────────────────── */
 section{padding:104px 0;position:relative}
@@ -93,36 +141,112 @@ section{padding:104px 0;position:relative}
 html[lang="fa"] .eyebrow{font-family:var(--font-fa);letter-spacing:0;font-size:13px}
 h1,h2,h3{margin:0 0 18px;line-height:1.18;letter-spacing:-.02em}
 h1{font-size:clamp(2.5rem,6.2vw,4.3rem);font-weight:800}
-h2{font-size:clamp(1.85rem,3.7vw,2.65rem);font-weight:800}
+h2{font-size:clamp(1.85rem,3.7vw,2.65rem);font-weight:800;
+  background:linear-gradient(180deg,var(--ink) 0%,rgba(242,240,235,.5) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 0 24px rgba(242,240,235,.10));
+}
 h3{font-size:1.16rem;font-weight:700;letter-spacing:-.01em}
 html[lang="fa"] h1,html[lang="fa"] h2,html[lang="fa"] h3{letter-spacing:0;line-height:1.4}
 .lede{font-size:1.14rem;color:var(--ink-muted);max-width:62ch;margin:0 0 34px}
 .section-head{max-width:70ch;margin-bottom:56px}
 
 /* ── Hero ──────────────────────────────────────────────────────────── */
-.hero{padding:96px 0 72px;text-align:center}
-.hero .lede{margin-inline:auto;font-size:1.2rem}
+.hero{padding:0 0 76px}
+
+/* Full-bleed stage: edge to edge, and exactly one viewport tall once the
+   sticky nav above it is accounted for — hence --nav-h rather than a plain
+   100svh, which would push the hero's bottom edge below the fold. */
+.hero-stage{
+  position:relative;isolation:isolate;overflow:hidden;
+  background:linear-gradient(152deg,#090A0E 0%,#111320 58%,#0B0D13 100%);
+  border:0;border-bottom:1px solid var(--border);
+  min-height:calc(100svh - var(--nav-h));
+  margin-bottom:64px;
+}
+
+/* Cursor spotlight. JS writes --sx/--sy (px, relative to the stage) on a
+   rAF-eased follow; CSS does the rest. No animation library needed. */
+.spotlight{
+  position:absolute;left:0;top:0;z-index:1;pointer-events:none;
+  width:var(--spot);height:var(--spot);
+  margin:calc(var(--spot) / -2) 0 0 calc(var(--spot) / -2);
+  transform:translate3d(var(--sx,50%),var(--sy,35%),0);
+  background:radial-gradient(circle at center,
+    rgba(255,242,222,.14),rgba(232,163,61,.07) 42%,transparent 70%);
+  filter:blur(26px);opacity:0;transition:opacity .4s ease;
+  --spot:540px;
+}
+.hero-stage.is-lit .spotlight{opacity:1}
+
+.hero-grid{
+  position:relative;z-index:2;display:grid;grid-template-columns:1.02fr .98fr;
+  align-items:stretch;min-height:inherit;
+}
+.hero-copy{
+  display:flex;flex-direction:column;justify-content:center;
+  /* Left edge lines up with the 1120px content column the rest of the page
+     uses, so a full-bleed hero still reads as part of the same grid. */
+  padding-block:clamp(48px,7vh,80px);
+  padding-inline-start:max(24px,calc(50vw - var(--maxw) / 2));
+  padding-inline-end:clamp(24px,3vw,48px);
+}
+.hero-copy h1{font-size:clamp(2.2rem,4.4vw,4rem)}
+.hero-copy .badge{align-self:flex-start}
+.hero-copy .lede{font-size:1.1rem;max-width:46ch;margin-bottom:32px}
 .hero h1 .hl{
   background:linear-gradient(115deg,var(--amber),#f5c877);
   -webkit-background-clip:text;background-clip:text;color:transparent;
 }
+
+/* 3D column. Empty until the gated loader decides this client should have it. */
+.hero-scene{position:relative;min-height:300px;align-self:stretch}
+/* Set by the hero module whenever the 3D column can never fill — scene
+   disabled, reduced motion, or a metered connection — so the copy gets the
+   whole stage instead of sitting beside a permanently empty half. */
+.hero-stage.no-3d .hero-grid{grid-template-columns:1fr}
+.hero-stage.no-3d .hero-scene{display:none}
+.hero-stage.no-3d .hero-copy{padding-inline-end:max(24px,calc(50vw - var(--maxw) / 2))}
+.hero-scene canvas{
+  display:block;width:100%!important;height:100%!important;
+  opacity:0;transition:opacity .8s ease;
+}
+.hero-scene.is-ready canvas{opacity:1}
+/* Placeholder: a slow amber sweep, so the column reads as "loading", not "broken" */
+.scene-loader{
+  position:absolute;inset:0;display:none;place-items:center;
+}
+.hero-scene.is-loading .scene-loader{display:grid}
+.scene-loader::after{
+  content:"";width:54px;height:54px;border-radius:50%;
+  border:2px solid rgba(232,163,61,.16);border-top-color:rgba(232,163,61,.62);
+  animation:spin 1.1s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
 .badge{
   display:inline-flex;align-items:center;gap:9px;
   background:var(--amber-dim);border:1px solid rgba(232,163,61,.34);
-  color:var(--amber);border-radius:99px;padding:7px 17px;
+  color:var(--amber);border-radius:999px;padding:8px 18px;
   font-size:13.5px;font-weight:700;margin-bottom:26px;
+  box-shadow:var(--glass-lift);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
 }
 .pulse{width:7px;height:7px;border-radius:99px;background:var(--go-light);box-shadow:0 0 0 0 rgba(74,222,128,.6);animation:pulse 2.2s infinite}
 @keyframes pulse{70%{box-shadow:0 0 0 9px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
-.cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:16px}
-.micro{font-size:13.5px;color:var(--ink-muted);margin:0 0 58px}
+.cta-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:15px}
+.micro{font-size:13.5px;color:var(--ink-muted);margin:0}
 
 /* ── Stat strip ────────────────────────────────────────────────────── */
 .stats{
-  display:grid;grid-template-columns:repeat(4,1fr);gap:1px;
-  background:var(--border);border:1px solid var(--border);border-radius:18px;overflow:hidden;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:14px;
 }
-.stat{background:var(--surface);padding:28px 18px;text-align:center}
+.stat{
+  background:var(--glass-bg);border:1px solid var(--glass-line);box-shadow:var(--glass-lift);
+  border-radius:18px;padding:28px 18px;text-align:center;
+  transition:background .3s var(--ease-glass),border-color .3s,box-shadow .3s;
+}
+.stat:hover{background:var(--glass-bg-hi);border-color:var(--glass-line-hi);box-shadow:var(--glass-lift-hi)}
 .stat .n{
   font-family:var(--font-display);font-size:2.5rem;font-weight:800;
   color:var(--amber);line-height:1;display:block;margin-bottom:7px;direction:ltr;
@@ -135,14 +259,17 @@ html[lang="fa"] .stat .l{letter-spacing:0;text-transform:none;font-size:13.5px}
 .g2{grid-template-columns:repeat(2,1fr)}
 .g3{grid-template-columns:repeat(3,1fr)}
 .card{
-  background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:30px;
-  transition:transform .2s,border-color .2s;
+  background:var(--glass-bg);border:1px solid var(--glass-line);border-radius:20px;padding:30px;
+  box-shadow:var(--glass-lift);
+  transition:transform .3s var(--ease-glass),border-color .3s,background .3s,box-shadow .3s;
 }
-.card:hover{transform:translateY(-3px);border-color:rgba(232,163,61,.42)}
+.card:hover{transform:translateY(-3px);border-color:var(--glass-line-hi);
+  background:var(--glass-bg-hi);box-shadow:var(--glass-lift-hi)}
 .card p{color:var(--ink-muted);margin:0;font-size:15px}
 .ico{
   width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
   font-size:21px;margin-bottom:18px;background:var(--amber-dim);border:1px solid rgba(232,163,61,.26);
+  box-shadow:inset 0 1px 1px rgba(242,240,235,.12);
 }
 
 /* ── Problem / split ───────────────────────────────────────────────── */
@@ -150,8 +277,8 @@ html[lang="fa"] .stat .l{letter-spacing:0;text-transform:none;font-size:13.5px}
 .pain{list-style:none;padding:0;margin:0;display:grid;gap:13px}
 .pain li{
   display:flex;gap:13px;align-items:flex-start;
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:12px;padding:16px 19px;font-size:15px;color:var(--ink-muted);
+  background:var(--glass-bg);border:1px solid var(--glass-line);box-shadow:var(--glass-lift);
+  border-radius:14px;padding:16px 19px;font-size:15px;color:var(--ink-muted);
 }
 .pain li b{color:var(--ink);font-weight:700}
 .tick{color:var(--stop-light);flex:none;font-weight:800;line-height:1.5}
@@ -160,13 +287,14 @@ html[lang="fa"] .stat .l{letter-spacing:0;text-transform:none;font-size:13.5px}
 .pipe{display:grid;gap:14px;counter-reset:step}
 .step{
   display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:start;
-  background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px 26px;
-  transition:border-color .2s;
+  background:var(--glass-bg);border:1px solid var(--glass-line);border-radius:18px;padding:24px 26px;
+  box-shadow:var(--glass-lift);
+  transition:border-color .3s var(--ease-glass),background .3s,box-shadow .3s;
 }
-.step:hover{border-color:rgba(232,163,61,.42)}
+.step:hover{border-color:var(--glass-line-hi);background:var(--glass-bg-hi);box-shadow:var(--glass-lift-hi)}
 .step .num{
-  counter-increment:step;width:38px;height:38px;border-radius:11px;flex:none;
-  background:var(--surface-2);border:1px solid var(--border);
+  counter-increment:step;width:38px;height:38px;border-radius:12px;flex:none;
+  background:var(--glass-bg);border:1px solid var(--glass-line);box-shadow:var(--glass-lift);
   display:grid;place-items:center;font-family:var(--font-display);
   font-weight:800;font-size:16px;color:var(--amber);direction:ltr;
 }
@@ -176,32 +304,37 @@ html[lang="fa"] .stat .l{letter-spacing:0;text-transform:none;font-size:13.5px}
 .tag{
   display:inline-block;margin-top:11px;font-family:var(--font-display);
   font-size:11.5px;font-weight:700;letter-spacing:.11em;text-transform:uppercase;
-  color:var(--ink-muted);background:var(--surface-2);border:1px solid var(--border);
-  border-radius:6px;padding:4px 10px;direction:ltr;
+  color:var(--ink-muted);background:var(--glass-bg);border:1px solid var(--glass-line);
+  border-radius:999px;padding:5px 13px;direction:ltr;
 }
 
 /* ── Stack ─────────────────────────────────────────────────────────── */
 .stack{display:flex;flex-wrap:wrap;gap:11px}
 .chip{
-  background:var(--surface);border:1px solid var(--border);border-radius:10px;
-  padding:11px 17px;font-size:14px;font-weight:600;color:var(--ink-muted);direction:ltr;
-  font-family:var(--font-en);transition:.18s;
+  background:var(--glass-bg);border:1px solid var(--glass-line);border-radius:999px;
+  box-shadow:var(--glass-lift);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  padding:11px 19px;font-size:14px;font-weight:600;color:var(--ink-muted);direction:ltr;
+  font-family:var(--font-en);transition:.3s var(--ease-glass);
 }
-.chip:hover{color:var(--ink);border-color:rgba(232,163,61,.42)}
+.chip:hover{color:var(--ink);border-color:var(--glass-line-hi);
+  background:var(--glass-bg-hi);box-shadow:var(--glass-lift-hi)}
 .chip b{color:var(--amber);font-weight:700}
 
 /* ── Pricing ───────────────────────────────────────────────────────── */
 .trial-line{
-  display:inline-block;background:var(--surface);border:1px solid rgba(232,163,61,.34);
-  border-radius:12px;padding:13px 22px;margin:0 auto 40px;font-size:14.6px;color:var(--ink-muted);max-width:66ch;
+  display:inline-block;background:var(--glass-bg);border:1px solid rgba(232,163,61,.34);
+  box-shadow:var(--glass-lift);
+  border-radius:20px;padding:14px 26px;margin:0 auto 40px;font-size:14.6px;color:var(--ink-muted);max-width:66ch;
 }
 .trial-line b{color:var(--amber);font-weight:700}
 .price-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;max-width:760px;margin:0 auto}
 .plan{
-  background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:36px 32px;
+  background:var(--glass-bg);border:1px solid var(--glass-line);border-radius:22px;padding:36px 32px;
+  box-shadow:var(--glass-lift);
   position:relative;display:flex;flex-direction:column;
 }
-.plan.best{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber),0 12px 32px rgba(0,0,0,.45)}
+.plan.best{border-color:rgba(232,163,61,.5);
+  box-shadow:0 0 0 1px rgba(232,163,61,.32),0 24px 52px -14px rgba(0,0,0,.62),inset 0 1px 1px rgba(242,240,235,.14)}
 .plan-flag{
   position:absolute;top:-12px;inset-inline-start:32px;background:var(--amber);color:#14151A;
   font-size:11.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
@@ -219,19 +352,161 @@ html[lang="fa"] .plan-flag{letter-spacing:0;text-transform:none}
 /* ── Quote / traction ──────────────────────────────────────────────── */
 .traction{
   background:linear-gradient(140deg,rgba(232,163,61,.11),rgba(27,122,61,.08));
-  border:1px solid rgba(232,163,61,.28);border-radius:22px;padding:48px 44px;text-align:center;
+  border:1px solid rgba(232,163,61,.28);border-radius:24px;padding:48px 44px;text-align:center;
+  box-shadow:0 24px 60px -20px rgba(0,0,0,.6),inset 0 1px 1px rgba(242,240,235,.12);
 }
 .traction .big{font-family:var(--font-display);font-size:clamp(2.6rem,6vw,4rem);font-weight:800;color:var(--amber);line-height:1;direction:ltr}
 .traction p{color:var(--ink-muted);max-width:52ch;margin:14px auto 0;font-size:1.03rem}
 
-/* ── Footer ────────────────────────────────────────────────────────── */
-footer{border-top:1px solid var(--border);padding:44px 0;color:var(--ink-muted);font-size:14px}
-.foot-in{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:center}
+/* ── Cinematic footer (curtain reveal) ──────────────────────────────
+   .curtain sits in normal flow; .cine inside it is viewport-fixed and painted
+   only where the curtain's box is, so scrolling the curtain up uncovers the
+   footer from beneath the page. clip-path does the masking and — verified in
+   this engine — does NOT become a containing block for fixed children, which
+   is exactly what lets this work without restructuring everything above it. */
+.curtain{
+  position:relative;z-index:2;
+  height:100vh;height:100svh;min-height:580px;
+  clip-path:polygon(0 0,100% 0,100% 100%,0 100%);
+}
+.cine{
+  position:fixed;left:0;bottom:0;width:100%;
+  height:100vh;height:100svh;min-height:580px;
+  display:flex;flex-direction:column;justify-content:space-between;
+  overflow:hidden;background:var(--bg);border-top:1px solid var(--border);
+}
+
+/* Ambient light + grid, same idea as the page's road glow, turned up */
+.cine-aurora{
+  position:absolute;left:50%;top:52%;z-index:0;pointer-events:none;
+  width:80vw;height:56vh;border-radius:50%;filter:blur(80px);
+  background:radial-gradient(circle at 50% 50%,
+    rgba(232,163,61,.17) 0%,rgba(27,122,61,.12) 40%,transparent 70%);
+  animation:cine-breathe 8s ease-in-out infinite alternate;
+}
+@keyframes cine-breathe{
+  from{transform:translate(-50%,-50%) scale(1);opacity:.6}
+  to{transform:translate(-50%,-50%) scale(1.1);opacity:1}
+}
+/* Wordmark behind everything. Centred with inset+text-align, never a transform —
+   motion owns transform here for the scroll parallax and would overwrite it. */
+.cine-giant{
+  position:absolute;left:0;right:0;bottom:-3vh;z-index:0;
+  pointer-events:none;user-select:none;white-space:nowrap;text-align:center;
+  direction:ltr;font-family:var(--font-display);font-weight:800;
+  font-size:min(24vw,320px);line-height:.75;letter-spacing:-.04em;
+  color:transparent;-webkit-text-stroke:1px rgba(242,240,235,.06);
+  background:linear-gradient(180deg,rgba(242,240,235,.11) 0%,transparent 62%);
+  -webkit-background-clip:text;background-clip:text;
+}
+
+/* Diagonal proof band. Static and wrapping, not a marquee: the content never
+   changes, so scrolling it would only hide half of it at any moment and pull
+   attention from the CTA directly below. Wrapping means nothing is ever
+   clipped, which is also why it is readable content rather than aria-hidden. */
+.cine-band{
+  position:absolute;top:7%;left:-4%;width:108%;z-index:1;
+  /* The band is deliberately wider than the viewport so its ends bleed off
+     screen; the padding keeps the text itself clear of that clipped zone. */
+  padding:13px 8%;transform:rotate(-2deg);
+  border-top:1px solid rgba(46,49,66,.8);border-bottom:1px solid rgba(46,49,66,.8);
+  background:rgba(20,21,26,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+  box-shadow:0 20px 50px rgba(0,0,0,.45);
+}
+.cine-band-in{
+  display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;letter-spacing:.28em;text-transform:uppercase;
+  color:var(--ink-muted);text-align:center;
+}
+html[lang="fa"] .cine-band-in{letter-spacing:0;text-transform:none;font-size:13px}
+
+/* Centre block */
+.cine-main{
+  position:relative;z-index:10;flex:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:0 24px;margin-top:56px;
+}
+.cine-title{
+  font-family:var(--font-display);font-weight:800;
+  font-size:clamp(2.3rem,6.6vw,5.2rem);letter-spacing:-.03em;line-height:1.02;
+  margin:0 0 16px;text-align:center;
+  background:linear-gradient(180deg,var(--ink) 0%,rgba(242,240,235,.42) 100%);
+  -webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;
+  filter:drop-shadow(0 0 24px rgba(242,240,235,.12));
+}
+html[lang="fa"] .cine-title{font-family:var(--font-fa);letter-spacing:0;line-height:1.45}
+.cine-lede{
+  color:var(--ink-muted);font-size:15px;text-align:center;
+  max-width:54ch;margin:0 0 32px;
+}
+.cine-links{display:flex;flex-direction:column;align-items:center;gap:18px;width:100%}
+.cine-row{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;perspective:800px}
+.cine-band-in i{font-style:normal;color:var(--amber);opacity:.6;padding:0 14px}
+
+/* Glass pill. Note the transition list names properties explicitly and omits
+   transform — motion drives transform on the magnetic pills and a CSS
+   transition on the same property would fight it every frame. */
+.cine .pill{
+  display:inline-flex;align-items:center;justify-content:center;gap:10px;
+  border-radius:999px;padding:13px 26px;
+  font-size:13.5px;font-weight:700;color:var(--ink-muted);
+  background:var(--glass-bg);border:1px solid var(--glass-line);box-shadow:var(--glass-lift);
+  backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  transition:background .4s var(--ease-glass),border-color .4s,box-shadow .4s,color .4s;
+}
+.cine .pill:hover{
+  color:var(--ink);border-color:var(--glass-line-hi);
+  background:var(--glass-bg-hi);box-shadow:var(--glass-lift-hi);
+}
+.cine .pill-primary{
+  padding:18px 38px;font-size:15.5px;
+  background:var(--amber);color:#14151A;border-color:transparent;
+  box-shadow:0 14px 34px -10px rgba(0,0,0,.65),inset 0 1px 1px rgba(255,255,255,.25);
+}
+.cine .pill-primary:hover{background:#f0b357;color:#14151A;border-color:transparent}
+.cine .pill svg{width:19px;height:19px;flex:none}
+
+/* Bottom bar */
+.cine-bottom{
+  position:relative;z-index:20;width:100%;
+  padding:0 clamp(20px,4vw,48px) 30px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+}
+.cine-copy{
+  font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--ink-muted);order:2;
+}
+html[lang="fa"] .cine-copy{letter-spacing:0;text-transform:none;font-size:12.5px}
+.cine-byline{order:1;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;perspective:800px}
+.cine-badge{cursor:default;font-size:11px;letter-spacing:.14em;text-transform:uppercase}
+.cine-social{width:44px;height:44px;padding:0;border-radius:50%;color:var(--ink-muted)}
+.cine-social svg{width:18px;height:18px}
+.cine-social:hover{color:var(--ink)}
+html[lang="fa"] .cine-badge{letter-spacing:0;text-transform:none;font-size:12.5px}
+.cine-badge b{color:var(--ink);font-weight:800;letter-spacing:0;text-transform:none}
+.cine-heart{color:var(--stop-light);font-size:14px;animation:cine-heartbeat 2s cubic-bezier(.25,1,.5,1) infinite}
+@keyframes cine-heartbeat{
+  0%,100%{transform:scale(1);filter:drop-shadow(0 0 5px rgba(193,39,45,.5))}
+  15%,45%{transform:scale(1.2);filter:drop-shadow(0 0 10px rgba(193,39,45,.8))}
+  30%{transform:scale(1)}
+}
+.cine-top{order:3;width:48px;height:48px;padding:0;border-radius:50%;cursor:pointer;font:inherit}
+.cine-top svg{width:20px;height:20px;transition:transform .3s}
+.cine-top:hover svg{transform:translateY(-5px)}
 .note{
   margin-top:26px;font-size:13px;color:var(--ink-muted);
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:10px;padding:14px 18px;
+  background:var(--glass-bg);border:1px solid var(--glass-line);box-shadow:var(--glass-lift);
+  border-radius:14px;padding:15px 20px;
 }
+
+/* ── Scroll reveals ─────────────────────────────────────────────────
+   Armed by the inline <head> script before first paint (so nothing flashes)
+   and only when motion is welcome. That same script releases the hold if the
+   animation module never runs — the page must never keep content invisible. */
+html.anim [data-reveal]:not([data-revealed]) > *{opacity:0}
+/* Count-up changes digit widths; fixed-width figures stop the cells jittering */
+.stat .n,.traction .big{font-variant-numeric:tabular-nums}
 
 /* ── i18n visibility ───────────────────────────────────────────────── */
 html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
@@ -245,6 +520,36 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
   .price-grid{grid-template-columns:1fr}
   .nav-links a{display:none}
   .traction{padding:36px 24px}
+  /* No 3D on phones: the scene is ~1.3MB and this audience is mobile-heavy.
+     The stage keeps the copy, the spotlight, and the ambient glow. */
+  .hero{padding:0 0 60px}
+  .hero-stage{min-height:calc(100svh - var(--nav-h));margin-bottom:48px}
+  .hero-grid{grid-template-columns:1fr}
+  .hero-scene{display:none}
+  .hero-copy{padding-inline:24px}
+  .hero-copy .lede{max-width:none}
+  .spotlight{--spot:380px}
+  .cine-giant{font-size:min(30vw,230px)}
+  .cine-band-in{font-size:11px;letter-spacing:.2em}
+  .cine .pill-primary{padding:16px 30px;font-size:14.5px}
+  .cine-lede{font-size:14px}
+}
+
+/* Phones: a viewport-locked curtain cannot hold this much content without
+   clipping it, and the reveal is worth least on a small screen with no hover.
+   Fall back to an ordinary static footer — same design, no curtain. */
+@media(max-width:700px){
+  .curtain{height:auto;min-height:0;clip-path:none}
+  .cine{position:relative;height:auto;min-height:0;padding-top:30px}
+  .cine-main{margin-top:8px;padding-bottom:44px}
+  /* In flow rather than absolute: wrapped to three lines on a narrow screen the
+     band is much taller, and pinned absolutely it overlapped the heading.
+     Negative margins keep the edge bleed without the overlap. */
+  .cine-band{position:static;width:auto;left:auto;top:auto;margin:0 -4% 26px;padding:12px 7%}
+  .cine-bottom{justify-content:center;text-align:center;gap:20px}
+  .cine-copy{order:3}
+  .cine-byline{order:2}
+  .cine-top{order:1}
 }
 @media(prefers-reduced-motion:reduce){
   *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
@@ -270,7 +575,15 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
 </nav>
 
 <!-- ── HERO ────────────────────────────────────────────────────────── -->
-<header class="hero wrap" id="top">
+<!-- .hero carries no .wrap: the stage runs edge to edge, and the copy inside it
+     re-aligns to the shared content column via padding-inline-start. -->
+<header class="hero" id="top">
+ <div class="hero-stage" id="hero-stage">
+  <div class="spotlight" aria-hidden="true"></div>
+  <div class="hero-grid">
+   <!-- Deliberately not [data-reveal]: the h1 is the LCP element, and holding it
+        at opacity 0 until a JS module loads would push LCP out for everyone. -->
+   <div class="hero-copy">
   <span class="badge"><span class="pulse"></span><span data-en="Live · 30 active users in week one" data-fa="فعال · ۳۰ کاربر فعال در هفته‌ی اول">Live · 30 active users in week one</span></span>
 
   <h1>
@@ -285,12 +598,22 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
     <a class="btn btn-ghost" href="#agentic" data-en="See the architecture" data-fa="مشاهده معماری">See the architecture</a>
   </div>
   <p class="micro" data-en="Opens in Telegram · No card, no signup form · Full access for 72 hours" data-fa="در تلگرام باز می‌شود · بدون کارت بانکی، بدون فرم ثبت‌نام · دسترسی کامل به‌مدت ۷۲ ساعت">Opens in Telegram · No card, no signup form · Full access for 72 hours</p>
+   </div><!-- .hero-copy -->
 
-  <div class="stats">
-    <div class="stat"><span class="n">7,139</span><span class="l" data-en="Exam questions" data-fa="سوال آزمون">Exam questions</span></div>
-    <div class="stat"><span class="n">27</span><span class="l" data-en="Official chapters" data-fa="فصل رسمی">Official chapters</span></div>
-    <div class="stat"><span class="n">3,983</span><span class="l" data-en="Sign &amp; diagram items" data-fa="سوال تصویری">Sign &amp; diagram items</span></div>
-    <div class="stat"><span class="n">0</span><span class="l" data-en="Servers to manage" data-fa="سرور برای نگهداری">Servers to manage</span></div>
+   <div class="hero-scene" id="hero-scene">
+     <div class="scene-loader" aria-hidden="true"></div>
+     <canvas id="hero-canvas" aria-hidden="true"></canvas>
+   </div>
+  </div><!-- .hero-grid -->
+ </div><!-- .hero-stage -->
+
+  <div class="wrap">
+    <div class="stats">
+      <div class="stat"><span class="n">7,139</span><span class="l" data-en="Exam questions" data-fa="سوال آزمون">Exam questions</span></div>
+      <div class="stat"><span class="n">27</span><span class="l" data-en="Official chapters" data-fa="فصل رسمی">Official chapters</span></div>
+      <div class="stat"><span class="n">3,983</span><span class="l" data-en="Sign &amp; diagram items" data-fa="سوال تصویری">Sign &amp; diagram items</span></div>
+      <div class="stat"><span class="n">0</span><span class="l" data-en="Servers to manage" data-fa="سرور برای نگهداری">Servers to manage</span></div>
+    </div>
   </div>
 </header>
 
@@ -302,7 +625,7 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
       <h2 data-en="The exam is a language test wearing a driving test's clothes." data-fa="این آزمون در واقع یک امتحان زبان است که لباس آزمون رانندگی پوشیده.">The exam is a language test wearing a driving test's clothes.</h2>
       <p class="lede" data-en="Italy's patente B theory exam is 30 true/false statements in 20 minutes. Four wrong answers and you fail. The statements are written in dense legal-administrative Italian — deliberately ambiguous phrasing, double negatives, and terms that never appear in ordinary conversation. For a newcomer from Iran or Afghanistan, the road rules are the easy half. Parsing the sentence is the hard half." data-fa="آزمون تئوری patente B ایتالیا ۳۰ جمله‌ی درست/غلط در ۲۰ دقیقه است. چهار جواب اشتباه یعنی مردود. جمله‌ها به ایتالیاییِ حقوقی-اداریِ سنگین نوشته شده‌اند — عبارت‌های عمداً مبهم، منفی‌های دوگانه، و اصطلاحاتی که هرگز در مکالمه‌ی روزمره شنیده نمی‌شوند. برای یک تازه‌وارد از ایران یا افغانستان، قوانین راهنمایی و رانندگی نصف آسانِ کار است. فهمیدن خودِ جمله نصف سختِ آن است.">Italy's patente B theory exam is 30 true/false statements in 20 minutes.</p>
     </div>
-    <ul class="pain">
+    <ul class="pain" data-reveal>
       <li><span class="tick">✕</span><span data-en="<b>Generic translation fails.</b> Machine-translating a legal Italian statement into Persian often flips its meaning — and on a true/false exam, a flipped meaning is a wrong answer." data-fa="<b>ترجمه‌ی عمومی جواب نمی‌دهد.</b> ترجمه‌ی ماشینی یک جمله‌ی حقوقی ایتالیایی به فارسی اغلب معنای آن را برعکس می‌کند — و در آزمون درست/غلط، معنای برعکس یعنی جواب غلط."><b>Generic translation fails.</b></span></li>
       <li><span class="tick">✕</span><span data-en="<b>Existing apps are Italian-only.</b> They assume you already read the language well enough to study in it." data-fa="<b>اپلیکیشن‌های موجود فقط ایتالیایی هستند.</b> فرض می‌کنند شما آنقدر ایتالیایی بلدید که بتوانید با آن درس بخوانید."><b>Existing apps are Italian-only.</b></span></li>
       <li><span class="tick">✕</span><span data-en="<b>Driving schools cost hundreds of euros</b> and teach in Italian, at a fixed pace, on someone else's schedule." data-fa="<b>آموزشگاه‌های رانندگی صدها یورو هزینه دارند</b> و به ایتالیایی، با سرعت ثابت و طبق برنامه‌ی دیگران تدریس می‌کنند."><b>Driving schools cost hundreds of euros.</b></span></li>
@@ -312,13 +635,13 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
 </section>
 
 <!-- ── WHY TELEGRAM ────────────────────────────────────────────────── -->
-<section id="why-telegram" class="wrap">
-  <div class="section-head">
+<section id="why-telegram" class="wrap aurora-bg">
+  <div class="section-head" data-reveal>
     <span class="eyebrow" data-en="Distribution" data-fa="چرا تلگرام">Distribution</span>
     <h2 data-en="Why Telegram, and not an app store" data-fa="چرا تلگرام، و نه اپ استور">Why Telegram, and not an app store</h2>
     <p class="lede" data-en="This wasn't a technical shortcut. It was the only channel where the audience already was." data-fa="این یک میان‌بر فنی نبود. تنها کانالی بود که مخاطب از قبل در آن حضور داشت.">This wasn't a technical shortcut.</p>
   </div>
-  <div class="grid g3">
+  <div class="grid g3" data-reveal>
     <div class="card">
       <div class="ico" aria-hidden="true">📍</div>
       <h3 data-en="The users are already there" data-fa="کاربران از قبل آنجا هستند">The users are already there</h3>
@@ -339,13 +662,13 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
 
 <!-- ── AGENTIC ─────────────────────────────────────────────────────── -->
 <section id="agentic" class="wrap">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <span class="eyebrow" data-en="Agentic architecture" data-fa="معماری عامل‌محور">Agentic architecture</span>
     <h2 data-en="Not one prompt. A pipeline of narrow agents." data-fa="نه یک پرامپت. یک زنجیره از عامل‌های تخصصی.">Not one prompt. A pipeline of narrow agents.</h2>
     <p class="lede" data-en="Every question passes through a chain of single-purpose model calls, each with its own prompt, its own model tier, and its own cached result in D1. A question is translated and explained once — then served from the database forever after." data-fa="هر سوال از زنجیره‌ای از فراخوانی‌های تک‌منظوره‌ی مدل عبور می‌کند؛ هرکدام با پرامپت خودش، سطح مدل خودش، و نتیجه‌ی کش‌شده‌ی خودش در D1. هر سوال یک‌بار ترجمه و توضیح داده می‌شود — و از آن پس همیشه از دیتابیس سرو می‌شود.">Every question passes through a chain of single-purpose model calls.</p>
   </div>
 
-  <div class="pipe">
+  <div class="pipe" data-reveal>
     <div class="step">
       <div class="num" aria-hidden="true"></div>
       <div>
@@ -401,11 +724,11 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
 
 <!-- ── FEATURES ────────────────────────────────────────────────────── -->
 <section class="wrap">
-  <div class="section-head">
+  <div class="section-head" data-reveal>
     <span class="eyebrow" data-en="What's inside" data-fa="امکانات">What's inside</span>
     <h2 data-en="Everything the exam asks of you" data-fa="هرچه آزمون از شما می‌خواهد">Everything the exam asks of you</h2>
   </div>
-  <div class="grid g3">
+  <div class="grid g3" data-reveal>
     <div class="card"><div class="ico" aria-hidden="true">🚦</div>
       <h3 data-en="Real exam simulation" data-fa="شبیه‌سازی آزمون واقعی">Real exam simulation</h3>
       <p data-en="30 statements, 20 minutes, a fourth wrong answer ends it. The same rule the examiner applies, enforced identically — so your practice score means something." data-fa="۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان. دقیقاً همان قانونی که ممتحن اعمال می‌کند — بنابراین نمره‌ی تمرینی شما معنا دارد.">30 statements, 20 minutes.</p></div>
@@ -434,7 +757,7 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
       <span class="eyebrow" data-en="Engineering" data-fa="مهندسی">Engineering</span>
       <h2 data-en="One Worker. No servers. Global by default." data-fa="یک Worker. بدون سرور. سراسری از ابتدا.">One Worker. No servers. Global by default.</h2>
       <p class="lede" data-en="The entire product — bot webhook, REST API, Mini App shell, image delivery, and scheduled jobs — is a single Cloudflare Worker. There is no container to patch, no instance to scale, and no region to pick. It runs in the datacenter closest to whoever opened it, which for a user base split between Italy and Iran matters more than it sounds." data-fa="کل محصول — وب‌هوک بات، REST API، پوسته‌ی مینی‌اپ، تحویل تصاویر و jobهای زمان‌بندی‌شده — یک Cloudflare Worker واحد است. نه کانتینری برای وصله‌کردن، نه اینستنسی برای مقیاس‌دادن، نه منطقه‌ای برای انتخاب. در نزدیک‌ترین دیتاسنتر به کاربر اجرا می‌شود، و برای کاربرانی که بین ایتالیا و ایران پخش‌اند این خیلی مهم‌تر از آن است که به‌نظر می‌رسد.">The entire product is a single Cloudflare Worker.</p>
-      <div class="stack">
+      <div class="stack" data-reveal>
         <span class="chip"><b>Cloudflare</b> Workers</span>
         <span class="chip"><b>Hono</b> · TypeScript</span>
         <span class="chip"><b>D1</b> SQLite</span>
@@ -445,7 +768,7 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
         <span class="chip"><b>OpenAI</b> GPT + vision</span>
       </div>
     </div>
-    <div class="grid" style="gap:16px">
+    <div class="grid" style="gap:16px" data-reveal>
       <div class="card">
         <h3 data-en="Verified identity, gated access" data-fa="هویت تاییدشده، دسترسی کنترل‌شده">Verified identity, gated access</h3>
         <p data-en="Every API request carries a Telegram-signed payload validated server-side before it touches the database. New accounts land in a pending state and an admin approves them — deliberate, while the product is small and the AI bill is real." data-fa="هر درخواست API یک payload امضاشده توسط تلگرام دارد که پیش از رسیدن به دیتابیس در سمت سرور اعتبارسنجی می‌شود. حساب‌های جدید در وضعیت «در انتظار» قرار می‌گیرند و مدیر آن‌ها را تایید می‌کند — عمدی، تا وقتی محصول کوچک است و هزینه‌ی هوش مصنوعی واقعی.">Every API request carries a Telegram-signed payload.</p>
@@ -469,15 +792,15 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
 </section>
 
 <!-- ── PRICING ─────────────────────────────────────────────────────── -->
-<section id="pricing" class="wrap">
-  <div class="section-head" style="text-align:center;margin-inline:auto">
+<section id="pricing" class="wrap aurora-bg">
+  <div class="section-head" style="text-align:center;margin-inline:auto" data-reveal>
     <span class="eyebrow" data-en="Pricing" data-fa="قیمت">Pricing</span>
     <h2 data-en="Less than one hour at a driving school" data-fa="کمتر از یک جلسه در آموزشگاه رانندگی">Less than one hour at a driving school</h2>
     <p class="lede" style="margin-inline:auto" data-en="Full access to every question, every AI explanation, and the review system. One learner, one exam, one price." data-fa="دسترسی کامل به همه‌ی سوال‌ها، همه‌ی توضیح‌های هوش مصنوعی و سیستم مرور. یک کاربر، یک آزمون، یک قیمت.">Full access to every question, every AI explanation, and the review system.</p>
     <p class="trial-line"><span aria-hidden="true">🎁</span> <b data-en="Every account starts with 72 hours free." data-fa="هر حساب با ۷۲ ساعت رایگان شروع می‌شود.">Every account starts with 72 hours free.</b> <span data-en="Everything unlocked, no card required. Decide after you've used it." data-fa="همه‌چیز باز است، بدون نیاز به کارت بانکی. بعد از استفاده تصمیم بگیرید.">Everything unlocked, no card required. Decide after you've used it.</span></p>
   </div>
 
-  <div class="price-grid">
+  <div class="price-grid" data-reveal>
     <div class="plan">
       <div class="name" data-en="Monthly" data-fa="یک ماهه">Monthly</div>
       <div><span class="amount">€20</span></div>
@@ -513,19 +836,68 @@ html[lang="en"] [data-only="fa"],html[lang="fa"] [data-only="en"]{display:none}
   <div class="note" data-en="Question bank sourced from the open QuizPatenteB dataset (MIT), last updated 2023. Always spot-check against ilportaledellautomobilista.it before your exam date." data-fa="بانک سوال از مجموعه‌داده‌ی متن‌باز QuizPatenteB (لایسنس MIT) گرفته شده و آخرین بروزرسانی آن ۲۰۲۳ است. همیشه پیش از تاریخ آزمون با سایت رسمی ilportaledellautomobilista.it مطابقت بدهید.">Question bank sourced from the open QuizPatenteB dataset (MIT), last updated 2023.</div>
 </section>
 
-<!-- ── CTA ─────────────────────────────────────────────────────────── -->
-<section class="wrap" style="text-align:center;padding-top:0">
-  <h2 data-en="Ready when you are." data-fa="هر وقت آماده بودید.">Ready when you are.</h2>
-  <p class="lede" style="margin-inline:auto" data-en="72 hours of full access, free. Opens inside Telegram — no download, no signup form, no password." data-fa="۷۲ ساعت دسترسی کامل، رایگان. داخل تلگرام باز می‌شود — بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.">72 hours of full access, free.</p>
-  <a class="btn btn-primary" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener"><span aria-hidden="true">✈</span> <span data-en="Start your free trial" data-fa="شروع دوره آزمایشی رایگان">Start your free trial</span></a>
-</section>
+<!-- ── CINEMATIC FOOTER ─────────────────────────────────────────────
+     This absorbs the old closing CTA section: it carries the same heading,
+     lede and Telegram button, so keeping both would have repeated "Ready when
+     you are." twice inside one screen. -->
+<div class="curtain" id="curtain">
+  <footer class="cine">
+    <div class="cine-aurora" aria-hidden="true"></div>
+    <div class="cine-giant" id="cine-giant" aria-hidden="true">PATENTEFA</div>
 
-<footer>
-  <div class="wrap foot-in">
-    <div class="brand" style="font-size:17px"><span class="brand-mark" style="width:27px;height:27px;font-size:14px">P</span> PatenteFa</div>
-    <div data-en="Built on Cloudflare Workers · D1 · R2 · KV" data-fa="ساخته‌شده روی Cloudflare Workers · D1 · R2 · KV">Built on Cloudflare Workers · D1 · R2 · KV</div>
-  </div>
-</footer>
+    <div class="cine-band">
+      <div class="cine-band-in" data-en="7,139 exam questions <i>✦</i> 27 official chapters <i>✦</i> Persian translation <i>✦</i> AI explanations <i>✦</i> Spaced repetition <i>✦</i> Inside Telegram" data-fa="۷۱۳۹ سوال آزمون <i>✦</i> ۲۷ فصل رسمی <i>✦</i> ترجمه‌ی فارسی <i>✦</i> توضیح هوش مصنوعی <i>✦</i> تکرار فاصله‌دار <i>✦</i> داخل تلگرام">7,139 exam questions <i>✦</i> 27 official chapters <i>✦</i> Persian translation <i>✦</i> AI explanations <i>✦</i> Spaced repetition <i>✦</i> Inside Telegram</div>
+    </div>
+
+    <div class="cine-main">
+      <h2 class="cine-title" id="cine-title" data-en="Ready when you are." data-fa="هر وقت آماده بودید.">Ready when you are.</h2>
+      <p class="cine-lede" data-en="72 hours of full access, free. Opens inside Telegram — no download, no signup form, no password." data-fa="۷۲ ساعت دسترسی کامل، رایگان. داخل تلگرام باز می‌شود — بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.">72 hours of full access, free. Opens inside Telegram — no download, no signup form, no password.</p>
+
+      <div class="cine-links" id="cine-links">
+        <div class="cine-row">
+          <a class="pill pill-primary mag" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M23.07 3.28 19.6 20.1c-.26 1.16-.95 1.44-1.92.9l-5.3-3.9-2.56 2.46c-.28.28-.52.52-1.07.52l.38-5.4 9.83-8.88c.43-.38-.09-.6-.66-.22L6.15 12.24.92 10.6c-1.14-.36-1.16-1.14.24-1.69L21.6 1.6c.95-.35 1.78.22 1.47 1.68Z"/></svg>
+            <span data-en="Start 72 hours free" data-fa="شروع ۷۲ ساعت رایگان">Start 72 hours free</span>
+          </a>
+        </div>
+
+        <div class="cine-row">
+          <a class="pill mag" href="#problem" data-en="The problem" data-fa="مسئله">The problem</a>
+          <a class="pill mag" href="#why-telegram" data-en="Why Telegram" data-fa="چرا تلگرام">Why Telegram</a>
+          <a class="pill mag" href="#agentic" data-en="How it works" data-fa="معماری">How it works</a>
+          <a class="pill mag" href="#pricing" data-en="Pricing" data-fa="قیمت">Pricing</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="cine-bottom">
+      <div class="cine-copy" data-en="© 2026 PatenteFa · Built on Cloudflare Workers" data-fa="© ۲۰۲۶ پاتنته‌فا · ساخته‌شده روی Cloudflare Workers">© 2026 PatenteFa · Built on Cloudflare Workers</div>
+
+      <div class="cine-byline">
+        <div class="pill cine-badge">
+          <span data-en="Built with" data-fa="ساخته‌شده با">Built with</span>
+          <span class="cine-heart" aria-hidden="true">❤</span>
+          <span data-en="by" data-fa="توسط">by</span>
+          <b>Sina MohammadHosseinzadeh</b>
+        </div>
+        <a class="pill cine-social mag" href="https://github.com/sinahosseinzadeh97"
+           target="_blank" rel="noopener noreferrer" aria-label="GitHub — Sina MohammadHosseinzadeh">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.12 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></svg>
+        </a>
+        <a class="pill cine-social mag" href="https://www.linkedin.com/in/sina-hosseinzade20/"
+           target="_blank" rel="noopener noreferrer" aria-label="LinkedIn — Sina MohammadHosseinzadeh">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05a3.74 3.74 0 0 1 3.37-1.85c3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13ZM7.12 20.45H3.55V9h3.57v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/></svg>
+        </a>
+      </div>
+
+      <!-- Anchor, not a button: #top already exists and html{scroll-behavior:smooth}
+           handles the easing, so this needs no JS and works if scripts fail. -->
+      <a class="pill cine-top mag" href="#top" aria-label="Back to top">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18"/></svg>
+      </a>
+    </div>
+  </footer>
+</div>
 
 <script>
 function setLang(l){
@@ -542,6 +914,259 @@ function setLang(l){
 var saved;
 try{ saved = localStorage.getItem('pf-lang'); }catch(e){}
 setLang(saved || ((navigator.language||'').toLowerCase().startsWith('fa') ? 'fa' : 'en'));
+</script>
+
+<script type="module">
+/* Hero — cursor spotlight + optional Spline 3D scene.
+   Ported from a React/framer-motion component; this page carries neither.
+
+   ┌─ SWAP THE 3D MODEL HERE ────────────────────────────────────────────┐
+   │ SCENE is the only line to change. To use your own car model:        │
+   │   1. spline.design → open/create the scene (or remix a community    │
+   │      one you are licensed to use commercially)                      │
+   │   2. Export → Code Export → copy the "Public URL"                   │
+   │   3. paste it below — it ends in /scene.splinecode                  │
+   │ Set SCENE to '' to drop the 3D entirely; the hero copy then fills   │
+   │ the full width and nothing else needs touching.                     │
+   └─────────────────────────────────────────────────────────────────────┘
+   Currently Spline's stock demo robot — placeholder, not a licensed asset. */
+const SCENE   = 'https://prod.spline.design/kZDDjO5HuC9GJUM2/scene.splinecode';
+const RUNTIME = 'https://unpkg.com/@splinetool/runtime@1.12.98/build/runtime.js';
+
+const stage = document.getElementById('hero-stage');
+const calm  = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── Spotlight ──
+   framer-motion's useSpring replaced by a rAF lerp. Fine pointers only: on
+   touch there is no hover to leave, so the glow would stick after a tap. */
+if (stage && !calm && matchMedia('(pointer: fine)').matches) {
+  let tx = 0, ty = 0, x = 0, y = 0, raf = 0;
+
+  const place = () => {
+    stage.style.setProperty('--sx', x + 'px');
+    stage.style.setProperty('--sy', y + 'px');
+  };
+  const ease = () => {
+    x += (tx - x) * 0.14;
+    y += (ty - y) * 0.14;
+    place();
+    raf = (Math.abs(tx - x) > 0.5 || Math.abs(ty - y) > 0.5) ? requestAnimationFrame(ease) : 0;
+  };
+
+  stage.addEventListener('pointermove', (e) => {
+    const r = stage.getBoundingClientRect();
+    tx = e.clientX - r.left;
+    ty = e.clientY - r.top;
+    if (!raf) raf = requestAnimationFrame(ease);
+  });
+  stage.addEventListener('pointerenter', (e) => {
+    // Snap to the entry point, or the glow sweeps in from wherever it stopped.
+    const r = stage.getBoundingClientRect();
+    x = tx = e.clientX - r.left;
+    y = ty = e.clientY - r.top;
+    place();
+    stage.classList.add('is-lit');
+  });
+  stage.addEventListener('pointerleave', () => stage.classList.remove('is-lit'));
+}
+
+/* ── 3D scene ──
+   Gated to desktop, motion-allowed, non-metered clients. Deferred to the load
+   event so ~1.3MB of scene never competes with LCP. Every failure path leaves
+   the hero copy untouched — the column simply stays empty.
+   Deliberately NOT gated on connection.effectiveType: it reads pessimistically
+   at module-eval time and settles a moment later, so it drops the scene for
+   clients that are perfectly capable. saveData is the signal users actually set. */
+const scene = document.getElementById('hero-scene');
+const wide  = matchMedia('(min-width: 901px)');
+const wants3d = SCENE && scene && !calm && !(navigator.connection || {}).saveData;
+
+// Nothing will ever occupy the 3D column — give the stage back to the copy.
+if (!wants3d && stage) stage.classList.add('no-3d');
+
+if (wants3d) {
+  let started = false;
+
+  const load3d = async () => {
+    scene.classList.add('is-loading');
+    try {
+      const { Application } = await import(RUNTIME);
+      await new Application(document.getElementById('hero-canvas')).load(SCENE);
+      scene.classList.add('is-ready');
+    } catch (err) {
+      console.warn('[hero] 3D scene unavailable, showing copy only:', err);
+    } finally {
+      scene.classList.remove('is-loading');
+    }
+  };
+
+  const maybeLoad = () => {
+    // innerWidth is 0 in a hidden/background tab, so the width test can fail at
+    // load and pass later. Re-check on change instead of deciding once, or a page
+    // opened narrow (or in a background tab) never gets the scene after resizing.
+    if (started || !wide.matches) return;
+    started = true;
+    // A deferred module can also evaluate after `load` has already fired.
+    if (document.readyState === 'complete') load3d();
+    else addEventListener('load', load3d, { once: true });
+  };
+
+  maybeLoad();
+  wide.addEventListener('change', maybeLoad);
+}
+</script>
+
+<script type="module">
+/* Scroll reveals + stat count-up, using motion's vanilla DOM API — no React.
+   Bundle is self-hosted (scripts/motion.entry.js → npm run vendor:motion) rather
+   than CDN-loaded: much of the audience browses from Iran, where public JS CDNs
+   are unreliable, and a page whose content is hidden pending a blocked script is
+   worse than a page with no animation at all. */
+const html = document.documentElement;
+
+/* The cinematic footer is viewport-fixed at all times and merely clipped out of
+   sight, so its links stay in the tab order while invisible — a keyboard user
+   would tab into controls they cannot see. inert removes them until the curtain
+   is actually on screen. Applied from JS only: if this never runs, the footer
+   stays fully reachable rather than permanently unreachable. Deliberately
+   outside the motion block below, because this matters under
+   prefers-reduced-motion too, where that block never executes. */
+const curtainEl = document.getElementById('curtain');
+const cineEl = curtainEl && curtainEl.querySelector('.cine');
+if (cineEl && 'IntersectionObserver' in window) {
+  cineEl.setAttribute('inert', '');
+  new IntersectionObserver((entries) => {
+    for (const e of entries) {
+      if (e.isIntersecting) cineEl.removeAttribute('inert');
+      else cineEl.setAttribute('inert', '');
+    }
+  }).observe(curtainEl);
+}
+
+// The <head> script only arms this when motion is welcome; nothing to do otherwise.
+if (html.classList.contains('anim')) {
+  try {
+    const { animate, inView, stagger, scroll } = await import('/js/vendor/motion.js');
+    const EASE = [0.16, 1, 0.3, 1];
+
+    // Marked groups stagger their children in as they arrive. Each observer
+    // stops itself after firing — a reveal that replays on every scroll-back
+    // stops reading as arrival and starts reading as a glitch.
+    for (const group of document.querySelectorAll('[data-reveal]')) {
+      const stop = inView(group, () => {
+        // Safety net already released the hold (background tab, slow load)? The
+        // content is on screen — fading it in now would read as a glitch.
+        if (!html.classList.contains('anim')) { stop(); return; }
+        // Release the CSS hold in the same synchronous block as the animation.
+        // motion drives opacity through WAAPI, which reverts to the underlying
+        // style on finish — leave the hold in place and everything snaps back to
+        // invisible the moment the animation ends. The [0, …] from-keyframe
+        // covers the gap, so dropping it first cannot flash.
+        window.__motionReady = true;   // proof of life: only now stand the safety net down
+        group.setAttribute('data-revealed', '');
+        animate(
+          Array.from(group.children),
+          { opacity: [0, 1], y: [14, 0] },
+          { duration: 0.5, delay: stagger(0.06), ease: EASE }
+        );
+        stop();
+      }, { amount: 0.2 });
+    }
+
+    // Count the proof numbers up on arrival. Targets are parsed from the DOM so
+    // the copy stays the single source of truth — no figures duplicated in JS.
+    //
+    // Hand-rolled rather than animate(0, target, { onUpdate }): this bundle's
+    // animate() only drives elements. Handed a plain number pair it returns
+    // controls that never tick — measured at zero onUpdate calls on a visible
+    // page — so the count-up silently did nothing. If rAF never runs the text
+    // simply stays at its correct final value.
+    const countUp = (el, target) => {
+      const DURATION = 1400;
+      const started = performance.now();
+      const tick = (now) => {
+        const p = Math.min((now - started) / DURATION, 1);
+        const eased = 1 - Math.pow(1 - p, 3);   // easeOutCubic
+        el.textContent = Math.round(target * eased).toLocaleString('en-US');
+        if (p < 1) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    };
+
+    for (const el of document.querySelectorAll('.stat .n, .traction .big')) {
+      const target = Number(el.textContent.replace(/[^\d.]/g, ''));
+      if (!Number.isFinite(target) || target === 0) continue;   // "0 servers" has nowhere to count from
+      const stop = inView(el, () => { countUp(el, target); stop(); }, { amount: 0.6 });
+    }
+    // ── Cinematic footer ──────────────────────────────────────────────
+    // No CSS hold here, unlike the section reveals: these elements are visible
+    // by default and the animation supplies its own [from, to] keyframes. The
+    // curtain hides them until it is scrolled to anyway, so there is nothing to
+    // flash — and nothing that can strand them at opacity 0 if this code fails.
+    if (curtainEl) {
+      const giant = document.getElementById('cine-giant');
+      const parts = [
+        document.getElementById('cine-title'),
+        document.querySelector('.cine-lede'),
+        document.getElementById('cine-links'),
+      ].filter(Boolean);
+
+      // Wordmark drifts up as the curtain rises — tied to scroll position, not time.
+      // Driven by a progress callback rather than scroll(animate(...)): handing
+      // animate() a mix of transform and opacity splits them into separate
+      // underlying animations that scroll() then drives over different ranges —
+      // measured opacity running at exactly 2x the transform, leaving the
+      // wordmark stranded at scale(.94) at full scroll. Writing both from one
+      // progress value keeps them locked together.
+      if (giant) {
+        scroll((progress) => {
+          giant.style.opacity = progress;
+          giant.style.transform =
+            `translateY(${(1 - progress) * 70}px) scale(${0.88 + progress * 0.12})`;
+        }, { target: curtainEl, offset: ['start end', 'end end'] });
+      }
+
+      if (parts.length) {
+        const stopFooter = inView(curtainEl, () => {
+          animate(parts, { opacity: [0, 1], y: [40, 0] },
+            { duration: 0.7, delay: stagger(0.09), ease: EASE });
+          stopFooter();
+        }, { amount: 0.35 });
+      }
+
+      // Magnetic pills. Pointer devices only — on touch there is no pointerleave
+      // to settle them back, so they would stick where the finger lifted.
+      if (matchMedia('(pointer: fine)').matches) {
+        for (const el of document.querySelectorAll('.cine .mag')) {
+          let queued = 0, dx = 0, dy = 0;
+          el.addEventListener('pointermove', (e) => {
+            const r = el.getBoundingClientRect();
+            dx = e.clientX - r.left - r.width / 2;
+            dy = e.clientY - r.top - r.height / 2;
+            // One animate() per frame, not per event: pointermove fires far
+            // faster than 60Hz and each call starts a fresh animation.
+            if (queued) return;
+            queued = requestAnimationFrame(() => {
+              queued = 0;
+              animate(el, {
+                x: dx * 0.28, y: dy * 0.38,
+                rotateX: -dy * 0.12, rotateY: dx * 0.12, scale: 1.04,
+              }, { duration: 0.4, ease: 'easeOut' });
+            });
+          });
+          el.addEventListener('pointerleave', () => {
+            if (queued) { cancelAnimationFrame(queued); queued = 0; }
+            animate(el, { x: 0, y: 0, rotateX: 0, rotateY: 0, scale: 1 },
+              { type: 'spring', stiffness: 220, damping: 14 });
+          });
+        }
+      }
+    }
+  } catch (err) {
+    html.classList.remove('anim');   // fail open — content visible, just unanimated
+    console.warn('[motion] reveals disabled:', err);
+  }
+}
 </script>
 </body>
 </html>
