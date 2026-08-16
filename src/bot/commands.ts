@@ -10,6 +10,9 @@ import {
   answerCallbackQuery,
   editMessageText,
   notifyAdminNewUserRequest,
+  notifySupportMessage,
+  sendSupportReply,
+  esc,
 } from "../lib/telegram.js";
 import {
   upsertUser,
@@ -19,8 +22,11 @@ import {
   getStreak,
   getTopicAccuracy,
   getUserByTelegramId,
+  insertSupportMessage,
 } from "../db/queries.js";
 import { checkAllowList } from "../lib/auth.js";
+import { normalizeSupportText } from "../lib/support.js";
+import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
 
 export interface BotContext {
   db: D1Database;
@@ -30,11 +36,6 @@ export interface BotContext {
   miniAppUrl: string;
   /** Used to park the "admin is replying to user X" state between two updates. */
   kv: KVNamespace;
-}
-
-/** Escape text that gets interpolated into parse_mode: "HTML" messages. */
-function esc(s: string): string {
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /**
@@ -50,9 +51,8 @@ const replyKey = (chatId: number | string) => `support:reply:${chatId}`;
  * Is this chat the admin side of the relay (the log channel, or an admin's DM)?
  *
  * Deliberately does not use checkAllowList(): that helper throws rather than
- * returning, and honours a "*" wildcard — which here would classify every
- * customer as an admin and silently disable the inbound leg of the relay.
- * Numeric id match only, fail-closed on an empty allow-list.
+ * returning. This decision needs a boolean because it routes normal customer
+ * messages; numeric id match only, fail-closed on an empty/wildcard list.
  */
 export function isAdminChat(
   chatId: number | string,
@@ -62,24 +62,19 @@ export function isAdminChat(
   const channel = ctx.logChannelId || "@patente_fa_logs";
   if (String(chatId) === String(channel)) return true;
 
-  return (ctx.allowedIds || "")
+  return isAdminActor(telegramUserId, ctx.allowedIds);
+}
+
+/** Admin actions must resolve to a concrete, configured Telegram account. */
+export function isAdminActor(
+  telegramUserId: number,
+  allowedIds: string | undefined
+): boolean {
+  return (allowedIds || "")
     .split(",")
     .map((s) => Number(s.trim()))
     .filter(Boolean)
     .includes(telegramUserId);
-}
-
-/** Inline keyboard shown on an inbound customer message in the log channel. */
-function supportCardKeyboard(targetUserId: number) {
-  return {
-    inline_keyboard: [
-      [{ text: "💬 پاسخ به کاربر", callback_data: `reply_user:${targetUserId}` }],
-      [
-        { text: "✅ تایید دسترسی", callback_data: `approve_user:${targetUserId}` },
-        { text: "❌ رد درخواست", callback_data: `reject_user:${targetUserId}` },
-      ],
-    ],
-  };
 }
 
 interface TelegramUpdate {
@@ -120,6 +115,14 @@ export async function handleUpdate(
     const cb = update.callback_query;
     const data = cb.data || "";
 
+    // Every callback handled below mutates admin state (approval or private
+    // messaging). Telegram signs the actor id in callback_query.from; require a
+    // concrete configured admin even when the button lives in the log channel.
+    if (!isAdminActor(cb.from.id, ctx.allowedIds)) {
+      await answerCallbackQuery(ctx.token, cb.id, "دسترسی مدیریت ندارید.");
+      return;
+    }
+
     if (data === "admin_list_users") {
       await answerCallbackQuery(ctx.token, cb.id, "در حال بروزرسانی لیست کاربران… 🔄");
       if (cb.message) {
@@ -132,6 +135,10 @@ export async function handleUpdate(
       const targetUserId = Number(data.split(":")[1]);
       const chatId = cb.message?.chat.id;
 
+      if (!Number.isSafeInteger(targetUserId) || targetUserId <= 0) {
+        await answerCallbackQuery(ctx.token, cb.id, "شناسه کاربر نامعتبر است.");
+        return;
+      }
       if (!chatId) {
         await answerCallbackQuery(ctx.token, cb.id, "این دکمه فقط داخل کانال کار می‌کند.");
         return;
@@ -159,6 +166,10 @@ export async function handleUpdate(
 
     if (data.startsWith("approve_user:")) {
       const targetUserId = Number(data.split(":")[1]);
+      if (!Number.isSafeInteger(targetUserId) || targetUserId <= 0) {
+        await answerCallbackQuery(ctx.token, cb.id, "شناسه کاربر نامعتبر است.");
+        return;
+      }
       await setUserApproval(ctx.db, targetUserId, 1);
       await answerCallbackQuery(ctx.token, cb.id, "کاربر با موفقیت تایید شد! ✅");
 
@@ -183,6 +194,10 @@ export async function handleUpdate(
 
     if (data.startsWith("reject_user:") || data.startsWith("revoke_user:")) {
       const targetUserId = Number(data.split(":")[1]);
+      if (!Number.isSafeInteger(targetUserId) || targetUserId <= 0) {
+        await answerCallbackQuery(ctx.token, cb.id, "شناسه کاربر نامعتبر است.");
+        return;
+      }
       await setUserApproval(ctx.db, targetUserId, -1);
       await answerCallbackQuery(ctx.token, cb.id, "دسترسی کاربر لغو گردید 🚫");
 
@@ -214,16 +229,22 @@ export async function handleUpdate(
   const username = msg.from?.username;
   const chatId = msg.chat.id;
   const text = msg.text.trim();
+  const adminSide = isAdminChat(chatId, telegramUserId, ctx);
 
   // Command dispatch
   if (text.startsWith("/start") || text.startsWith("/panel") || text.startsWith("/admin")) {
     await handleStart(telegramUserId, firstName, username, chatId, ctx);
   } else if (text.startsWith("/users") || text.startsWith("/list")) {
-    await handleListUsers(chatId, ctx);
+    if (adminSide) await handleListUsers(chatId, ctx);
+    else await sendMessage(ctx.token, { chat_id: chatId, text: "دسترسی مدیریت ندارید." });
   } else if (text.startsWith("/approve")) {
+    if (!adminSide) {
+      await sendMessage(ctx.token, { chat_id: chatId, text: "دسترسی مدیریت ندارید." });
+      return;
+    }
     const parts = text.split(" ");
     const targetId = Number(parts[1]);
-    if (targetId) {
+    if (Number.isSafeInteger(targetId) && targetId > 0) {
       await setUserApproval(ctx.db, targetId, 1);
       await sendMessage(ctx.token, {
         chat_id: chatId,
@@ -238,9 +259,13 @@ export async function handleUpdate(
       });
     }
   } else if (text.startsWith("/revoke") || text.startsWith("/block")) {
+    if (!adminSide) {
+      await sendMessage(ctx.token, { chat_id: chatId, text: "دسترسی مدیریت ندارید." });
+      return;
+    }
     const parts = text.split(" ");
     const targetId = Number(parts[1]);
-    if (targetId) {
+    if (Number.isSafeInteger(targetId) && targetId > 0) {
       await setUserApproval(ctx.db, targetId, -1);
       await sendMessage(ctx.token, {
         chat_id: chatId,
@@ -278,16 +303,21 @@ export async function handleUpdate(
  *  - admin side: a queued reply target turns the next channel post into a DM
  *  - user side:  any plain message to the bot surfaces in the log channel
  * The admin's own Telegram account is never exposed to the customer.
+ *
+ * Both legs are also written to support_messages, so the same conversation is
+ * readable in the Mini App support screen and the admin inbox — a thread
+ * started here can be continued there and vice versa.
  */
 async function relayPlainText(
-  text: string,
+  rawText: string,
   telegramUserId: number,
   firstName: string,
   username: string | undefined,
   chatId: number | string,
   ctx: BotContext
 ): Promise<void> {
-  const channel = ctx.logChannelId || "@patente_fa_logs";
+  const text = normalizeSupportText(rawText);
+  if (!text) return;
 
   if (isAdminChat(chatId, telegramUserId, ctx)) {
     const pending = await ctx.kv.get(replyKey(chatId));
@@ -296,38 +326,43 @@ async function relayPlainText(
     const targetUserId = Number(pending);
     await ctx.kv.delete(replyKey(chatId));
 
-    const delivered = await sendMessage(ctx.token, {
-      chat_id: targetUserId,
-      text:
-        `💬 <b>پیام از پشتیبانی PatenteFa</b>\n\n` +
-        `${esc(text)}\n\n` +
-        `<i>برای پاسخ، همین‌جا بنویسید.</i>`,
-      parse_mode: "HTML",
-    });
+    const target = await getUserByTelegramId(ctx.db, targetUserId);
+    if (!target) {
+      await sendMessage(ctx.token, {
+        chat_id: chatId,
+        text: `⚠️ کاربر <code>${targetUserId}</code> در پایگاه داده پیدا نشد.`,
+        parse_mode: "HTML",
+      });
+      return;
+    }
+
+    const delivered = await persistThenDeliverSupportReply(
+      () => insertSupportMessage(ctx.db, target.id, "out", text, "telegram"),
+      () => sendSupportReply(ctx.token, target.telegram_user_id, text)
+    );
 
     await sendMessage(ctx.token, {
       chat_id: chatId,
       text: delivered
         ? `✅ پیام برای <code>${targetUserId}</code> ارسال شد.`
-        : `⚠️ ارسال پیام به <code>${targetUserId}</code> ناموفق بود. ممکن است کاربر ربات را بلاک کرده باشد یا هرگز /start نزده باشد.`,
+        : `⚠️ ارسال مستقیم به <code>${targetUserId}</code> ناموفق بود (کاربر ربات را استارت نکرده یا بلاک کرده). پیام در پنل پشتیبانی مینی‌اپ برای او باقی می‌ماند.`,
       parse_mode: "HTML",
       reply_markup: { inline_keyboard: [[{ text: "💬 ارسال پیام دیگر", callback_data: `reply_user:${targetUserId}` }]] },
     });
     return;
   }
 
-  // Customer side — forward into the log channel with a reply affordance.
-  const usernameSafe = username ? "@" + esc(username) : "ندارد";
-  await sendMessage(ctx.token, {
-    chat_id: channel,
-    text:
-      `📨 <b>پیام جدید از کاربر</b>\n\n` +
-      `👤 <b>نام</b>: ${esc(firstName)}\n` +
-      `🏷️ <b>نام کاربری</b>: ${usernameSafe}\n` +
-      `🆔 <b>آیدی</b>: <code>${telegramUserId}</code>\n\n` +
-      `💬 «<i>${esc(text)}</i>»`,
-    parse_mode: "HTML",
-    reply_markup: supportCardKeyboard(telegramUserId),
+  // Customer side — record the message, then surface it in the log channel
+  // with a reply affordance.
+  const user = await upsertUser(ctx.db, telegramUserId, firstName, username);
+  await insertSupportMessage(ctx.db, user.id, "in", text, "telegram");
+
+  await notifySupportMessage(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
+    telegramUserId,
+    firstName,
+    username,
+    text,
+    via: "telegram",
   });
 
   await sendMessage(ctx.token, {
@@ -411,8 +446,7 @@ async function handleStart(
   chatId: number,
   ctx: BotContext
 ): Promise<void> {
-  const allowedParts = (ctx.allowedIds || "").split(",").map((s) => s.trim()).filter(Boolean);
-  const isAdmin = allowedParts.map(Number).includes(telegramUserId);
+  const isAdmin = isAdminActor(telegramUserId, ctx.allowedIds);
 
   const dbUser = await upsertUser(ctx.db, telegramUserId, firstName, username, isAdmin);
 

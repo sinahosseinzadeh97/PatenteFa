@@ -14,6 +14,9 @@ export function renderAdminScreen(): string {
     <!-- ── Section 1: Header + KPI bar ────────────────────────────────────── -->
     <div class="admin-header-row">
       <div class="admin-header-left">
+        <button type="button" onclick="App.handleBackNavigation()" class="screen-back-btn" aria-label="بازگشت به خانه">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="screen-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
+        </button>
         <span class="admin-header-icon" aria-hidden="true">🎛️</span>
         <div>
           <h1 class="admin-title">پنل مدیریت PatenteFa</h1>
@@ -72,7 +75,18 @@ export function renderAdminScreen(): string {
       </div>
     </div>
 
-    <!-- ── Section 3: User list ─────────────────────────────────────────────── -->
+    <!-- ── Section 3: Support inbox ────────────────────────────────────────── -->
+    <div class="admin-section-card">
+      <div class="admin-section-header-row">
+        <h2 class="admin-section-heading">📨 صندوق پیام‌های پشتیبانی</h2>
+        <span id="admin-support-unread" class="admin-support-unread-pill" hidden></span>
+      </div>
+      <div id="admin-support-threads" class="admin-support-threads">
+        <div class="admin-loading-note">در حال بارگذاری…</div>
+      </div>
+    </div>
+
+    <!-- ── Section 4: User list ─────────────────────────────────────────────── -->
     <div class="admin-filter-row">
       <label for="admin-search-input" class="visually-hidden">جستجوی کاربر</label>
       <input type="text" id="admin-search-input" placeholder="🔍 جستجوی کاربر با نام یا آیدی…"
@@ -91,9 +105,40 @@ export function renderAdminScreen(): string {
     </div>
     <div id="admin-users-table" class="admin-users-table"></div>
 
-    <!-- ── Section 4: Live event stream ────────────────────────────────────── -->
+    <!-- ── Section 5: Live event stream ────────────────────────────────────── -->
     <h2 class="admin-events-heading">⚡ لاگ زنده رویدادها</h2>
     <div id="admin-events-stream" class="admin-events-stream"></div>
+  </div>
+</div>
+`;
+}
+
+/**
+ * Support thread panel. Opens from the inbox or from any row in the user list,
+ * so a conversation can be started with a user who has never written first.
+ * Nothing here shows or sends an admin identity — replies leave as the bot.
+ */
+export function renderAdminSupportModal(): string {
+  return `
+<div id="admin-support-modal" class="admin-support-modal" role="dialog" aria-modal="true" aria-labelledby="admin-support-modal-title">
+  <div class="admin-user-modal-overlay" onclick="App.closeAdminThread()"></div>
+  <div class="admin-user-modal-panel">
+    <div class="admin-user-modal-header-row">
+      <div>
+        <h3 id="admin-support-modal-title" class="admin-user-modal-title">💬 گفتگو با کاربر</h3>
+        <div id="admin-support-modal-sub" class="admin-support-modal-sub">پاسخ به‌صورت ناشناس از طرف ربات ارسال می‌شود</div>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" onclick="App.closeAdminThread()">✕ بستن</button>
+    </div>
+
+    <div id="admin-support-thread" class="support-thread admin-support-thread" role="log" aria-live="polite"></div>
+
+    <form onsubmit="App.sendAdminReply(event)" class="support-form">
+      <label for="admin-support-input" class="visually-hidden">پاسخ به کاربر</label>
+      <textarea id="admin-support-input" class="support-input" rows="2" maxlength="2000"
+        placeholder="پاسخ خود را بنویسید…"></textarea>
+      <button type="submit" id="admin-support-send-btn" class="btn btn-primary support-send-btn">ارسال</button>
+    </form>
   </div>
 </div>
 `;

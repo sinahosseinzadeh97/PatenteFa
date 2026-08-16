@@ -4,6 +4,7 @@
  */
 
 import { addDaysISO, todayLocalISO } from "../lib/srs.js";
+import { unreadDirectionFor, type SupportDirection } from "../lib/support.js";
 
 export interface DbUser {
   id: number;
@@ -148,6 +149,18 @@ export async function getUserByTelegramId(
     .prepare(`SELECT * FROM users WHERE telegram_user_id = ?`)
     .bind(telegramUserId)
     .first<DbUser>();
+}
+
+/**
+ * Look up by the internal row id. The admin dashboard identifies users by
+ * users.id, while everything that talks to Telegram needs telegram_user_id —
+ * this is the translation between the two.
+ */
+export async function getUserById(
+  db: D1Database,
+  userId: number
+): Promise<DbUser | null> {
+  return db.prepare(`SELECT * FROM users WHERE id = ?`).bind(userId).first<DbUser>();
 }
 
 export async function getAllUsers(db: D1Database): Promise<DbUser[]> {
@@ -1372,4 +1385,138 @@ export async function getApiCostByAction(db: D1Database): Promise<ApiCostByActio
     calls_total: row.calls_total || 0,
     cost_total: parseFloat((row.cost_total || 0).toFixed(5)),
   }));
+}
+
+// ── Support inbox ────────────────────────────────────────────────────────────
+// One thread per user, shared by the Mini App and the Telegram relay.
+// See migrations/0010_support_messages.sql for the direction/read_at semantics.
+
+export interface DbSupportMessage {
+  id: number;
+  user_id: number;
+  direction: SupportDirection;
+  body: string;
+  source: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface SupportThreadSummary {
+  user_id: number;
+  telegram_user_id: number;
+  first_name: string | null;
+  username: string | null;
+  is_approved: number;
+  last_body: string | null;
+  last_direction: SupportDirection | null;
+  last_at: string | null;
+  unread: number;
+}
+
+export async function insertSupportMessage(
+  db: D1Database,
+  userId: number,
+  direction: SupportDirection,
+  body: string,
+  source: "app" | "telegram"
+): Promise<void> {
+  await db
+    .prepare(
+      `INSERT INTO support_messages (user_id, direction, body, source) VALUES (?, ?, ?, ?)`
+    )
+    .bind(userId, direction, body, source)
+    .run();
+}
+
+/** Oldest first — the thread renders top-to-bottom like a chat. */
+export async function getSupportThread(
+  db: D1Database,
+  userId: number,
+  limit: number = 100
+): Promise<DbSupportMessage[]> {
+  const result = await db
+    .prepare(
+      `SELECT * FROM (
+         SELECT * FROM support_messages WHERE user_id = ?
+         ORDER BY created_at DESC, id DESC LIMIT ?
+       ) ORDER BY created_at ASC, id ASC`
+    )
+    .bind(userId, limit)
+    .all<DbSupportMessage>();
+  return result.results;
+}
+
+/** Mark everything the given side had not yet seen as read. */
+export async function markSupportThreadRead(
+  db: D1Database,
+  userId: number,
+  side: "admin" | "user"
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE support_messages SET read_at = datetime('now')
+       WHERE user_id = ? AND direction = ? AND read_at IS NULL`
+    )
+    .bind(userId, unreadDirectionFor(side))
+    .run();
+}
+
+export async function countUnreadSupport(
+  db: D1Database,
+  userId: number,
+  side: "admin" | "user"
+): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM support_messages
+       WHERE user_id = ? AND direction = ? AND read_at IS NULL`
+    )
+    .bind(userId, unreadDirectionFor(side))
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
+/**
+ * Admin inbox: every user who has ever exchanged a message, newest activity
+ * first, unread threads pinned to the top. Correlated subqueries rather than
+ * joins for the same reason as getAdminUsersList — a join would multiply the
+ * aggregates against each other.
+ */
+export async function getSupportThreads(
+  db: D1Database,
+  limit: number = 50
+): Promise<SupportThreadSummary[]> {
+  const result = await db
+    .prepare(
+      `SELECT
+         u.id AS user_id,
+         u.telegram_user_id,
+         u.first_name,
+         u.username,
+         u.is_approved,
+         (SELECT m.body      FROM support_messages m WHERE m.user_id = u.id
+            ORDER BY m.created_at DESC, m.id DESC LIMIT 1)              AS last_body,
+         (SELECT m.direction FROM support_messages m WHERE m.user_id = u.id
+            ORDER BY m.created_at DESC, m.id DESC LIMIT 1)              AS last_direction,
+         (SELECT MAX(m.created_at) FROM support_messages m WHERE m.user_id = u.id) AS last_at,
+         (SELECT COUNT(*) FROM support_messages m
+            WHERE m.user_id = u.id AND m.direction = 'in' AND m.read_at IS NULL)   AS unread
+       FROM users u
+       WHERE EXISTS (SELECT 1 FROM support_messages m WHERE m.user_id = u.id)
+       ORDER BY (unread > 0) DESC, last_at DESC
+       LIMIT ?`
+    )
+    .bind(limit)
+    .all<SupportThreadSummary>();
+  return result.results;
+}
+
+/** Total unread inbound messages — the badge on the admin panel. */
+export async function countUnreadSupportTotal(db: D1Database): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM support_messages WHERE direction = 'in' AND read_at IS NULL`
+    )
+    .first<{ n: number }>();
+  return row?.n ?? 0;
 }

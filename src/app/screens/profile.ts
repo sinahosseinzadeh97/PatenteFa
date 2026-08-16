@@ -12,7 +12,7 @@ export function renderProfileScreen(): string {
 
     <!-- Back header bar -->
     <div class="profile-header-bar">
-      <button type="button" onclick="App.showScreen('home','back')" class="profile-back-btn" aria-label="بازگشت به خانه">
+      <button type="button" onclick="App.handleBackNavigation()" class="profile-back-btn" aria-label="بازگشت به خانه">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="profile-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
       </button>
       <h1 class="profile-title">پروفایل</h1>
@@ -70,6 +70,17 @@ export function renderProfileScreen(): string {
         <span class="tile-label">لغت یادگرفته</span>
       </div>
     </div>
+
+    <!-- ── Contact support ── -->
+    <button type="button" class="card profile-support-card" onclick="App.openSupport()">
+      <span class="profile-support-icon" aria-hidden="true">💬</span>
+      <span class="profile-support-text">
+        <span class="profile-support-title">پشتیبانی و ارتباط با مدیریت</span>
+        <span class="profile-support-sub">سوال، مشکل یا پیشنهاد؟ همین‌جا بنویسید</span>
+      </span>
+      <span id="profile-support-badge" class="profile-support-badge" hidden></span>
+      <span class="profile-support-chevron" aria-hidden="true">‹</span>
+    </button>
 
     <!-- ─────────────── ANALYSIS SECTION ─────────────── -->
     <div class="profile-analysis-section">

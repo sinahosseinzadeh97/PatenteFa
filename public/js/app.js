@@ -66,7 +66,10 @@ App.renderRichText = function(el, text) {
     if (!res.ok) {
       const err = await res.json().catch(() => ({ error: 'خطای شبکه' }));
       if (res.status === 403 && err.isApproved === false) {
-        App.showPendingScreen(err.error);
+        // Not while the user is in the support thread: that screen is reachable
+        // without approval on purpose, and a background call (telemetry) hitting
+        // the gate would otherwise throw them out mid-message.
+        if (state.currentScreen !== 'support') App.showPendingScreen(err.error);
         throw new Error(err.error || 'در انتظار تایید مدیریت');
       }
       throw new Error(err.error || 'درخواست ناموفق بود');
@@ -89,6 +92,7 @@ App.renderRichText = function(el, text) {
     startedAt: null,
     timerInterval: null,
     secondsLeft: 1200,
+    examReturnScreen: 'home',
     translateOpen: false,
     translationCache: {},
     theoryCache: {},    // §15.3: per-question theory explanations (lazy)
@@ -169,7 +173,9 @@ App.renderRichText = function(el, text) {
     if (name === 'reels')   App.loadReels();
     if (name === 'admin')   App.loadAdminData();
     if (name === 'profile') App.loadProfile();
+    if (name === 'support') App.loadSupport();
 
+    App.syncTelegramBackButton();
     App.trackEvent('screen_view', { screen: name });
   };
 
@@ -195,6 +201,9 @@ App.renderRichText = function(el, text) {
   state.costBreakdown = [];
   state.costTab = 'today';
   state.adminSearchTimer = null;
+  state.adminThreadUserId = null;   // open support thread in the admin panel
+  state.adminThreadName = '';
+  state.supportFrom = null;         // screen to return to from the support thread
 
   // ── §18.3: relative time formatter ──────────────────────────────────────────
   App.relativeTime = function(isoStr) {
@@ -292,11 +301,12 @@ App.renderRichText = function(el, text) {
 
   App.loadAdminData = async function() {
     try {
-      const [overview, usersRes, eventsRes, costRes] = await Promise.all([
+      const [overview, usersRes, eventsRes, costRes, supportRes] = await Promise.all([
         api('GET', '/admin/overview'),
         api('GET', '/admin/users'),
         api('GET', '/admin/events'),
         api('GET', '/admin/cost'),
+        api('GET', '/admin/support'),
       ]);
 
       state.adminUsers = usersRes.users || [];
@@ -325,8 +335,100 @@ App.renderRichText = function(el, text) {
 
       App.renderAdminUsers(state.adminUsers);
       App.renderAdminEvents(eventsRes.events || []);
+      App.renderAdminSupport(supportRes.threads || [], supportRes.unreadTotal || 0);
     } catch (err) {
       App.toast('خطا در دریافت اطلاعات مدیریت (فقط ادمین دسترسی دارد)');
+    }
+  };
+
+  // ── Support inbox (admin side) ──────────────────────────────────────────────
+  App.renderAdminSupport = function(threads, unreadTotal) {
+    var box = document.getElementById('admin-support-threads');
+    var pill = document.getElementById('admin-support-unread');
+    if (pill) {
+      pill.textContent = unreadTotal > 0 ? unreadTotal + ' پیام خوانده‌نشده' : '';
+      pill.hidden = !(unreadTotal > 0);
+    }
+    if (!box) return;
+
+    if (!threads || threads.length === 0) {
+      box.innerHTML = '<div class="admin-loading-note">هنوز پیامی از کاربران دریافت نشده. برای شروع گفتگو، دکمه 💬 روی کارت هر کاربر را بزنید.</div>';
+      return;
+    }
+
+    var html = '';
+    threads.forEach(function(t) {
+      var name = App.escapeHtml(t.first_name || 'کاربر');
+      var preview = App.escapeHtml(String(t.last_body || '').slice(0, 80));
+      var when = App.relativeTime(t.last_at) || '';
+      var arrow = t.last_direction === 'out' ? '↩️' : '📨';
+      // Only the id crosses into the onclick attribute — a name interpolated
+      // there would be re-decoded by the HTML parser and could break out of the
+      // JS string. The panel takes its title from the API response instead.
+      html += '<button type="button" class="admin-support-row' + (t.unread > 0 ? ' unread' : '') + '"' +
+        ' onclick="App.openAdminThread(' + t.user_id + ')">' +
+        '<div class="admin-support-row-top">' +
+          '<span class="admin-support-row-name">' + name +
+            (t.username ? ' <span class="admin-user-username">@' + App.escapeHtml(t.username) + '</span>' : '') +
+          '</span>' +
+          (t.unread > 0 ? '<span class="admin-support-row-badge">' + t.unread + '</span>' : '<span class="admin-support-row-time">' + App.escapeHtml(when) + '</span>') +
+        '</div>' +
+        '<div class="admin-support-row-preview">' + arrow + ' ' + preview + '</div>' +
+      '</button>';
+    });
+    box.innerHTML = html;
+  };
+
+  App.openAdminThread = async function(userId) {
+    var modal = document.getElementById('admin-support-modal');
+    var box = document.getElementById('admin-support-thread');
+    var title = document.getElementById('admin-support-modal-title');
+    if (!modal || !box) return;
+
+    state.adminThreadUserId = userId;
+    state.adminThreadName = 'کاربر';
+    modal.style.display = 'flex';
+    if (title) title.textContent = '💬 گفتگو با کاربر';
+    box.innerHTML = '<div class="support-empty">در حال بارگذاری…</div>';
+
+    try {
+      var data = await api('GET', '/admin/support/' + userId);
+      state.adminThreadName = (data.user && data.user.firstName) || 'کاربر';
+      if (title) title.textContent = '💬 گفتگو با ' + state.adminThreadName;
+      App.renderSupportThread(box, data.messages || [], 'admin', state.adminThreadName);
+    } catch (err) {
+      box.innerHTML = '<div class="support-empty">دریافت گفتگو ناموفق بود.</div>';
+    }
+  };
+
+  App.closeAdminThread = function() {
+    var modal = document.getElementById('admin-support-modal');
+    if (modal) modal.style.display = 'none';
+    state.adminThreadUserId = null;
+    App.loadAdminData(); // refresh unread counts after reading a thread
+  };
+
+  App.sendAdminReply = async function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var input = document.getElementById('admin-support-input');
+    var btn = document.getElementById('admin-support-send-btn');
+    var box = document.getElementById('admin-support-thread');
+    var text = input ? input.value.trim() : '';
+    if (!text || !state.adminThreadUserId) return;
+
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    try {
+      var res = await api('POST', '/admin/support/' + state.adminThreadUserId + '/reply', { text: text });
+      if (input) input.value = '';
+      var data = await api('GET', '/admin/support/' + state.adminThreadUserId);
+      App.renderSupportThread(box, data.messages || [], 'admin', state.adminThreadName);
+      App.toast(res.delivered
+        ? 'پیام در مینی‌اپ ثبت و در تلگرام ارسال شد ✅'
+        : 'پیام در مینی‌اپ ثبت شد، اما ارسال تلگرام ناموفق بود؛ کاربر همچنان آن را داخل برنامه می‌بیند.');
+    } catch (err) {
+      App.toast(err.message || 'ارسال پاسخ ناموفق بود');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'ارسال'; }
     }
   };
 
@@ -388,6 +490,7 @@ App.renderRichText = function(el, text) {
         // Actions
         '<div class="admin-user-actions-row">' +
           '<button type="button" class="btn btn-ghost btn-sm" onclick="App.viewAdminUserTimeline(' + u.id + ')">📊 لاگ</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="App.openAdminThread(' + u.id + ')">💬 پیام</button>' +
           (u.is_approved === 1
             ? '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)">🚫 لغو</button>'
             : '<button type="button" class="btn btn-vero btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', 1)">✅ تایید</button>'
@@ -565,6 +668,9 @@ App.renderRichText = function(el, text) {
     if (msgEl && msg) msgEl.textContent = msg;
     const nav = document.getElementById('bottom-nav');
     if (nav) nav.style.display = 'none';
+    state.currentScreen = 'pending';
+    App.syncTelegramBackButton();
+    App.refreshSupportBadge();
   };
 
   App.checkApprovalStatus = async function() {
@@ -598,16 +704,165 @@ App.renderRichText = function(el, text) {
       const rewardBox = document.getElementById('fun-reward-box');
       if (rewardBox) rewardBox.style.display = 'block';
       if (btn) btn.textContent = 'پاسخ ارسال شد ✓';
-      App.toast('پاسخ شما برای سینا ارسال شد! 💌');
+      App.toast('درخواست شما برای پشتیبانی ارسال شد! 💌');
     } catch (e) {
       App.toast('پاسخ شما ثبت گردید ✓');
     }
   };
 
-  App.navigateBack = function() {
-    const dest = state.prevScreen || 'home';
-    App.showScreen(dest, 'back');
+  // ── Support thread (user side) ──────────────────────────────────────────────
+  // Uses its own fetch rather than api(): /api/support sits outside the approval
+  // gate on purpose, so a pending, trial-expired or blocked user can still reach
+  // the admin.
+  async function supportApi(method, body, path) {
+    const opts = {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'X-Telegram-InitData': initData },
+    };
+    if (body !== undefined) opts.body = JSON.stringify(body);
+    const res = await fetch('/api/support' + (path || ''), opts);
+    if (!res.ok) {
+      const err = await res.json().catch(function() { return {}; });
+      throw new Error(err.error || 'ارتباط با پشتیبانی برقرار نشد');
+    }
+    return res.json();
+  }
+
+  App.openSupport = function() {
+    // Read before showScreen() overwrites it — this is how the back button
+    // knows to return a pending user to the pending screen.
+    state.supportFrom = state.currentScreen;
+    App.showScreen('support');
   };
+
+  App.closeSupport = function() {
+    if (state.supportFrom === 'pending') {
+      App.showPendingScreen();
+      return;
+    }
+    App.showScreen(state.supportFrom || 'home', 'back');
+  };
+
+  /**
+   * Shared thread renderer. `side` is who is looking:
+   * for the user, their own messages are 'in'; for the admin, 'out'.
+   */
+  App.renderSupportThread = function(box, messages, side, peerName) {
+    if (!box) return;
+    if (!messages || messages.length === 0) {
+      box.innerHTML = '<div class="support-empty">' +
+        (side === 'admin'
+          ? 'هنوز پیامی بین شما و این کاربر رد و بدل نشده. اولین پیام را بنویسید.'
+          : 'هنوز پیامی ندارید. سوال یا مشکل خود را بنویسید — پاسخ را همین‌جا و در چت ربات دریافت می‌کنید.') +
+        '</div>';
+      return;
+    }
+
+    var html = '';
+    messages.forEach(function(m) {
+      var mine = side === 'admin' ? m.direction === 'out' : m.direction === 'in';
+      var who = m.direction === 'out'
+        ? (side === 'admin' ? 'پشتیبانی (شما)' : 'پشتیبانی')
+        : (side === 'admin' ? (peerName || 'کاربر') : 'شما');
+      var when = App.relativeTime(m.createdAt) || '';
+      html += '<div class="support-bubble ' + (mine ? 'mine' : 'theirs') + '">' +
+        '<div class="support-bubble-meta">' + App.escapeHtml(who) +
+          (when ? ' · ' + App.escapeHtml(when) : '') + '</div>' +
+        // Newlines survive via white-space: pre-wrap — no <br> injection needed.
+        '<div class="support-bubble-body">' + App.escapeHtml(m.body) + '</div>' +
+      '</div>';
+    });
+    box.innerHTML = html;
+    box.scrollTop = box.scrollHeight;
+  };
+
+  App.loadSupport = async function() {
+    var box = document.getElementById('support-thread');
+    if (!box) return;
+    try {
+      var data = await supportApi('GET');
+      App.renderSupportThread(box, data.messages || [], 'user');
+      App.setSupportBadge(0); // opening the thread marks replies read server-side
+    } catch (e) {
+      box.innerHTML = '<div class="support-empty">دریافت گفتگو ناموفق بود. اتصال اینترنت را بررسی کنید.</div>';
+    }
+  };
+
+  App.sendSupportMessage = async function(e) {
+    if (e && e.preventDefault) e.preventDefault();
+    var input = document.getElementById('support-input');
+    var btn = document.getElementById('support-send-btn');
+    var text = input ? input.value.trim() : '';
+    if (!text) return;
+
+    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    try {
+      await supportApi('POST', { text: text });
+      if (input) input.value = '';
+      await App.loadSupport();
+      App.toast('پیام شما برای پشتیبانی ارسال شد 🙏');
+    } catch (err) {
+      App.toast(err.message || 'ارسال پیام ناموفق بود');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'ارسال'; }
+    }
+  };
+
+  App.setSupportBadge = function(count) {
+    ['profile-support-badge', 'pending-support-badge'].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      el.textContent = count > 0 ? String(count) : '';
+      el.hidden = !(count > 0);
+    });
+  };
+
+  App.refreshSupportBadge = function() {
+    supportApi('GET', undefined, '/unread')
+      .then(function(d) { App.setSupportBadge(d.unread || 0); })
+      .catch(function() {});
+  };
+
+  App.currentBackAction = function() {
+    return App.resolveBackNavigation(state.currentScreen, {
+      supportFrom: state.supportFrom,
+      examReturnScreen: state.examReturnScreen,
+    });
+  };
+
+  App.syncTelegramBackButton = function() {
+    const backButton = tg && tg.BackButton;
+    if (!backButton) return;
+    const action = App.currentBackAction();
+    try {
+      if (action.kind === 'none') backButton.hide();
+      else backButton.show();
+    } catch (e) {}
+  };
+
+  App.handleBackNavigation = function() {
+    const action = App.currentBackAction();
+    if (action.kind === 'none') return;
+    if (action.kind === 'close-support') {
+      App.closeSupport();
+      return;
+    }
+    if (action.kind === 'exit-exam') {
+      if (typeof App.exitExam === 'function') App.exitExam();
+      return;
+    }
+    if (action.target === 'pending') {
+      App.showPendingScreen();
+      return;
+    }
+    App.showScreen(action.target || 'home', 'back');
+  };
+
+  // Compatibility for older inline handlers and one native Telegram control.
+  App.navigateBack = App.handleBackNavigation;
+  if (tg && tg.BackButton && typeof tg.BackButton.onClick === 'function') {
+    tg.BackButton.onClick(App.handleBackNavigation);
+  }
 
   // ── Toast ───────────────────────────────────────────────────────────────────
   App.toast = function(msg, duration) {
@@ -711,6 +966,7 @@ App.renderRichText = function(el, text) {
   };
 
   App.startTopicExam = async function(topicId) {
+    const returnScreen = state.currentScreen || 'topics';
     try {
       App.toast('در حال لود آزمون فصل… ⏳');
       const data = await api('POST', '/topics/' + topicId + '/exam');
@@ -722,6 +978,7 @@ App.renderRichText = function(el, text) {
       state.startedAt = Date.now();
       state.secondsLeft = 600; // 10 minutes for 15 chapter questions
       state.examMode = 'topic_practice';
+      state.examReturnScreen = returnScreen;
 
       App.showScreen('exam');
       const nav = document.getElementById('bottom-nav');
@@ -774,6 +1031,8 @@ App.renderRichText = function(el, text) {
       const initials = (firstName.charAt(0) + (lastName ? lastName.charAt(0) : '')).toUpperCase() || '👤';
       initialsEl.textContent = initials;
     }
+
+    App.refreshSupportBadge();
 
     // 2. Fetch stats & user profile from backend
     try {

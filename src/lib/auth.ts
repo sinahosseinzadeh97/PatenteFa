@@ -120,7 +120,11 @@ export function checkAllowList(userId: number, allowedIds: string | undefined): 
     .filter(Boolean);
 
   if (parts.includes("*")) {
-    return; // Explicit wildcard allow all
+    console.warn("⚠️ SECURITY WARNING: wildcard admin access is disabled. Configure concrete Telegram user IDs.");
+    throw new Response(JSON.stringify({ error: "Forbidden: wildcard admin access is not allowed" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
   }
 
   const ids = parts.map(Number).filter(Boolean);

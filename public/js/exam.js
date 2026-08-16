@@ -11,6 +11,9 @@
   // ── Start exam ──────────────────────────────────────────────────────────────
   App.startExam = async function(mode) {
     mode = mode || 'exam';
+    const returnScreen = state.currentScreen && state.currentScreen !== 'exam'
+      ? state.currentScreen
+      : 'home';
     try {
       const data = await api('POST', '/exam/start', { mode });
       state.sessionId = data.sessionId;
@@ -23,6 +26,7 @@
       state.translationCache = {};
       state.secondsLeft = 1200;
       state.examMode = mode;
+      state.examReturnScreen = returnScreen;
 
       App.showScreen('exam');
       document.getElementById('bottom-nav').style.display = 'none';
@@ -43,41 +47,42 @@
     App.startExam('topic_practice');
   };
 
-  // ── Chapter practice: leave without finishing ───────────────────────────────
-  // Only 'topic_practice' gets an exit. The real exam must not be abandonable —
-  // walking out of a session you're failing and starting a fresh one would make
-  // the pass rate meaningless.
+  // ── Leave an unfinished session ─────────────────────────────────────────────
+  // Answers are persisted as they are given, but an abandoned session is not
+  // finished/scored and therefore never changes the pass rate.
   App.applyExamMode = function() {
-    const btn = document.getElementById('btn-exit-practice');
+    const btn = document.getElementById('btn-exit-exam');
     if (!btn) return;
-    btn.hidden = state.examMode !== 'topic_practice';
+    btn.setAttribute(
+      'aria-label',
+      state.examMode === 'topic_practice' ? 'بازگشت از تمرین' : 'خروج از آزمون'
+    );
+    btn.title = state.examMode === 'topic_practice' ? 'بازگشت از تمرین' : 'خروج از آزمون';
   };
 
-  App.exitTopicPractice = function() {
-    if (state.examMode !== 'topic_practice') return;
-
+  App.exitExam = function() {
     const answered = Object.keys(state.answers).length;
     const total = state.questions.length;
-    if (answered > 0 && answered < total) {
+    if (answered > 0) {
+      const modeLabel = state.examMode === 'topic_practice' ? 'تمرین' : 'آزمون';
       const ok = window.confirm(
-        'از این فصل خارج می‌شوید؟\n' +
-        answered + ' سوال از ' + total + ' را پاسخ داده‌اید. پاسخ‌های داده‌شده ذخیره می‌مانند و در آمار فصل حساب می‌شوند.'
+        'از این ' + modeLabel + ' خارج می‌شوید؟\n' +
+        answered + ' سوال از ' + total + ' را پاسخ داده‌اید. این جلسه نهایی و در آمار قبولی حساب نمی‌شود.'
       );
       if (!ok) return;
     }
 
-    // Each answer was already POSTed as it was given (see App.answer), so the
-    // session is left unfinished on purpose — nothing to submit, nothing lost.
     clearInterval(state.timerInterval);
     state.examMode = null;
     App.applyExamMode();
 
     const nav = document.getElementById('bottom-nav');
     if (nav) nav.style.display = '';
-    // showScreen('topics') re-runs loadTopics, so the card the user just
-    // practised picks up its new counts on the way back.
-    App.showScreen('topics');
+    App.showScreen(state.examReturnScreen || 'home', 'back');
   };
+
+  // Backwards-compatible name for any stale cached markup.
+  App.exitTopicPractice = App.exitExam;
 
   // ── Timer ───────────────────────────────────────────────────────────────────
   App.startTimer = function() {
@@ -607,5 +612,4 @@
       btn.disabled = false;
     }
   };
-
 

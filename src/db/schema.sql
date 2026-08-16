@@ -101,3 +101,19 @@ CREATE TABLE IF NOT EXISTS vocab_items (
 );
 
 CREATE INDEX IF NOT EXISTS idx_vocab_user ON vocab_items(user_id, next_review_at);
+
+-- Support inbox — one thread per user, written by both the Mini App and the
+-- Telegram relay. See migrations/0010_support_messages.sql for the direction
+-- and read_at semantics.
+CREATE TABLE IF NOT EXISTS support_messages (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  direction TEXT NOT NULL,             -- 'in' = user → support, 'out' = support → user
+  body TEXT NOT NULL,
+  source TEXT NOT NULL DEFAULT 'app',  -- 'app' | 'telegram'
+  read_at TEXT,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_support_user ON support_messages(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_support_unread ON support_messages(direction, read_at);

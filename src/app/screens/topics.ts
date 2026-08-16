@@ -6,8 +6,11 @@ export function renderTopicsScreen(): string {
   return `
 <div id="screen-topics" class="screen" style="padding:0 0 85px;">
   <div class="topics-content">
-    <div class="topics-header-row">
-      <h1 class="topics-title">📚 فصل‌های آموزشی</h1>
+    <div class="screen-header-bar topics-header-row">
+      <button type="button" onclick="App.handleBackNavigation()" class="screen-back-btn" aria-label="بازگشت به خانه">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="screen-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
+      </button>
+      <h1 class="topics-title screen-header-title">📚 فصل‌های آموزشی</h1>
       <span class="topics-badge">Capitoli</span>
     </div>
 

@@ -5,6 +5,12 @@
 export function renderResultsScreen(): string {
   return `
 <div id="screen-results" class="screen" style="padding:0 0 110px;">
+  <div class="results-nav-header">
+    <button type="button" onclick="App.handleBackNavigation()" class="screen-back-btn" aria-label="بازگشت به خانه">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="screen-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
+    </button>
+    <h1 class="results-nav-title">نتیجه آزمون</h1>
+  </div>
   <div class="results-header">
     <div id="results-badge" class="result-badge pass"></div>
     <div class="results-score-value" id="results-score"></div>

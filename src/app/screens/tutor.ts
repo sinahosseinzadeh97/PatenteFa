@@ -7,7 +7,9 @@ export function renderTutorScreen(): string {
 <div id="screen-tutor" class="screen" style="padding:0 0 90px;display:none;flex-direction:column;">
   <!-- Header -->
   <div class="tutor-header">
-    <button onclick="App.showScreen('results', 'back')" class="tutor-back-btn" aria-label="بازگشت به نتایج">←</button>
+    <button onclick="App.handleBackNavigation()" class="tutor-back-btn" aria-label="بازگشت به نتایج">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="screen-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
+    </button>
     <div class="tutor-header-title-wrap">
       <h1 class="tutor-header-title">🎓 استاد رفع اشکال هوش مصنوعی</h1>
       <span id="tutor-progress-badge" class="tutor-header-sub">در حال دریافت اطلاعات...</span>

@@ -21,8 +21,9 @@ import { renderTutorScreen } from "./screens/tutor.js";
 import { renderVocabScreen } from "./screens/vocab.js";
 import { renderStatsScreen } from "./screens/stats.js";
 import { renderProfileScreen } from "./screens/profile.js";
-import { renderAdminScreen, renderAdminUserModal } from "./screens/admin.js";
+import { renderAdminScreen, renderAdminUserModal, renderAdminSupportModal } from "./screens/admin.js";
 import { renderSignsScreen } from "./screens/signs.js";
+import { renderSupportScreen } from "./screens/support.js";
 import {
   renderLoading,
   renderBottomNav,
@@ -53,7 +54,9 @@ function buildScreens(): string {
     renderProfileScreen(),
     renderAdminScreen(),
     renderAdminUserModal(),
+    renderAdminSupportModal(),
     renderSignsScreen(),
+    renderSupportScreen(),
   ].join("\n");
 }
 
@@ -115,6 +118,7 @@ window.onerror = function(msg, url, line, col, err) {
 </script>
 
 <!-- ── Client JavaScript (static assets — see public/js/) ─────────────────────── -->
+<script src="/js/navigation.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/exam.js"></script>
 </body>

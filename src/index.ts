@@ -16,6 +16,7 @@ import { translate } from "./api/translate.js";
 import { vocab } from "./api/vocab.js";
 import { stats } from "./api/stats.js";
 import { signs } from "./api/signs.js";
+import { support } from "./api/support.js";
 import { serveApp } from "./app/shell.js";
 import { runMorningReminder } from "./jobs/morningReminder.js";
 import { runNightlyBackup } from "./jobs/nightlyJournalAndBackup.js";
@@ -80,6 +81,12 @@ app.post("/api/request-access", async (c) => {
 
   return c.json({ ok: true, isApproved: isAdmin });
 });
+
+// ── Support thread ───────────────────────────────────────────────────────────
+// Mounted before the /api group on purpose: it authenticates with initData but
+// is NOT approval-gated, so a pending, trial-expired or blocked user can still
+// reach the admin. Registered first, so the gate below never runs for it.
+app.route("/api/support", support);
 
 // ── API auth middleware ───────────────────────────────────────────────────────
 const api = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();

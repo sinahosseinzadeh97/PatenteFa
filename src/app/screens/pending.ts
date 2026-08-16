@@ -42,6 +42,13 @@ export function renderPendingScreen(): string {
   <button class="btn btn-primary btn-full pending-recheck-btn" onclick="App.checkApprovalStatus()">
     🔄 بررسی مجدد وضعیت دسترسی
   </button>
+
+  <!-- The support thread is not approval-gated on purpose — a user waiting
+       here is the one most likely to have a question. -->
+  <button class="btn btn-ghost btn-full pending-support-btn" onclick="App.openSupport()">
+    💬 گفتگو با پشتیبانی
+    <span id="pending-support-badge" class="profile-support-badge" hidden></span>
+  </button>
 </div>
 `;
 }

@@ -9,7 +9,12 @@ export function renderStatsScreen(): string {
   return `
 <div id="screen-stats" class="screen" style="padding:0 0 80px;">
   <div class="stats-content">
-    <h1 class="stats-title">📊 آمار</h1>
+    <div class="screen-header-bar">
+      <button type="button" onclick="App.handleBackNavigation()" class="screen-back-btn" aria-label="بازگشت به خانه">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="screen-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
+      </button>
+      <h1 class="stats-title screen-header-title">📊 آمار</h1>
+    </div>
 
     <div class="stats-chip-row">
       <div class="stat-chip"><div class="stat-chip-value" id="stats-streak">0</div><div class="stat-chip-label">🔥 روز</div></div>

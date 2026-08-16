@@ -705,6 +705,17 @@ html, body {
 .vocab-sheet-actions { display: flex; gap: 10px; }
 
 /* ── Exam screen chrome (replaces inline style="" soup) ────────────────────── */
+.screen-header-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+.screen-back-btn {
+  background: none; border: none; color: var(--ink-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px; border-radius: 8px; flex-shrink: 0;
+  transition: background 150ms, color 150ms;
+}
+.screen-back-btn:hover { background: var(--surface-2); color: var(--ink); }
+.screen-back-icon { width: 22px; height: 22px; }
+.screen-header-title { flex: 1; min-width: 0; }
+
 .exam-topbar-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
 .exam-position { font-family: 'Public Sans', system-ui, sans-serif; font-size: 0.82rem; color: var(--ink-muted); }
 .exam-tabs-hint { font-size: 0.72rem; color: var(--ink-muted); margin-right: 6px; }
@@ -719,9 +730,7 @@ html, body {
 .btn-icon:hover { background: var(--surface-2); }
 .btn-icon.active { opacity: 1; }
 
-/* Chapter-practice escape hatch — hidden in the real exam. */
 .exam-exit-btn { opacity: 0.75; }
-.exam-exit-btn[hidden] { display: none; }
 
 .exam-tts-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px 0; }
 .exam-timer-inline { font-size: 0.95rem; flex-shrink: 0; }
@@ -766,6 +775,8 @@ html, body {
 .exam-answer-row { padding: 0 16px 16px; display: flex; gap: 12px; }
 
 /* ── Results screen chrome ───────────────────────────────────────────────── */
+.results-nav-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px 0; }
+.results-nav-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.35rem; font-weight: 700; }
 .results-header { padding: 24px 16px 0; text-align: center; }
 .results-score-value { font-family: 'Barlow Condensed', sans-serif; font-size: 3.5rem; font-weight: 700; line-height: 1; margin: 10px 0 4px; }
 .results-detail { color: var(--ink-muted); font-size: 0.88rem; }
@@ -890,7 +901,7 @@ html, body {
 /* ── Legacy stats screen (no in-app nav entry; only reachable via ?screen=stats,
    kept rather than deleted per "don't drop features" — see final report) ─── */
 .stats-content { padding: 20px 16px 0; }
-.stats-title { margin: 0 0 20px; font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; }
+.stats-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.8rem; font-weight: 700; }
 .stats-chip-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 20px; }
 .stats-section-heading { font-size: 0.88rem; font-weight: 700; margin: 0 0 14px; color: var(--ink-muted); }
 .stats-profile-cta-wrap { margin-top: 20px; }
@@ -901,7 +912,7 @@ html, body {
 .profile-back-btn {
   background: none; border: none; color: var(--ink-muted); cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 40px; min-height: 40px; border-radius: 8px;
+  min-width: 44px; min-height: 44px; border-radius: 8px;
   transition: background 150ms, color 150ms;
 }
 .profile-back-btn:hover { background: var(--surface-2); color: var(--ink); }
@@ -1002,7 +1013,7 @@ html, body {
 
 /* ── Topics (Capitoli) screen ────────────────────────────────────────────── */
 .topics-content { padding: 20px 16px 0; }
-.topics-header-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.topics-header-row { justify-content: space-between; margin-bottom: 12px; }
 .topics-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.7rem; font-weight: 700; }
 .topics-badge { font-size: 0.78rem; background: var(--amber-dim); color: var(--amber); padding: 3px 8px; border-radius: 10px; font-weight: 700; }
 .topics-intro { font-size: 0.8rem; color: var(--ink-muted); margin: 0 0 16px; line-height: 1.5; }
@@ -1040,7 +1051,7 @@ html, body {
 .tutor-back-btn {
   background: none; border: none; color: var(--ink); font-size: 1.2rem; cursor: pointer;
   display: inline-flex; align-items: center; justify-content: center;
-  min-width: 40px; min-height: 40px; border-radius: 8px;
+  min-width: 44px; min-height: 44px; border-radius: 8px;
 }
 .tutor-back-btn:hover { background: var(--surface-2); }
 .tutor-header-title-wrap { text-align: center; }
@@ -1275,3 +1286,99 @@ html, body {
   line-height: 1.5;
 }
 .trial-banner b { font-weight: 700; }
+
+/* ── Support thread ────────────────────────────────────────────────────────
+   Shared by the user's support screen and the admin's reply panel: one set of
+   bubbles, two points of view (.mine flips side and colour). Outbound messages
+   are always labelled "پشتیبانی" — the admin behind them is never named. */
+/* Fills the screen's flex column (never taller than it, or the composer ends up
+   under the fixed bottom nav) and lets the thread take the leftover height. */
+.support-content { padding: 20px 16px 0; display: flex; flex-direction: column; flex: 1; min-height: 0; }
+.support-header-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.support-back-btn {
+  background: none; border: none; color: var(--ink-muted); cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 44px; min-height: 44px; border-radius: 8px; flex-shrink: 0;
+  transition: background 150ms, color 150ms;
+}
+.support-back-btn:hover { background: var(--surface-2); color: var(--ink); }
+.support-back-icon { width: 22px; height: 22px; }
+.support-title { margin: 0; font-family: 'Barlow Condensed', sans-serif; font-size: 1.6rem; font-weight: 700; color: var(--ink); }
+.support-subtitle { font-size: 0.72rem; color: var(--ink-muted); line-height: 1.6; }
+
+.support-thread {
+  flex: 1; min-height: 180px; overflow-y: auto;
+  display: flex; flex-direction: column; gap: 12px;
+  padding: 14px; margin-bottom: 12px;
+  background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 14px;
+}
+.support-empty { font-size: 0.82rem; color: var(--ink-muted); text-align: center; padding: 24px 8px; line-height: 1.8; }
+
+.support-bubble { max-width: 88%; display: flex; flex-direction: column; gap: 4px; }
+.support-bubble.mine   { align-self: flex-start; }
+.support-bubble.theirs { align-self: flex-end; }
+.support-bubble-meta { font-size: 0.62rem; color: var(--ink-muted); padding: 0 4px; }
+.support-bubble-body {
+  padding: 10px 14px; border-radius: 14px;
+  font-size: 0.86rem; line-height: 1.8; white-space: pre-wrap; word-break: break-word;
+}
+.support-bubble.mine   .support-bubble-body { background: var(--go); color: #fff; border-bottom-right-radius: 3px; }
+.support-bubble.theirs .support-bubble-body { background: var(--surface-2); border: 1px solid var(--border); color: var(--ink); border-bottom-left-radius: 3px; }
+
+.support-form { display: flex; gap: 8px; align-items: flex-end; padding-bottom: env(safe-area-inset-bottom, 8px); }
+.support-input {
+  flex: 1; background: var(--bg); border: 1px solid var(--border); color: var(--ink);
+  padding: 10px 12px; border-radius: 12px; font-size: 0.86rem; line-height: 1.7;
+  font-family: 'Vazirmatn', system-ui, sans-serif; resize: none; direction: rtl;
+}
+.support-input:focus { outline: none; border-color: var(--amber); }
+.support-send-btn { padding: 11px 18px; font-size: 0.85rem; flex-shrink: 0; }
+
+/* Entry points — profile row and the pending screen's secondary button */
+.profile-support-card {
+  display: flex; align-items: center; gap: 12px; width: 100%; margin-bottom: 20px;
+  padding: 14px 16px; text-align: right; cursor: pointer;
+  font-family: 'Vazirmatn', system-ui, sans-serif; color: var(--ink);
+  transition: border-color 150ms, background 150ms;
+}
+.profile-support-card:hover { border-color: var(--amber); background: var(--surface-2); }
+.profile-support-icon { font-size: 1.4rem; flex-shrink: 0; }
+.profile-support-text { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+.profile-support-title { font-size: 0.9rem; font-weight: 700; }
+.profile-support-sub { font-size: 0.72rem; color: var(--ink-muted); }
+.profile-support-badge {
+  background: var(--stop); color: #fff; border-radius: 999px;
+  min-width: 20px; padding: 1px 7px; font-size: 0.7rem; font-weight: 700; text-align: center;
+}
+.profile-support-chevron { color: var(--ink-muted); font-size: 1.2rem; flex-shrink: 0; }
+.pending-support-btn { max-width: 280px; margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+
+/* Admin inbox */
+.admin-support-unread-pill {
+  background: var(--stop-dim); color: var(--stop-light); border: 1px solid rgba(193,39,45,0.4);
+  border-radius: 999px; padding: 3px 10px; font-size: 0.7rem; font-weight: 700;
+}
+.admin-support-threads { display: flex; flex-direction: column; gap: 6px; }
+.admin-support-row {
+  display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: right;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 10px;
+  padding: 10px 12px; cursor: pointer; color: var(--ink);
+  font-family: 'Vazirmatn', system-ui, sans-serif;
+  transition: border-color 150ms, background 150ms;
+}
+.admin-support-row:hover { border-color: var(--amber); background: var(--surface-2); }
+/* Unread is already carried by the count badge — a tint is enough to make the
+   row scannable without a slab of colour down its edge. */
+.admin-support-row.unread { background: var(--stop-dim); border-color: rgba(193,39,45,0.4); }
+.admin-support-row-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.admin-support-row-name { font-size: 0.85rem; font-weight: 700; }
+.admin-support-row-time { font-size: 0.68rem; color: var(--ink-muted); }
+.admin-support-row-badge {
+  background: var(--stop); color: #fff; border-radius: 999px;
+  min-width: 20px; padding: 1px 7px; font-size: 0.68rem; font-weight: 700; text-align: center;
+}
+.admin-support-row-preview { font-size: 0.72rem; color: var(--ink-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.admin-support-modal { position: fixed; inset: 0; z-index: 360; display: none; flex-direction: column; justify-content: flex-end; }
+.admin-support-modal-sub { font-size: 0.68rem; color: var(--ink-muted); margin-top: 2px; }
+.admin-support-thread { max-height: 46vh; min-height: 140px; }
