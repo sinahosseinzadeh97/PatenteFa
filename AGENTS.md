@@ -19,3 +19,5 @@ Read all five before making any significant changes.
 - **Question bank:** ~7,139 questions from `Ed0ardo/QuizPatenteB`, seeded via `scripts/import-question-bank.ts`
 - **Pass rule:** ≤ 3 wrong answers out of 30 = pass (matches real Italian exam)
 - **Dark theme:** green (#16a34a) / white / red (#dc2626) accent palette — both Italian and Iranian flags share these colours
+
+## Imported Claude Cowork project instructions
