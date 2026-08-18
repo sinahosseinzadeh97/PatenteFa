@@ -509,12 +509,20 @@ test("answer persistence failures stay visible and ambiguous retries are idempot
 test("exam start mode and delayed tutor rendering remain scoped to their request", () => {
   const examRoute = readFileSync("src/api/exam.ts", "utf8");
   const appClient = readFileSync("public/js/app.js", "utf8");
+  const examClient = readFileSync("public/js/exam.js", "utf8");
+  const finishFunction = examClient.slice(
+    examClient.indexOf("App.finishExam = async function"),
+    examClient.indexOf("// ── Results")
+  );
 
   assert.match(examRoute, /c\.req\.json\(\)\.catch/);
   assert.match(examRoute, /requestedMode\s*!==\s*"exam"/);
   assert.match(examRoute, /requestedMode\s*!==\s*"review"/);
   assert.match(examRoute, /requestedMode\s*!==\s*"topic_practice"/);
   assert.match(appClient, /currentTutorQuestion\?\.questionId\s*===\s*q\.questionId/);
+  assert.match(finishFunction, /const finishingSessionId\s*=\s*state\.sessionId/);
+  assert.match(finishFunction, /state\.finishPending/);
+  assert.match(finishFunction, /state\.sessionId\s*!==\s*finishingSessionId/);
 });
 
 test("Reels regenerate missing explanations and render their structure safely", () => {
