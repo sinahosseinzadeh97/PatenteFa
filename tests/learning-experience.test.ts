@@ -395,7 +395,16 @@ test("abandoned sessions stop blocking study content without becoming scored exa
   assert.match(examRouteSource, /\/:sessionId\/abandon/);
   assert.match(examRouteSource, /ACTIVE_EXAM_SESSION_MS\s*=\s*30\s*\*\s*60\s*\*\s*1000/);
   assert.match(examRouteSource, /isExamSessionExpired/);
-  assert.match(examClient, /\/exam\/['"]?\s*\+\s*state\.sessionId\s*\+\s*['"]\/abandon/);
+  assert.match(examClient, /\/exam\/['"]?\s*\+\s*abandonedSessionId\s*\+\s*['"]\/abandon/);
+  const exitFunction = examClient.slice(
+    examClient.indexOf("App.exitExam = function"),
+    examClient.indexOf("App.exitTopicPractice")
+  );
+  assert.match(exitFunction, /const abandonedSessionId\s*=\s*state\.sessionId/);
+  assert.ok(
+    exitFunction.indexOf("state.sessionId = null") < exitFunction.indexOf("api('POST'"),
+    "exit must invalidate the local session before the asynchronous abandon request"
+  );
 });
 
 test("exam answers are validated, immutable, and terminal transitions are atomic", () => {
@@ -492,6 +501,9 @@ test("answer persistence failures stay visible and ambiguous retries are idempot
   assert.match(answerFunction, /برای تلاش دوباره|دوباره/);
   assert.match(answerFunction, /const answeredIndex\s*=\s*state\.currentIndex/);
   assert.match(answerFunction, /state\.currentIndex\s*!==\s*answeredIndex/);
+  assert.match(renderExamScreen(), /id="btn-finish-exam"/);
+  assert.match(examClient, /App\.updateFinishAvailability\s*=\s*function/);
+  assert.match(answerFunction, /App\.updateFinishAvailability\(\)/);
 });
 
 test("exam start mode and delayed tutor rendering remain scoped to their request", () => {
