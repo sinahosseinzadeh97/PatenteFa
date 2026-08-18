@@ -419,6 +419,7 @@ test("exam answers are validated, immutable, and terminal transitions are atomic
   assert.match(recordAnswerQuery, /finished_at\s+IS\s+NULL/i);
   assert.match(recordAnswerQuery, /abandoned_at\s+IS\s+NULL/i);
   assert.match(recordAnswerQuery, /meta\.changes/);
+  assert.match(recordAnswerQuery, /existing\?\.user_answer\s*===\s*userAnswer/);
   assert.match(finishQuery, /finished_at\s+IS\s+NULL/i);
   assert.match(finishQuery, /abandoned_at\s+IS\s+NULL/i);
   assert.match(finishQuery, /meta\.changes/);
@@ -432,10 +433,59 @@ test("chapter exams reuse the canonical session lifecycle and client reset", () 
   const appClient = readFileSync("public/js/app.js", "utf8");
   const examClient = readFileSync("public/js/exam.js", "utf8");
 
-  assert.match(topicsRoute, /abandonOpenExamSessions\(c\.env\.DB,\s*userId\)/);
+  const querySource = readFileSync("src/db/queries.ts", "utf8");
+  const examRoute = readFileSync("src/api/exam.ts", "utf8");
+  const replaceSessionQuery = querySource.slice(
+    querySource.indexOf("export async function replaceActiveExamSession"),
+    querySource.indexOf("export async function insertExamAnswer")
+  );
+
+  assert.match(topicsRoute, /replaceActiveExamSession\(c\.env\.DB,\s*userId/);
+  assert.match(examRoute, /replaceActiveExamSession\(c\.env\.DB,\s*userId/);
+  assert.match(replaceSessionQuery, /db\.batch/);
+  assert.match(replaceSessionQuery, /UPDATE\s+exam_sessions/i);
+  assert.match(replaceSessionQuery, /INSERT\s+INTO\s+exam_sessions/i);
+  assert.match(appClient, /state\.examStartPending/);
+  assert.match(examClient, /state\.examStartPending/);
   assert.match(examClient, /App\.initializeExamState\s*=\s*function/);
   assert.match(examClient, /state\.recordedAnswers\s*=\s*new Set\(\)/);
   assert.match(appClient, /App\.initializeExamState\(data,/);
+});
+
+test("tutor chat rejects injected roles and bounds caller-controlled context", () => {
+  const tutorRoute = readFileSync("src/api/tutor.ts", "utf8");
+  const openaiSource = readFileSync("src/lib/openai.ts", "utf8");
+  const appClient = readFileSync("public/js/app.js", "utf8");
+  const tutorMessageType = openaiSource.slice(
+    openaiSource.indexOf("export interface TutorChatMessage"),
+    openaiSource.indexOf("export async function chatWithTutor")
+  );
+
+  assert.match(tutorRoute, /Array\.isArray\(body\.history\)/);
+  assert.match(tutorRoute, /message\.role\s*!==\s*"user"/);
+  assert.match(tutorRoute, /message\.role\s*!==\s*"assistant"/);
+  assert.match(tutorRoute, /MAX_TUTOR_HISTORY_MESSAGES/);
+  assert.match(tutorRoute, /MAX_TUTOR_MESSAGE_LENGTH/);
+  assert.doesNotMatch(tutorMessageType, /"system"/);
+  assert.match(appClient, /tutorChatHistory\[q\.questionId\][\s\S]*slice\(-6\)/);
+});
+
+test("answer persistence failures stay visible and ambiguous retries are idempotent", () => {
+  const appClient = readFileSync("public/js/app.js", "utf8");
+  const examClient = readFileSync("public/js/exam.js", "utf8");
+  const answerFunction = examClient.slice(
+    examClient.indexOf("App.answer = async function"),
+    examClient.indexOf("// ── Flag / bookmark")
+  );
+
+  assert.match(appClient, /apiError\.status\s*=\s*res\.status/);
+  assert.match(examClient, /state\.answerPending/);
+  assert.doesNotMatch(answerFunction, /Offline — continue locally/);
+  assert.ok(
+    answerFunction.indexOf("await api(") < answerFunction.indexOf("state.answers[q.questionId] = value"),
+    "the client must only accept and advance an answer after persistence succeeds"
+  );
+  assert.match(answerFunction, /برای تلاش دوباره|دوباره/);
 });
 
 test("Reels regenerate missing explanations and render their structure safely", () => {
