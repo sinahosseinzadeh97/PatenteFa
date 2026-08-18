@@ -74,6 +74,40 @@ test("translation explanations are prompted for first-read clarity", async (t) =
   assert.ok((explanationRequest?.max_tokens ?? 0) >= 450);
 });
 
+test("a cached translation can regenerate only its explanation", async (t) => {
+  const requests: OpenAIRequest[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body)) as OpenAIRequest;
+    requests.push(body);
+    return responseWithContent(JSON.stringify({ explanation: "توضیح تازه و ساده" }));
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const translateWithExistingText = translateQuestion as unknown as (
+    ...args: unknown[]
+  ) => Promise<{ translated_text: string; explanation: string }>;
+  const result = await translateWithExistingText(
+    env,
+    "Il conducente deve rallentare.",
+    1,
+    null,
+    undefined,
+    undefined,
+    null,
+    "ترجمه تاییدشده قبلی"
+  );
+
+  assert.equal(requests.length, 1, "only the missing explanation should call OpenAI");
+  assert.equal(result.translated_text, "ترجمه تاییدشده قبلی");
+  assert.equal(result.explanation, "توضیح تازه و ساده");
+
+  const routeSource = readFileSync("src/api/translate.ts", "utf8");
+  assert.match(routeSource, /translateQuestion\([\s\S]*cached\?\.translated_text/);
+});
+
 test("image-backed learning prompts keep the verified sign identity and usable image URL", async (t) => {
   const requests: OpenAIRequest[] = [];
   const originalFetch = globalThis.fetch;
@@ -222,6 +256,24 @@ test("vocabulary coverage preserves meaningful accented verbs and rejects empty 
   );
 });
 
+test("vocabulary coverage distinguishes E' and è from e and retains meaning-changing conjunctions", () => {
+  const sentence = "E' consentito proseguire, ma il conducente deve rallentare o fermarsi";
+  const coverage = vocabularyCoverageTokens(sentence);
+
+  assert.ok(coverage.includes("è"), "E' must be canonicalized as the verb è");
+  assert.ok(coverage.includes("ma"), "contrastive ma changes the statement meaning");
+  assert.ok(coverage.includes("o"), "alternative o changes the statement meaning");
+
+  assert.equal(
+    hasCompleteVocabularyCoverage("La strada è stretta e termina", [
+      { term_it: "strada", term_fa: "جاده" },
+      { term_it: "stretta e termina", term_fa: "باریک است و تمام می‌شود" },
+    ]),
+    false,
+    "a conjunction e in another suggestion must not falsely cover verb è"
+  );
+});
+
 test("single-term vocabulary suggestions remain available for manual saves", async (t) => {
   let request: OpenAIRequest | undefined;
   const originalFetch = globalThis.fetch;
@@ -237,6 +289,23 @@ test("single-term vocabulary suggestions remain available for manual saves", asy
 
   assert.equal(result, "حق تقدم");
   assert.match(JSON.stringify(request), /precedenza/);
+});
+
+test("exam AI help is gated until an answer exists and results render structured explanations", () => {
+  const examClient = readFileSync("public/js/exam.js", "utf8");
+
+  assert.match(examClient, /App\.canUseAiForCurrentQuestion\s*=\s*function/);
+  assert.match(examClient, /state\.answers\[q\.questionId\]\s*!==\s*undefined/);
+  assert.match(examClient, /App\.toggleTranslate[\s\S]*App\.canUseAiForCurrentQuestion\(\)/);
+  assert.match(examClient, /App\.renderRichText\(explanationBody,\s*data\.explanation\)/);
+
+  const screenMarkup = renderExamScreen();
+  assert.match(screenMarkup, /id="translate-toggle"[^>]*disabled/);
+});
+
+test("admin labels vocabulary repair usage in Persian", () => {
+  const appClient = readFileSync("public/js/app.js", "utf8");
+  assert.match(appClient, /['"]grammar_vocab_repair['"]\s*:/);
 });
 
 test("the cache-reset migration invalidates all outdated learning content", () => {
