@@ -11,8 +11,11 @@ export function renderExamScreen(): string {
       <!-- Collapsible question tabs -->
       <details id="tabs-details" style="flex:1;min-width:0;">
         <summary class="tabs-summary">
-          <span id="exam-position" class="exam-position">Q 1 / 30</span>
-          <span class="exam-tabs-hint"> — ببین</span>
+          <span class="exam-position-badge">
+            <span class="exam-position-label">سؤال جاری</span>
+            <span id="exam-position" class="exam-position" aria-live="polite" aria-atomic="true">1 / 30</span>
+          </span>
+          <span class="exam-tabs-hint">فهرست سؤال‌ها</span>
         </summary>
         <div class="question-tabs" id="exam-tabs"></div>
       </details>
@@ -47,8 +50,8 @@ export function renderExamScreen(): string {
   <div class="ai-toggle-row">
     <label class="ai-toggle-label" for="translate-toggle">
       <span class="ai-toggle-text">کمک AI</span>
-      <input type="checkbox" id="translate-toggle" onchange="App.toggleTranslate()" class="ai-toggle-checkbox" />
-      <span class="ai-toggle-sub">🤖 ۳ متخصص</span>
+      <input type="checkbox" id="translate-toggle" onchange="App.toggleTranslate()" class="ai-toggle-checkbox" aria-describedby="ai-toggle-sub" />
+      <span id="ai-toggle-sub" class="ai-toggle-sub">همین حالا قابل استفاده است</span>
     </label>
   </div>
 
@@ -125,6 +128,9 @@ export function renderExamScreen(): string {
     <button class="btn btn-falso btn-full" id="btn-falso" onclick="App.answer(0)">✗ FALSO</button>
     <button class="btn btn-vero btn-full"  id="btn-vero"  onclick="App.answer(1)">✓ VERO</button>
   </div>
+  <button class="btn btn-primary btn-full exam-finish-btn" id="btn-finish-exam" onclick="App.finishExam()">
+    پایان آزمون و دیدن نتیجه
+  </button>
 </div>
 `;
 }

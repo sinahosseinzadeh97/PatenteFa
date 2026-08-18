@@ -311,9 +311,10 @@ html, body {
 
 /* ── Question tabs (inside details) ─────────────────────────────────────── */
 .tabs-summary {
+  display: inline-flex; align-items: center; gap: 8px;
   font-size: 0.8rem; color: var(--ink-muted);
   cursor: pointer; list-style: none;
-  padding: 4px 0 8px; user-select: none;
+  padding: 2px 0 8px; user-select: none;
 }
 .tabs-summary::-webkit-details-marker { display: none; }
 .question-tabs {
@@ -717,8 +718,25 @@ html, body {
 .screen-header-title { flex: 1; min-width: 0; }
 
 .exam-topbar-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.exam-position { font-family: 'Public Sans', system-ui, sans-serif; font-size: 0.82rem; color: var(--ink-muted); }
-.exam-tabs-hint { font-size: 0.72rem; color: var(--ink-muted); margin-right: 6px; }
+.exam-position-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  min-height: 44px; padding: 5px 12px;
+  background: linear-gradient(135deg, rgba(232,163,61,0.2), rgba(232,163,61,0.08));
+  border: 1px solid rgba(232,163,61,0.65); border-radius: 12px;
+  box-shadow: 0 3px 14px rgba(232,163,61,0.12);
+}
+.exam-position-label {
+  font-family: 'Vazirmatn', system-ui, sans-serif;
+  font-size: 0.68rem; font-weight: 600; color: var(--amber);
+  white-space: nowrap;
+}
+.exam-position {
+  font-family: 'Barlow Condensed', 'Public Sans', system-ui, sans-serif;
+  font-size: 1.35rem; font-weight: 700; line-height: 1;
+  color: var(--ink); direction: ltr; unicode-bidi: isolate;
+  letter-spacing: 0.03em; white-space: nowrap;
+}
+.exam-tabs-hint { font-size: 0.68rem; color: var(--ink-muted); }
 .btn-icon {
   display: inline-flex; align-items: center; justify-content: center;
   min-width: 40px; min-height: 40px;
@@ -773,6 +791,7 @@ html, body {
 
 .exam-question-body { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; }
 .exam-answer-row { padding: 0 16px 16px; display: flex; gap: 12px; }
+.exam-finish-btn { display: none; width: calc(100% - 32px); margin: 0 16px 16px; }
 
 /* ── Results screen chrome ───────────────────────────────────────────────── */
 .results-nav-header { display: flex; align-items: center; gap: 10px; padding: 14px 16px 0; }

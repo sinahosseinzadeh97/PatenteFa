@@ -72,7 +72,10 @@ App.renderRichText = function(el, text) {
         if (state.currentScreen !== 'support') App.showPendingScreen(err.error);
         throw new Error(err.error || 'در انتظار تایید مدیریت');
       }
-      throw new Error(err.error || 'درخواست ناموفق بود');
+      const apiError = new Error(err.error || 'درخواست ناموفق بود');
+      apiError.status = res.status;
+      apiError.payload = err;
+      throw apiError;
     }
     // Trial clock rides along on every API response; absent for paid/admin users.
     App.renderTrialBanner(res.headers.get('X-Trial-Ms-Left'));
@@ -88,6 +91,7 @@ App.renderRichText = function(el, text) {
     questions: [],
     currentIndex: 0,
     answers: {},
+    recordedAnswers: new Set(),
     flags: new Set(),
     startedAt: null,
     timerInterval: null,
@@ -97,6 +101,11 @@ App.renderRichText = function(el, text) {
     translationCache: {},
     theoryCache: {},    // §15.3: per-question theory explanations (lazy)
     grammarCache: {},   // §15.3: per-question grammar+vocab (lazy)
+    aiPendingRequests: {},
+    aiRequestGeneration: 0,
+    examStartPending: false,
+    answerPending: {},
+    finishPending: false,
     // Vocab
     vocabItems: [],
     dueVocab: [],
@@ -116,6 +125,7 @@ App.renderRichText = function(el, text) {
     reelsLoading: false,
     reelsAnswered: {},
     reelsLiked: new Set(),
+    reelTranslationRequests: {},
   };
 
   // ── Screen routing (with slide transition) ───────────────────────────────────
@@ -250,8 +260,11 @@ App.renderRichText = function(el, text) {
     });
     var actionLabels = {
       'translate_question': '🌐 ترجمه سوال',
+      'translate_question_text': '🌐 ترجمه متن سوال',
+      'translate_question_explanation': '💡 توضیح پاسخ',
       'theory_explain':     '🎓 توضیح تئوری',
       'grammar_analyze':    '📚 آنالیز گرامر',
+      'grammar_vocab_repair': '📚 تکمیل لغات جاافتاده',
       'tutor_chat':         '💬 مکالمه مربی',
       'suggest_vocab':      '📖 پیشنهاد لغت'
     };
@@ -966,19 +979,17 @@ App.renderRichText = function(el, text) {
   };
 
   App.startTopicExam = async function(topicId) {
+    if (state.examStartPending) return;
+    state.examStartPending = true;
     const returnScreen = state.currentScreen || 'topics';
     try {
       App.toast('در حال لود آزمون فصل… ⏳');
       const data = await api('POST', '/topics/' + topicId + '/exam');
-      state.sessionId = data.sessionId;
-      state.questions = data.questions || [];
-      state.currentIndex = 0;
-      state.answers = {};
-      state.flags = new Set();
-      state.startedAt = Date.now();
-      state.secondsLeft = 600; // 10 minutes for 15 chapter questions
-      state.examMode = 'topic_practice';
-      state.examReturnScreen = returnScreen;
+      App.initializeExamState(data, {
+        secondsLeft: 600,
+        mode: 'topic_practice',
+        returnScreen: returnScreen
+      });
 
       App.showScreen('exam');
       const nav = document.getElementById('bottom-nav');
@@ -989,6 +1000,8 @@ App.renderRichText = function(el, text) {
       App.startTimer();
     } catch(e) {
       App.toast(e.message || 'خطا در شروع آزمون فصل');
+    } finally {
+      state.examStartPending = false;
     }
   };
 
@@ -1743,54 +1756,25 @@ App.renderRichText = function(el, text) {
 
       const isSign = item.type === 'sign';
       const isTip = item.type === 'tip';
-      const badgeClass = isSign ? 'reel-badge-sign' : isTip ? 'reel-badge-tip' : 'reel-badge-question';
       const badgeText = isSign ? '🚦 تابلو راهنمایی' : isTip ? '💡 نکته طلایی امتحانی' : '❓ تست سریع';
       const initialLikes = Math.floor(120 + (item.question_id * 17) % 850);
-
-      let bodyHtml = '';
-
-      if (item.image_url) {
-        bodyHtml += '<div class="reel-img-container"><img src="' + item.image_url + '" class="reel-img" alt="Sign Image" /></div>';
-      }
-
-      if (isTip) {
-        bodyHtml += '<div class="reel-tip-card">' +
-          '<div class="reel-tip-title">' + (item.tip_title_fa || 'نکته طلایی امتحانی') + '</div>' +
-          (item.tip_keyword_it ? '<span class="reel-tip-kw">' + item.tip_keyword_it + '</span>' : '') +
-          '<div class="reel-text-it long-pressable" id="reel-text-it-' + item.question_id + '">' + item.text_it + '</div>' +
-          '</div>';
-      } else {
-        bodyHtml += '<div class="reel-text-it long-pressable" id="reel-text-it-' + item.question_id + '">' + item.text_it + '</div>';
-      }
-
-      if (!isTip) {
-        bodyHtml += '<div class="reel-quiz-row" id="reel-quiz-row-' + item.question_id + '">' +
-          '<button class="btn-reel-quiz btn-reel-vero" onclick="App.answerReelQuestion(' + item.question_id + ', 1, ' + item.correct_answer + ')">✓ VERO (درست)</button>' +
-          '<button class="btn-reel-quiz btn-reel-falso" onclick="App.answerReelQuestion(' + item.question_id + ', 0, ' + item.correct_answer + ')">✗ FALSO (نادرست)</button>' +
-          '</div>' +
-          '<div class="reel-quiz-feedback" id="reel-feedback-' + item.question_id + '"></div>';
-      }
-
-      bodyHtml += '<div class="reel-translation-box" id="reel-trans-box-' + item.question_id + '">' +
-        '<div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 10px;"></div>' +
-        '<div class="reel-trans-text" id="reel-trans-text-' + item.question_id + '">' +
-        (item.translated_text || 'در حال دریافت ترجمه فارسی… ⏳') +
-        '</div>' +
-        '<div class="reel-trans-expl" id="reel-trans-expl-' + item.question_id + '">' +
-        (item.explanation || '') +
-        '</div>' +
-        '</div>';
+      const safeTopicName = App.escapeHtml(item.topic_name_fa || 'سوال آزمون');
+      const safeImageUrl = App.escapeHtml(item.image_url || '');
+      const safeQuestionText = App.escapeHtml(item.text_it || '');
+      const safeTranslation = App.escapeHtml(
+        item.translated_text || 'در حال دریافت ترجمه فارسی… ⏳'
+      );
 
       cardEl.innerHTML =
         '<div class="reel-card-header">' +
           '<div class="reel-badge-pill">' + badgeText + '</div>' +
-          '<div class="reel-topic-name">' + (item.topic_name_fa || 'سوال آزمون') + '</div>' +
+          '<div class="reel-topic-name">' + safeTopicName + '</div>' +
         '</div>' +
 
         '<div class="reel-main-body">' +
           (item.image_url ?
             '<div class="reel-sign-frame">' +
-              '<img src="' + item.image_url + '" class="reel-sign-image" alt="Road Sign" />' +
+              '<img src="' + safeImageUrl + '" class="reel-sign-image" alt="Road Sign" />' +
             '</div>' +
             '<div class="reel-divider-rule">' +
               '<div class="reel-divider-line"></div>' +
@@ -1800,7 +1784,7 @@ App.renderRichText = function(el, text) {
           : '') +
 
           '<div class="reel-question-card">' +
-            '<div class="reel-question-text long-pressable" id="reel-text-it-' + item.question_id + '">' + item.text_it + '</div>' +
+            '<div class="reel-question-text long-pressable" id="reel-text-it-' + item.question_id + '">' + safeQuestionText + '</div>' +
           '</div>' +
 
           (!isTip ?
@@ -1818,11 +1802,9 @@ App.renderRichText = function(el, text) {
 
           '<div class="reel-trans-drawer" id="reel-trans-box-' + item.question_id + '">' +
             '<div class="reel-trans-title" id="reel-trans-text-' + item.question_id + '">' +
-            (item.translated_text || 'در حال دریافت ترجمه فارسی… ⏳') +
+            safeTranslation +
             '</div>' +
-            '<div class="reel-trans-detail" id="reel-trans-expl-' + item.question_id + '">' +
-            (item.explanation || '') +
-            '</div>' +
+            '<div class="reel-trans-detail" id="reel-trans-expl-' + item.question_id + '"></div>' +
           '</div>' +
         '</div>' +
 
@@ -1849,6 +1831,13 @@ App.renderRichText = function(el, text) {
         '</div>';
 
       viewport.appendChild(cardEl);
+
+      const initialExplanationEl = cardEl.querySelector(
+        '#reel-trans-expl-' + item.question_id
+      );
+      if (initialExplanationEl && item.explanation) {
+        App.renderRichText(initialExplanationEl, item.explanation);
+      }
 
       // Setup Double-Tap to Like on Instagram Reel Card
       let lastTap = 0;
@@ -1954,16 +1943,27 @@ App.renderRichText = function(el, text) {
       if (btn) btn.classList.add('active');
 
       const textEl = document.getElementById('reel-trans-text-' + questionId);
-      if (textEl && textEl.textContent.includes('در حال دریافت')) {
+      const explEl = document.getElementById('reel-trans-expl-' + questionId);
+      const needsTranslation = !!textEl && textEl.textContent.includes('در حال دریافت');
+      const needsExplanation = !!explEl && !explEl.textContent.trim();
+      if (textEl && (needsTranslation || needsExplanation)) {
+        let pending = state.reelTranslationRequests[questionId];
+        if (!pending) {
+          pending = api('POST', '/translate/' + questionId);
+          state.reelTranslationRequests[questionId] = pending;
+        }
         try {
-          const res = await api('POST', '/translate/' + questionId);
+          const res = await pending;
           if (res.translatedText) {
             textEl.textContent = res.translatedText;
-            const explEl = document.getElementById('reel-trans-expl-' + questionId);
-            if (explEl && res.explanation) explEl.textContent = res.explanation;
           }
+          if (explEl && res.explanation) App.renderRichText(explEl, res.explanation);
         } catch (e) {
-          if (textEl) textEl.textContent = 'خطا در دریافت ترجمه';
+          if (needsTranslation) textEl.textContent = 'خطا در دریافت ترجمه';
+        } finally {
+          if (state.reelTranslationRequests[questionId] === pending) {
+            delete state.reelTranslationRequests[questionId];
+          }
         }
       }
     } else {
@@ -2230,12 +2230,15 @@ App.renderRichText = function(el, text) {
         sessionId: state.tutorSessionId,
         questionId: q.questionId,
         userMessage: userMessage,
-        history: state.tutorChatHistory[q.questionId],
+        history: state.tutorChatHistory[q.questionId].slice(0, -1).slice(-6),
       });
 
       if (res.response) {
         state.tutorChatHistory[q.questionId].push({ role: 'assistant', content: res.response });
-        App.renderTutorChatHistory(q.questionId);
+        const currentTutorQuestion = state.tutorQuestions[state.tutorCurrentIndex];
+        if (currentTutorQuestion?.questionId === q.questionId) {
+          App.renderTutorChatHistory(q.questionId);
+        }
       }
     } catch (err) {
       App.toast('خطا در پاسخ استاد: ' + (err.message || err));

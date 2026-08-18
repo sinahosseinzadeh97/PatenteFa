@@ -41,6 +41,7 @@ export interface DbExamSession {
   mode: string;
   started_at: string;
   finished_at: string | null;
+  abandoned_at: string | null;
   duration_seconds: number | null;
   score: number | null;
   wrong_count: number | null;
@@ -88,7 +89,7 @@ export interface DbTranslation {
   // §15.2 — three-tab AI panel columns (nullable, populated independently per tab)
   theory_text: string | null;
   grammar_analysis: string | null;
-  vocab_suggestions: string | null; // JSON array of {term_it, term_fa}
+  vocab_suggestions: string | null; // JSON array of vocabulary items + grammatical metadata
   created_at: string;
 }
 
@@ -348,19 +349,49 @@ export async function getQuestionCount(db: D1Database): Promise<number> {
 
 // ── Exam sessions ────────────────────────────────────────────────────────────
 
-export async function createExamSession(
+/**
+ * Atomically retire every open session and create its replacement.
+ * D1 batch statements commit as one transaction, so concurrent starts never
+ * expose two active sessions between the update and insert.
+ */
+export async function replaceActiveExamSession(
   db: D1Database,
   userId: number,
-  mode: "exam" | "review" | "topic_practice"
+  mode: "exam" | "review" | "topic_practice",
+  questionIds: number[]
 ): Promise<number> {
-  const result = await db
-    .prepare(
-      `INSERT INTO exam_sessions (user_id, mode) VALUES (?, ?) RETURNING id`
-    )
-    .bind(userId, mode)
-    .first<{ id: number }>();
-  if (!result) throw new Error("Failed to create exam session");
-  return result.id;
+  if (questionIds.length === 0) throw new Error("Cannot create an exam without questions");
+
+  const answerStatements = questionIds.map((questionId, index) =>
+    db
+      .prepare(
+        `INSERT INTO exam_answers
+           (session_id, question_id, position, user_answer, is_correct, answered_at)
+         SELECT es.id, ?, ?, NULL, NULL, NULL
+         FROM exam_sessions es
+         WHERE es.user_id = ? AND es.finished_at IS NULL AND es.abandoned_at IS NULL
+         ORDER BY es.id DESC
+         LIMIT 1`
+      )
+      .bind(questionId, index + 1, userId)
+  );
+
+  const results = await db.batch<{ id: number }>([
+    db
+      .prepare(
+        `UPDATE exam_sessions
+         SET abandoned_at = COALESCE(abandoned_at, datetime('now'))
+         WHERE user_id = ? AND finished_at IS NULL AND abandoned_at IS NULL`
+      )
+      .bind(userId),
+    db
+      .prepare(`INSERT INTO exam_sessions (user_id, mode) VALUES (?, ?) RETURNING id`)
+      .bind(userId, mode),
+    ...answerStatements,
+  ]);
+  const created = results[1]?.results[0];
+  if (!created) throw new Error("Failed to replace active exam session");
+  return created.id;
 }
 
 export async function insertExamAnswer(
@@ -381,6 +412,54 @@ export async function insertExamAnswer(
     .run();
 }
 
+/** Record the first answer only while its owning session is still active. */
+export type ExamAnswerRecordResult = "recorded" | "duplicate" | "conflict" | "inactive";
+
+export async function recordExamAnswer(
+  db: D1Database,
+  sessionId: number,
+  userId: number,
+  questionId: number,
+  userAnswer: 0 | 1,
+  isCorrect: 0 | 1
+): Promise<ExamAnswerRecordResult> {
+  const result = await db
+    .prepare(
+      `UPDATE exam_answers
+       SET user_answer = ?, is_correct = ?, answered_at = datetime('now')
+       WHERE session_id = ?
+         AND question_id = ?
+         AND user_answer IS NULL
+         AND EXISTS (
+           SELECT 1
+           FROM exam_sessions es
+           WHERE es.id = exam_answers.session_id
+             AND es.user_id = ?
+             AND es.finished_at IS NULL
+             AND es.abandoned_at IS NULL
+             AND es.started_at >= datetime('now', '-30 minutes')
+         )`
+    )
+    .bind(userAnswer, isCorrect, sessionId, questionId, userId)
+    .run();
+  if (result.meta.changes === 1) return "recorded";
+
+  // A response can be lost after D1 commits. Treat an exact retry as success so
+  // the client can reconcile safely without ever allowing an answer change.
+  const existing = await db
+    .prepare(
+      `SELECT ea.user_answer
+       FROM exam_answers ea
+       JOIN exam_sessions es ON es.id = ea.session_id
+       WHERE ea.session_id = ? AND ea.question_id = ? AND es.user_id = ?`
+    )
+    .bind(sessionId, questionId, userId)
+    .first<{ user_answer: number | null }>();
+  if (existing?.user_answer === userAnswer) return "duplicate";
+  if (existing?.user_answer != null) return "conflict";
+  return "inactive";
+}
+
 export async function updateAnswerFlag(
   db: D1Database,
   sessionId: number,
@@ -398,19 +477,40 @@ export async function updateAnswerFlag(
 export async function finishExamSession(
   db: D1Database,
   sessionId: number,
-  score: number,
-  wrongCount: number,
-  passed: number,
+  userId: number,
   durationSeconds: number
-): Promise<void> {
-  await db
+): Promise<boolean> {
+  const result = await db
     .prepare(
-      `UPDATE exam_sessions
-       SET finished_at = datetime('now'), score = ?, wrong_count = ?, passed = ?, duration_seconds = ?
-       WHERE id = ?`
+      `WITH result AS (
+         SELECT
+           COUNT(*) AS total_count,
+           COALESCE(SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_count,
+           COALESCE(SUM(CASE WHEN is_correct = 1 THEN 0 ELSE 1 END), 0) AS wrong_count
+         FROM exam_answers
+         WHERE session_id = ?
+       )
+       UPDATE exam_sessions
+       SET finished_at = datetime('now'),
+           score = (SELECT correct_count FROM result),
+           wrong_count = (SELECT wrong_count FROM result),
+           passed = (
+             SELECT CASE
+               WHEN wrong_count <= CASE WHEN total_count BETWEEN 1 AND 10 THEN 1 ELSE 3 END
+               THEN 1 ELSE 0
+             END
+             FROM result
+           ),
+           duration_seconds = ?
+       WHERE id = ?
+         AND user_id = ?
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL
+         AND started_at >= datetime('now', '-30 minutes')`
     )
-    .bind(score, wrongCount, passed, durationSeconds, sessionId)
+    .bind(sessionId, durationSeconds, sessionId, userId)
     .run();
+  return result.meta.changes === 1;
 }
 
 export async function getSessionAnswers(
@@ -432,6 +532,40 @@ export async function getSessionById(
     .prepare(`SELECT * FROM exam_sessions WHERE id = ?`)
     .bind(sessionId)
     .first<DbExamSession>();
+}
+
+export async function abandonExamSession(
+  db: D1Database,
+  sessionId: number,
+  userId: number
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `UPDATE exam_sessions
+       SET abandoned_at = datetime('now')
+       WHERE id = ?
+         AND user_id = ?
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL`
+    )
+    .bind(sessionId, userId)
+    .run();
+  return result.meta.changes === 1;
+}
+
+/** Close stale unfinished sessions before dealing a new one to this user. */
+export async function abandonOpenExamSessions(
+  db: D1Database,
+  userId: number
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE exam_sessions
+       SET abandoned_at = COALESCE(abandoned_at, datetime('now'))
+       WHERE user_id = ? AND finished_at IS NULL AND abandoned_at IS NULL`
+    )
+    .bind(userId)
+    .run();
 }
 
 // ── Review queue ─────────────────────────────────────────────────────────────
@@ -912,10 +1046,21 @@ export async function getReelsFeedItems(
        FROM questions q
        LEFT JOIN topics t ON q.topic_id = t.id
        LEFT JOIN translations_cache tr ON tr.question_id = q.id AND tr.lang = 'fa'
+       WHERE NOT EXISTS (
+         SELECT 1
+         FROM exam_answers ea
+         JOIN exam_sessions es ON es.id = ea.session_id
+         WHERE ea.question_id = q.id
+           AND es.user_id = ?
+           AND es.finished_at IS NULL
+           AND es.abandoned_at IS NULL
+           AND es.started_at >= datetime('now', '-30 minutes')
+           AND ea.user_answer IS NULL
+       )
        ORDER BY RANDOM()
        LIMIT ?`
     )
-    .bind(limit)
+    .bind(userId, limit)
     .all<{
       question_id: number;
       text_it: string;

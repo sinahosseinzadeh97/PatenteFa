@@ -9,24 +9,38 @@
 'use strict';
 
   // ── Start exam ──────────────────────────────────────────────────────────────
+  App.initializeExamState = function(data, options) {
+    options = options || {};
+    state.sessionId = data.sessionId;
+    state.questions = data.questions || [];
+    state.currentIndex = 0;
+    state.answers = {};
+    state.recordedAnswers = new Set();
+    state.flags = new Set();
+    state.startedAt = Date.now();
+    state.translateOpen = false;
+    state.translationCache = {};
+    state.theoryCache = {};
+    state.grammarCache = {};
+    state.aiPendingRequests = {};
+    state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
+    state.answerPending = {};
+    state.finishPending = false;
+    state.secondsLeft = options.secondsLeft || 1200;
+    state.examMode = options.mode || data.mode || 'exam';
+    state.examReturnScreen = options.returnScreen || 'home';
+  };
+
   App.startExam = async function(mode) {
+    if (state.examStartPending) return;
+    state.examStartPending = true;
     mode = mode || 'exam';
     const returnScreen = state.currentScreen && state.currentScreen !== 'exam'
       ? state.currentScreen
       : 'home';
     try {
       const data = await api('POST', '/exam/start', { mode });
-      state.sessionId = data.sessionId;
-      state.questions = data.questions;
-      state.currentIndex = 0;
-      state.answers = {};
-      state.flags = new Set();
-      state.startedAt = Date.now();
-      state.translateOpen = false;
-      state.translationCache = {};
-      state.secondsLeft = 1200;
-      state.examMode = mode;
-      state.examReturnScreen = returnScreen;
+      App.initializeExamState(data, { mode: mode, returnScreen: returnScreen });
 
       App.showScreen('exam');
       document.getElementById('bottom-nav').style.display = 'none';
@@ -36,6 +50,8 @@
       App.startTimer();
     } catch (e) {
       App.toast('خطا: ' + e.message);
+    } finally {
+      state.examStartPending = false;
     }
   };
 
@@ -73,6 +89,16 @@
     }
 
     clearInterval(state.timerInterval);
+    const abandonedSessionId = state.sessionId;
+    // Invalidate first: delayed answer/finish callbacks capture the old ID and
+    // must become no-ops before the asynchronous abandon request is sent.
+    state.sessionId = null;
+    state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
+    state.answerPending = {};
+    state.finishPending = false;
+    if (abandonedSessionId) {
+      api('POST', '/exam/' + abandonedSessionId + '/abandon').catch(function() {});
+    }
     state.examMode = null;
     App.applyExamMode();
 
@@ -118,7 +144,7 @@
     // Update the summary label
     const posEl = document.getElementById('exam-position');
     if (posEl) {
-      posEl.textContent = 'Q ' + (state.currentIndex + 1) + ' / ' + total;
+      posEl.textContent = (state.currentIndex + 1) + ' / ' + total;
     }
 
     state.questions.forEach(function(q, i) {
@@ -173,6 +199,19 @@
 
     // §15.3: reset AI panel on question switch (uses centralized helper)
     App._resetAiPanel();
+    App.updateFinishAvailability();
+  };
+
+  App.updateFinishAvailability = function() {
+    const btn = document.getElementById('btn-finish-exam');
+    if (!btn) return;
+    const lastQuestion = state.questions[state.questions.length - 1];
+    const canFinish = !!(
+      state.sessionId &&
+      lastQuestion &&
+      state.recordedAnswers.has(lastQuestion.questionId)
+    );
+    btn.style.display = canFinish ? 'inline-flex' : 'none';
   };
 
   // ── Answer ──────────────────────────────────────────────────────────────────
@@ -180,30 +219,48 @@
     const q = state.questions[state.currentIndex];
     if (!q) return;
     if (state.answers[q.questionId] !== undefined) return; // already answered
+    if (state.answerPending[q.questionId]) return;
 
-    state.answers[q.questionId] = value;
+    const sessionId = state.sessionId;
+    const answeredIndex = state.currentIndex;
+    state.answerPending[q.questionId] = true;
 
     document.getElementById('btn-vero').classList.add('btn-disabled');
     document.getElementById('btn-falso').classList.add('btn-disabled');
 
-    // Update road immediately on answer
-    App.renderExamTabs();
-
     try {
-      await api('POST', '/exam/' + state.sessionId + '/answer', {
+      await api('POST', '/exam/' + sessionId + '/answer', {
         questionId: q.questionId,
         answer: value,
       });
+      if (state.sessionId !== sessionId) return;
+      state.answers[q.questionId] = value;
+      state.recordedAnswers.add(q.questionId);
+      App.renderExamTabs();
+      App._updateAiAvailability();
+      App.updateFinishAvailability();
     } catch (e) {
-      // Offline — continue locally
+      const message = e && typeof e.status === 'number'
+        ? 'پاسخ ذخیره نشد: ' + e.message
+        : 'وضعیت شبکه نامشخص است؛ برای تلاش دوباره پاسخ را بزنید.';
+      App.toast(message);
+      document.getElementById('btn-vero').classList.remove('btn-disabled');
+      document.getElementById('btn-falso').classList.remove('btn-disabled');
+      return;
+    } finally {
+      if (state.sessionId === sessionId) delete state.answerPending[q.questionId];
     }
 
     setTimeout(function() {
+      if (state.sessionId !== sessionId) return;
       document.getElementById('btn-vero').classList.remove('btn-disabled');
       document.getElementById('btn-falso').classList.remove('btn-disabled');
 
-      if (state.currentIndex < state.questions.length - 1) {
-        state.currentIndex++;
+      // The user may have opened another numbered tab while persistence was in
+      // flight. Never advance or finish from a different tab than the one answered.
+      if (state.currentIndex !== answeredIndex) return;
+      if (answeredIndex < state.questions.length - 1) {
+        state.currentIndex = answeredIndex + 1;
         App.renderExamTabs();
         App.renderQuestion();
       } else {
@@ -276,6 +333,7 @@
 
     const q = state.questions[state.currentIndex];
     if (!q) return;
+    const requestGeneration = state.aiRequestGeneration;
 
     if (tabIndex === 0) {
       // Translation tab — load immediately (same as before)
@@ -286,10 +344,15 @@
       document.getElementById('translate-text').textContent = '⏳ در حال ترجمه…';
       document.getElementById('translate-explanation').textContent = '';
       try {
-        const data = await api('POST', '/translate/' + q.questionId);
+        const data = await App.getAiRequest(
+          requestGeneration + ':translation:' + q.questionId,
+          function() { return api('POST', '/translate/' + q.questionId); }
+        );
         state.translationCache[q.questionId] = data;
+        if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
         App.showTranslation(data);
       } catch (e) {
+        if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
         document.getElementById('translate-text').textContent = '⚠ خطا: ' + (e.message || 'ترجمه در دسترس نیست');
       }
     } else if (tabIndex === 1) {
@@ -317,62 +380,82 @@
       verdictEl.style.display = 'block';
     }
     document.getElementById('translate-text').textContent = data.translatedText || '';
-    document.getElementById('translate-explanation').textContent = data.explanation || '';
+    App.renderRichText(document.getElementById('translate-explanation'), data.explanation || '');
     document.getElementById('exam-question-text').classList.add('translated');
   };
 
   // loadTheoryTab: fetches theory once per question, caches in state.theoryCache
   App.loadTheoryTab = async function(questionId) {
-    if (state.theoryCache && state.theoryCache[questionId]) {
-      App.renderRichText(document.getElementById('theory-text'), state.theoryCache[questionId]);
-      return;
-    }
     const loadingEl = document.getElementById('theory-loading');
     const textEl = document.getElementById('theory-text');
     const errorEl = document.getElementById('theory-error');
+    if (state.theoryCache && state.theoryCache[questionId]) {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      App.renderRichText(textEl, state.theoryCache[questionId]);
+      return;
+    }
+    const requestGeneration = state.aiRequestGeneration;
     loadingEl.style.display = 'block';
     textEl.textContent = '';
     errorEl.style.display = 'none';
     try {
-      const data = await api('POST', '/translate/' + questionId + '/theory');
+      const data = await App.getAiRequest(
+        requestGeneration + ':theory:' + questionId,
+        function() { return api('POST', '/translate/' + questionId + '/theory'); }
+      );
       if (!state.theoryCache) state.theoryCache = {};
       state.theoryCache[questionId] = data.theoryText || '';
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       App.renderRichText(textEl, data.theoryText || '');
     } catch (e) {
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       errorEl.textContent = 'مربی تئوری در دسترس نیست — دوباره تلاش کنید';
       errorEl.style.display = 'block';
     } finally {
-      loadingEl.style.display = 'none';
+      if (App.isAiRequestCurrent(questionId, requestGeneration)) {
+        loadingEl.style.display = 'none';
+      }
     }
   };
 
   // loadGrammarTab: fetches grammar+vocab once per question, caches in state.grammarCache
   App.loadGrammarTab = async function(questionId) {
-    if (state.grammarCache && state.grammarCache[questionId]) {
-      const cached = state.grammarCache[questionId];
-      App.renderRichText(document.getElementById('grammar-analysis'), cached.grammarAnalysis || '');
-      App.renderVocabSuggestions(cached.vocabSuggestions || [], questionId);
-      return;
-    }
     const loadingEl = document.getElementById('grammar-loading');
     const analysisEl = document.getElementById('grammar-analysis');
     const errorEl = document.getElementById('grammar-error');
     const listEl = document.getElementById('vocab-suggestions-list');
+    if (state.grammarCache && state.grammarCache[questionId]) {
+      const cached = state.grammarCache[questionId];
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      App.renderRichText(analysisEl, cached.grammarAnalysis || '');
+      App.renderVocabSuggestions(cached.vocabSuggestions || [], questionId);
+      return;
+    }
+    const requestGeneration = state.aiRequestGeneration;
     loadingEl.style.display = 'block';
     analysisEl.textContent = '';
     listEl.innerHTML = '';
     errorEl.style.display = 'none';
     try {
-      const data = await api('POST', '/translate/' + questionId + '/grammar');
+      const data = await App.getAiRequest(
+        requestGeneration + ':grammar:' + questionId,
+        function() { return api('POST', '/translate/' + questionId + '/grammar'); }
+      );
       if (!state.grammarCache) state.grammarCache = {};
       state.grammarCache[questionId] = { grammarAnalysis: data.grammarAnalysis, vocabSuggestions: data.vocabSuggestions };
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       App.renderRichText(analysisEl, data.grammarAnalysis || '');
       App.renderVocabSuggestions(data.vocabSuggestions || [], questionId);
     } catch (e) {
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       errorEl.textContent = 'معلم گرامر در دسترس نیست — دوباره تلاش کنید';
       errorEl.style.display = 'block';
     } finally {
-      loadingEl.style.display = 'none';
+      if (App.isAiRequestCurrent(questionId, requestGeneration)) {
+        loadingEl.style.display = 'none';
+      }
     }
   };
 
@@ -418,6 +501,42 @@
     btn.setAttribute('aria-pressed', flagged ? 'true' : 'false');
   };
 
+  App.isAiRequestCurrent = function(questionId, requestGeneration) {
+    const q = state.questions[state.currentIndex];
+    return (
+      !!q &&
+      q.questionId === questionId &&
+      state.translateOpen &&
+      state.aiRequestGeneration === requestGeneration
+    );
+  };
+
+  App.getAiRequest = function(key, requestFactory) {
+    if (!state.aiPendingRequests) state.aiPendingRequests = {};
+    if (state.aiPendingRequests[key]) return state.aiPendingRequests[key];
+
+    const pending = Promise.resolve().then(requestFactory);
+    state.aiPendingRequests[key] = pending;
+    const clear = function() {
+      if (state.aiPendingRequests[key] === pending) {
+        delete state.aiPendingRequests[key];
+      }
+    };
+    pending.then(clear, clear);
+    return pending;
+  };
+
+  App._updateAiAvailability = function() {
+    const toggle = document.getElementById('translate-toggle');
+    const label = toggle ? toggle.closest('.ai-toggle-label') : null;
+    const sub = document.getElementById('ai-toggle-sub');
+
+    // Keep older cached markup usable when it is paired with this newer script.
+    if (toggle) toggle.disabled = false;
+    if (label) label.classList.remove('locked');
+    if (sub) sub.textContent = 'همین حالا قابل استفاده است';
+  };
+
   App._resetAiPanel = function() {
     state.translateOpen = false;
     const tog = document.getElementById('translate-toggle');
@@ -425,6 +544,7 @@
     const panel = document.getElementById('translate-panel');
     if (panel) panel.classList.remove('open');
     document.getElementById('exam-question-text').className = 'question-text';
+    App._updateAiAvailability();
   };
 
 
@@ -465,15 +585,36 @@
 
   // ── Finish exam ─────────────────────────────────────────────────────────────
   App.finishExam = async function() {
+    const finishingSessionId = state.sessionId;
+    if (!finishingSessionId || state.finishPending) return;
+    if (Object.keys(state.answerPending).length > 0) {
+      setTimeout(function() {
+        if (state.sessionId === finishingSessionId) App.finishExam();
+      }, 250);
+      return;
+    }
+
+    state.finishPending = true;
+    const finishBtn = document.getElementById('btn-finish-exam');
+    if (finishBtn) finishBtn.disabled = true;
     clearInterval(state.timerInterval);
     const durationSeconds = Math.round((Date.now() - state.startedAt) / 1000);
     let data;
     try {
-      data = await api('POST', '/exam/' + state.sessionId + '/finish', { durationSeconds });
+      data = await api('POST', '/exam/' + finishingSessionId + '/finish', { durationSeconds });
     } catch (e) {
-      App.toast('خطا در ثبت نتایج: ' + e.message);
+      if (state.sessionId === finishingSessionId) {
+        App.toast('خطا در ثبت نتایج: ' + e.message);
+      }
       return;
+    } finally {
+      if (state.sessionId === finishingSessionId) {
+        state.finishPending = false;
+        if (finishBtn) finishBtn.disabled = false;
+      }
     }
+    if (state.sessionId !== finishingSessionId) return;
+    state.sessionId = null;
     document.getElementById('bottom-nav').style.display = '';
     state.examMode = null;
     App.applyExamMode();
@@ -598,11 +739,18 @@
         '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">' +
         (isVero ? '✅' : '❌') + ' پاسخ: ' + label + '</span></div>';
       content += '<div class="result-translation-text">🌐 ' + App.escapeHtml(data.translatedText) + '</div>';
-      if (data.explanation) {
-        content += '<div class="result-translation-explanation">💡 ' + App.escapeHtml(data.explanation) + '</div>';
-      }
-
       block.innerHTML = content;
+      if (data.explanation) {
+        const explanationBlock = document.createElement('div');
+        explanationBlock.className = 'result-translation-explanation';
+        const explanationIcon = document.createElement('span');
+        explanationIcon.textContent = '💡 ';
+        const explanationBody = document.createElement('div');
+        App.renderRichText(explanationBody, data.explanation);
+        explanationBlock.appendChild(explanationIcon);
+        explanationBlock.appendChild(explanationBody);
+        block.appendChild(explanationBlock);
+      }
       container.insertBefore(block, btn);
       btn.style.display = 'none';
       // The row grows a lot when the explanation lands — bring it into view.
@@ -612,4 +760,3 @@
       btn.disabled = false;
     }
   };
-
