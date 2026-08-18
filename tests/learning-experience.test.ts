@@ -371,6 +371,18 @@ test("answer-bearing AI routes enforce the answered state on the server", () => 
   );
 });
 
+test("abandoned sessions stop blocking study content without becoming scored exams", () => {
+  const querySource = readFileSync("src/db/queries.ts", "utf8");
+  const examRouteSource = readFileSync("src/api/exam.ts", "utf8");
+  const examClient = readFileSync("public/js/exam.js", "utf8");
+
+  assert.ok(existsSync("migrations/0012_add_abandoned_sessions.sql"));
+  assert.ok(existsSync("migrations/0013_backfill_abandoned_sessions.sql"));
+  assert.match(querySource, /abandoned_at\s+IS\s+NULL/i);
+  assert.match(examRouteSource, /\/:sessionId\/abandon/);
+  assert.match(examClient, /\/exam\/['"]?\s*\+\s*state\.sessionId\s*\+\s*['"]\/abandon/);
+});
+
 test("Reels regenerate missing explanations and render their structure safely", () => {
   const appClient = readFileSync("public/js/app.js", "utf8");
 
