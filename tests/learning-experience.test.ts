@@ -445,6 +445,10 @@ test("chapter exams reuse the canonical session lifecycle and client reset", () 
   assert.match(replaceSessionQuery, /db\.batch/);
   assert.match(replaceSessionQuery, /UPDATE\s+exam_sessions/i);
   assert.match(replaceSessionQuery, /INSERT\s+INTO\s+exam_sessions/i);
+  assert.match(replaceSessionQuery, /questionIds\.map/);
+  assert.match(replaceSessionQuery, /INSERT\s+INTO\s+exam_answers/i);
+  assert.doesNotMatch(examRoute, /for\s*\([^)]*questions\.length[\s\S]*insertExamAnswer/);
+  assert.doesNotMatch(topicsRoute, /for\s*\([^)]*questions\.length[\s\S]*insertExamAnswer/);
   assert.match(appClient, /state\.examStartPending/);
   assert.match(examClient, /state\.examStartPending/);
   assert.match(examClient, /App\.initializeExamState\s*=\s*function/);
@@ -486,6 +490,19 @@ test("answer persistence failures stay visible and ambiguous retries are idempot
     "the client must only accept and advance an answer after persistence succeeds"
   );
   assert.match(answerFunction, /برای تلاش دوباره|دوباره/);
+  assert.match(answerFunction, /const answeredIndex\s*=\s*state\.currentIndex/);
+  assert.match(answerFunction, /state\.currentIndex\s*!==\s*answeredIndex/);
+});
+
+test("exam start mode and delayed tutor rendering remain scoped to their request", () => {
+  const examRoute = readFileSync("src/api/exam.ts", "utf8");
+  const appClient = readFileSync("public/js/app.js", "utf8");
+
+  assert.match(examRoute, /c\.req\.json\(\)\.catch/);
+  assert.match(examRoute, /requestedMode\s*!==\s*"exam"/);
+  assert.match(examRoute, /requestedMode\s*!==\s*"review"/);
+  assert.match(examRoute, /requestedMode\s*!==\s*"topic_practice"/);
+  assert.match(appClient, /currentTutorQuestion\?\.questionId\s*===\s*q\.questionId/);
 });
 
 test("Reels regenerate missing explanations and render their structure safely", () => {
