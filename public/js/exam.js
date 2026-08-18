@@ -20,6 +20,7 @@
       state.questions = data.questions;
       state.currentIndex = 0;
       state.answers = {};
+      state.recordedAnswers = new Set();
       state.flags = new Set();
       state.startedAt = Date.now();
       state.translateOpen = false;
@@ -75,6 +76,9 @@
     }
 
     clearInterval(state.timerInterval);
+    if (state.sessionId) {
+      api('POST', '/exam/' + state.sessionId + '/abandon').catch(function() {});
+    }
     state.examMode = null;
     App.applyExamMode();
 
@@ -184,7 +188,6 @@
     if (state.answers[q.questionId] !== undefined) return; // already answered
 
     state.answers[q.questionId] = value;
-    App._updateAiAvailability();
 
     document.getElementById('btn-vero').classList.add('btn-disabled');
     document.getElementById('btn-falso').classList.add('btn-disabled');
@@ -197,6 +200,8 @@
         questionId: q.questionId,
         answer: value,
       });
+      state.recordedAnswers.add(q.questionId);
+      App._updateAiAvailability();
     } catch (e) {
       // Offline — continue locally
     }
@@ -458,7 +463,11 @@
 
   App.canUseAiForCurrentQuestion = function() {
     const q = state.questions[state.currentIndex];
-    return !!q && state.answers[q.questionId] !== undefined;
+    return (
+      !!q &&
+      state.answers[q.questionId] !== undefined &&
+      state.recordedAnswers.has(q.questionId)
+    );
   };
 
   App.isAiRequestCurrent = function(questionId, requestGeneration) {

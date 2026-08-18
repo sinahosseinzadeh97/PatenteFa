@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
   mode TEXT DEFAULT 'exam',            -- 'exam' | 'topic_practice' | 'review'
   started_at TEXT DEFAULT (datetime('now')),
   finished_at TEXT,
+  abandoned_at TEXT,                   -- left without scoring; answers remain for progress
   duration_seconds INTEGER,
   score INTEGER,
   wrong_count INTEGER,
@@ -60,6 +61,7 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON exam_sessions(user_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON exam_sessions(user_id, finished_at, abandoned_at);
 
 CREATE TABLE IF NOT EXISTS exam_answers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

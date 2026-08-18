@@ -41,6 +41,7 @@ export interface DbExamSession {
   mode: string;
   started_at: string;
   finished_at: string | null;
+  abandoned_at: string | null;
   duration_seconds: number | null;
   score: number | null;
   wrong_count: number | null;
@@ -432,6 +433,63 @@ export async function getSessionById(
     .prepare(`SELECT * FROM exam_sessions WHERE id = ?`)
     .bind(sessionId)
     .first<DbExamSession>();
+}
+
+export async function abandonExamSession(
+  db: D1Database,
+  sessionId: number,
+  userId: number
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE exam_sessions
+       SET abandoned_at = COALESCE(abandoned_at, datetime('now'))
+       WHERE id = ? AND user_id = ? AND finished_at IS NULL`
+    )
+    .bind(sessionId, userId)
+    .run();
+}
+
+/** Close stale unfinished sessions before dealing a new one to this user. */
+export async function abandonOpenExamSessions(
+  db: D1Database,
+  userId: number
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE exam_sessions
+       SET abandoned_at = COALESCE(abandoned_at, datetime('now'))
+       WHERE user_id = ? AND finished_at IS NULL AND abandoned_at IS NULL`
+    )
+    .bind(userId)
+    .run();
+}
+
+/**
+ * True when this question is currently dealt to the user but has not been
+ * answered yet. Answer-bearing AI endpoints use this guard before cache reads,
+ * so a direct API call cannot bypass the exam UI lock.
+ */
+export async function hasUnansweredActiveExamQuestion(
+  db: D1Database,
+  userId: number,
+  questionId: number
+): Promise<boolean> {
+  const row = await db
+    .prepare(
+      `SELECT 1 AS found
+       FROM exam_answers ea
+       JOIN exam_sessions es ON es.id = ea.session_id
+       WHERE es.user_id = ?
+         AND es.finished_at IS NULL
+         AND es.abandoned_at IS NULL
+         AND ea.question_id = ?
+         AND ea.user_answer IS NULL
+       LIMIT 1`
+    )
+    .bind(userId, questionId)
+    .first<{ found: number }>();
+  return row?.found === 1;
 }
 
 // ── Review queue ─────────────────────────────────────────────────────────────

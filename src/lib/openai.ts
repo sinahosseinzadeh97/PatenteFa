@@ -434,10 +434,10 @@ const ITALIAN_VOCAB_STOP_WORDS = new Set([
 const MEANINGFUL_SINGLE_CHARACTER_TOKENS = new Set(["è", "e", "o"]);
 
 function normalizeItalianToken(value: string): string {
-  return value
-    .normalize("NFD")
-    .replace(/\p{M}/gu, "")
-    .toLocaleLowerCase("it");
+  // Accents can change both part of speech and meaning (`dà` = gives, `da` =
+  // from). NFC handles canonically equivalent input without merging distinct
+  // Italian words.
+  return value.normalize("NFC").toLocaleLowerCase("it");
 }
 
 function italianSurfaceTokens(value: string): string[] {

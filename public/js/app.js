@@ -88,6 +88,7 @@ App.renderRichText = function(el, text) {
     questions: [],
     currentIndex: 0,
     answers: {},
+    recordedAnswers: new Set(),
     flags: new Set(),
     startedAt: null,
     timerInterval: null,
@@ -1748,54 +1749,25 @@ App.renderRichText = function(el, text) {
 
       const isSign = item.type === 'sign';
       const isTip = item.type === 'tip';
-      const badgeClass = isSign ? 'reel-badge-sign' : isTip ? 'reel-badge-tip' : 'reel-badge-question';
       const badgeText = isSign ? '🚦 تابلو راهنمایی' : isTip ? '💡 نکته طلایی امتحانی' : '❓ تست سریع';
       const initialLikes = Math.floor(120 + (item.question_id * 17) % 850);
-
-      let bodyHtml = '';
-
-      if (item.image_url) {
-        bodyHtml += '<div class="reel-img-container"><img src="' + item.image_url + '" class="reel-img" alt="Sign Image" /></div>';
-      }
-
-      if (isTip) {
-        bodyHtml += '<div class="reel-tip-card">' +
-          '<div class="reel-tip-title">' + (item.tip_title_fa || 'نکته طلایی امتحانی') + '</div>' +
-          (item.tip_keyword_it ? '<span class="reel-tip-kw">' + item.tip_keyword_it + '</span>' : '') +
-          '<div class="reel-text-it long-pressable" id="reel-text-it-' + item.question_id + '">' + item.text_it + '</div>' +
-          '</div>';
-      } else {
-        bodyHtml += '<div class="reel-text-it long-pressable" id="reel-text-it-' + item.question_id + '">' + item.text_it + '</div>';
-      }
-
-      if (!isTip) {
-        bodyHtml += '<div class="reel-quiz-row" id="reel-quiz-row-' + item.question_id + '">' +
-          '<button class="btn-reel-quiz btn-reel-vero" onclick="App.answerReelQuestion(' + item.question_id + ', 1, ' + item.correct_answer + ')">✓ VERO (درست)</button>' +
-          '<button class="btn-reel-quiz btn-reel-falso" onclick="App.answerReelQuestion(' + item.question_id + ', 0, ' + item.correct_answer + ')">✗ FALSO (نادرست)</button>' +
-          '</div>' +
-          '<div class="reel-quiz-feedback" id="reel-feedback-' + item.question_id + '"></div>';
-      }
-
-      bodyHtml += '<div class="reel-translation-box" id="reel-trans-box-' + item.question_id + '">' +
-        '<div style="width:36px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;margin:0 auto 10px;"></div>' +
-        '<div class="reel-trans-text" id="reel-trans-text-' + item.question_id + '">' +
-        (item.translated_text || 'در حال دریافت ترجمه فارسی… ⏳') +
-        '</div>' +
-        '<div class="reel-trans-expl" id="reel-trans-expl-' + item.question_id + '">' +
-        (item.explanation || '') +
-        '</div>' +
-        '</div>';
+      const safeTopicName = App.escapeHtml(item.topic_name_fa || 'سوال آزمون');
+      const safeImageUrl = App.escapeHtml(item.image_url || '');
+      const safeQuestionText = App.escapeHtml(item.text_it || '');
+      const safeTranslation = App.escapeHtml(
+        item.translated_text || 'در حال دریافت ترجمه فارسی… ⏳'
+      );
 
       cardEl.innerHTML =
         '<div class="reel-card-header">' +
           '<div class="reel-badge-pill">' + badgeText + '</div>' +
-          '<div class="reel-topic-name">' + (item.topic_name_fa || 'سوال آزمون') + '</div>' +
+          '<div class="reel-topic-name">' + safeTopicName + '</div>' +
         '</div>' +
 
         '<div class="reel-main-body">' +
           (item.image_url ?
             '<div class="reel-sign-frame">' +
-              '<img src="' + item.image_url + '" class="reel-sign-image" alt="Road Sign" />' +
+              '<img src="' + safeImageUrl + '" class="reel-sign-image" alt="Road Sign" />' +
             '</div>' +
             '<div class="reel-divider-rule">' +
               '<div class="reel-divider-line"></div>' +
@@ -1805,7 +1777,7 @@ App.renderRichText = function(el, text) {
           : '') +
 
           '<div class="reel-question-card">' +
-            '<div class="reel-question-text long-pressable" id="reel-text-it-' + item.question_id + '">' + item.text_it + '</div>' +
+            '<div class="reel-question-text long-pressable" id="reel-text-it-' + item.question_id + '">' + safeQuestionText + '</div>' +
           '</div>' +
 
           (!isTip ?
@@ -1823,11 +1795,9 @@ App.renderRichText = function(el, text) {
 
           '<div class="reel-trans-drawer" id="reel-trans-box-' + item.question_id + '">' +
             '<div class="reel-trans-title" id="reel-trans-text-' + item.question_id + '">' +
-            (item.translated_text || 'در حال دریافت ترجمه فارسی… ⏳') +
+            safeTranslation +
             '</div>' +
-            '<div class="reel-trans-detail" id="reel-trans-expl-' + item.question_id + '">' +
-            (item.explanation || '') +
-            '</div>' +
+            '<div class="reel-trans-detail" id="reel-trans-expl-' + item.question_id + '"></div>' +
           '</div>' +
         '</div>' +
 
@@ -1854,6 +1824,13 @@ App.renderRichText = function(el, text) {
         '</div>';
 
       viewport.appendChild(cardEl);
+
+      const initialExplanationEl = cardEl.querySelector(
+        '#reel-trans-expl-' + item.question_id
+      );
+      if (initialExplanationEl && item.explanation) {
+        App.renderRichText(initialExplanationEl, item.explanation);
+      }
 
       // Setup Double-Tap to Like on Instagram Reel Card
       let lastTap = 0;
@@ -1959,16 +1936,18 @@ App.renderRichText = function(el, text) {
       if (btn) btn.classList.add('active');
 
       const textEl = document.getElementById('reel-trans-text-' + questionId);
-      if (textEl && textEl.textContent.includes('در حال دریافت')) {
+      const explEl = document.getElementById('reel-trans-expl-' + questionId);
+      const needsTranslation = !!textEl && textEl.textContent.includes('در حال دریافت');
+      const needsExplanation = !!explEl && !explEl.textContent.trim();
+      if (textEl && (needsTranslation || needsExplanation)) {
         try {
           const res = await api('POST', '/translate/' + questionId);
           if (res.translatedText) {
             textEl.textContent = res.translatedText;
-            const explEl = document.getElementById('reel-trans-expl-' + questionId);
-            if (explEl && res.explanation) explEl.textContent = res.explanation;
           }
+          if (explEl && res.explanation) App.renderRichText(explEl, res.explanation);
         } catch (e) {
-          if (textEl) textEl.textContent = 'خطا در دریافت ترجمه';
+          if (needsTranslation) textEl.textContent = 'خطا در دریافت ترجمه';
         }
       }
     } else {

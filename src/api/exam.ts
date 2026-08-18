@@ -7,6 +7,8 @@
 import { Hono } from "hono";
 import type { AppEnv, AppVariables } from "../types.js";
 import {
+  abandonExamSession,
+  abandonOpenExamSessions,
   createExamSession,
   drawExamQuestions,
   finishExamSession,
@@ -63,6 +65,9 @@ exam.post("/start", async (c) => {
     }
   }
 
+  // Only supersede an old session once this start request is known to succeed.
+  // Its answers remain available for progress stats, but it is never scored.
+  await abandonOpenExamSessions(c.env.DB, userId);
   const sessionId = await createExamSession(c.env.DB, userId, mode);
 
   // Pre-insert all answer rows with null answers so position is established
@@ -83,6 +88,19 @@ exam.post("/start", async (c) => {
   });
 });
 
+// ── POST /api/exam/:sessionId/abandon ────────────────────────────────────────
+exam.post("/:sessionId/abandon", async (c) => {
+  const userId: number = c.get("userId" as never);
+  const sessionId = Number(c.req.param("sessionId"));
+  const session = await getSessionById(c.env.DB, sessionId);
+  if (!session || session.user_id !== userId) {
+    return c.json({ error: "Session not found" }, 404);
+  }
+
+  await abandonExamSession(c.env.DB, sessionId, userId);
+  return c.json({ abandoned: true });
+});
+
 // ── POST /api/exam/:sessionId/answer ─────────────────────────────────────────
 exam.post("/:sessionId/answer", async (c) => {
   const userId: number = c.get("userId" as never);
@@ -95,6 +113,9 @@ exam.post("/:sessionId/answer", async (c) => {
   }
   if (session.finished_at) {
     return c.json({ error: "Session already finished" }, 400);
+  }
+  if (session.abandoned_at) {
+    return c.json({ error: "Session was abandoned" }, 400);
   }
 
   const question = await getQuestionById(c.env.DB, body.questionId);
@@ -142,6 +163,9 @@ exam.post("/:sessionId/finish", async (c) => {
   }
   if (session.finished_at) {
     return c.json({ error: "Session already finished" }, 400);
+  }
+  if (session.abandoned_at) {
+    return c.json({ error: "Session was abandoned" }, 400);
   }
 
   const answers = await getSessionAnswers(c.env.DB, sessionId);
