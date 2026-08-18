@@ -11,6 +11,7 @@ import {
   getSessionAnswers,
   getQuestionById,
   getCachedTranslation,
+  getSignCardForImage,
   insertTranslation,
 } from "../db/queries.js";
 import { translateQuestion, chatWithTutor, resolveImageUrl, type TutorChatMessage } from "../lib/openai.js";
@@ -65,7 +66,11 @@ tutor.post("/explain-wrong", async (c) => {
           q.correct_answer,
           resolveImageUrl(c.env.MINI_APP_URL, q.image_url),
           c.env.DB,
-          userId
+          userId,
+          q.image_url ? await getSignCardForImage(c.env.DB, q.image_url) : null,
+          trans?.translated_text && trans.translated_text.length > 10
+            ? trans.translated_text
+            : null
         );
         await insertTranslation(
           c.env.DB,

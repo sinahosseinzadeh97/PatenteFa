@@ -24,6 +24,8 @@
       state.startedAt = Date.now();
       state.translateOpen = false;
       state.translationCache = {};
+      state.aiPendingRequests = {};
+      state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
       state.secondsLeft = 1200;
       state.examMode = mode;
       state.examReturnScreen = returnScreen;
@@ -286,6 +288,7 @@
 
     const q = state.questions[state.currentIndex];
     if (!q) return;
+    const requestGeneration = state.aiRequestGeneration;
 
     if (tabIndex === 0) {
       // Translation tab — load immediately (same as before)
@@ -296,10 +299,15 @@
       document.getElementById('translate-text').textContent = '⏳ در حال ترجمه…';
       document.getElementById('translate-explanation').textContent = '';
       try {
-        const data = await api('POST', '/translate/' + q.questionId);
+        const data = await App.getAiRequest(
+          requestGeneration + ':translation:' + q.questionId,
+          function() { return api('POST', '/translate/' + q.questionId); }
+        );
         state.translationCache[q.questionId] = data;
+        if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
         App.showTranslation(data);
       } catch (e) {
+        if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
         document.getElementById('translate-text').textContent = '⚠ خطا: ' + (e.message || 'ترجمه در دسترس نیست');
       }
     } else if (tabIndex === 1) {
@@ -333,56 +341,76 @@
 
   // loadTheoryTab: fetches theory once per question, caches in state.theoryCache
   App.loadTheoryTab = async function(questionId) {
-    if (state.theoryCache && state.theoryCache[questionId]) {
-      App.renderRichText(document.getElementById('theory-text'), state.theoryCache[questionId]);
-      return;
-    }
     const loadingEl = document.getElementById('theory-loading');
     const textEl = document.getElementById('theory-text');
     const errorEl = document.getElementById('theory-error');
+    if (state.theoryCache && state.theoryCache[questionId]) {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      App.renderRichText(textEl, state.theoryCache[questionId]);
+      return;
+    }
+    const requestGeneration = state.aiRequestGeneration;
     loadingEl.style.display = 'block';
     textEl.textContent = '';
     errorEl.style.display = 'none';
     try {
-      const data = await api('POST', '/translate/' + questionId + '/theory');
+      const data = await App.getAiRequest(
+        requestGeneration + ':theory:' + questionId,
+        function() { return api('POST', '/translate/' + questionId + '/theory'); }
+      );
       if (!state.theoryCache) state.theoryCache = {};
       state.theoryCache[questionId] = data.theoryText || '';
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       App.renderRichText(textEl, data.theoryText || '');
     } catch (e) {
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       errorEl.textContent = 'مربی تئوری در دسترس نیست — دوباره تلاش کنید';
       errorEl.style.display = 'block';
     } finally {
-      loadingEl.style.display = 'none';
+      if (App.isAiRequestCurrent(questionId, requestGeneration)) {
+        loadingEl.style.display = 'none';
+      }
     }
   };
 
   // loadGrammarTab: fetches grammar+vocab once per question, caches in state.grammarCache
   App.loadGrammarTab = async function(questionId) {
-    if (state.grammarCache && state.grammarCache[questionId]) {
-      const cached = state.grammarCache[questionId];
-      App.renderRichText(document.getElementById('grammar-analysis'), cached.grammarAnalysis || '');
-      App.renderVocabSuggestions(cached.vocabSuggestions || [], questionId);
-      return;
-    }
     const loadingEl = document.getElementById('grammar-loading');
     const analysisEl = document.getElementById('grammar-analysis');
     const errorEl = document.getElementById('grammar-error');
     const listEl = document.getElementById('vocab-suggestions-list');
+    if (state.grammarCache && state.grammarCache[questionId]) {
+      const cached = state.grammarCache[questionId];
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      App.renderRichText(analysisEl, cached.grammarAnalysis || '');
+      App.renderVocabSuggestions(cached.vocabSuggestions || [], questionId);
+      return;
+    }
+    const requestGeneration = state.aiRequestGeneration;
     loadingEl.style.display = 'block';
     analysisEl.textContent = '';
     listEl.innerHTML = '';
     errorEl.style.display = 'none';
     try {
-      const data = await api('POST', '/translate/' + questionId + '/grammar');
+      const data = await App.getAiRequest(
+        requestGeneration + ':grammar:' + questionId,
+        function() { return api('POST', '/translate/' + questionId + '/grammar'); }
+      );
       if (!state.grammarCache) state.grammarCache = {};
       state.grammarCache[questionId] = { grammarAnalysis: data.grammarAnalysis, vocabSuggestions: data.vocabSuggestions };
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       App.renderRichText(analysisEl, data.grammarAnalysis || '');
       App.renderVocabSuggestions(data.vocabSuggestions || [], questionId);
     } catch (e) {
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       errorEl.textContent = 'معلم گرامر در دسترس نیست — دوباره تلاش کنید';
       errorEl.style.display = 'block';
     } finally {
-      loadingEl.style.display = 'none';
+      if (App.isAiRequestCurrent(questionId, requestGeneration)) {
+        loadingEl.style.display = 'none';
+      }
     }
   };
 
@@ -431,6 +459,31 @@
   App.canUseAiForCurrentQuestion = function() {
     const q = state.questions[state.currentIndex];
     return !!q && state.answers[q.questionId] !== undefined;
+  };
+
+  App.isAiRequestCurrent = function(questionId, requestGeneration) {
+    const q = state.questions[state.currentIndex];
+    return (
+      !!q &&
+      q.questionId === questionId &&
+      state.translateOpen &&
+      state.aiRequestGeneration === requestGeneration
+    );
+  };
+
+  App.getAiRequest = function(key, requestFactory) {
+    if (!state.aiPendingRequests) state.aiPendingRequests = {};
+    if (state.aiPendingRequests[key]) return state.aiPendingRequests[key];
+
+    const pending = Promise.resolve().then(requestFactory);
+    state.aiPendingRequests[key] = pending;
+    const clear = function() {
+      if (state.aiPendingRequests[key] === pending) {
+        delete state.aiPendingRequests[key];
+      }
+    };
+    pending.then(clear, clear);
+    return pending;
   };
 
   App._updateAiAvailability = function() {

@@ -97,6 +97,8 @@ App.renderRichText = function(el, text) {
     translationCache: {},
     theoryCache: {},    // §15.3: per-question theory explanations (lazy)
     grammarCache: {},   // §15.3: per-question grammar+vocab (lazy)
+    aiPendingRequests: {},
+    aiRequestGeneration: 0,
     // Vocab
     vocabItems: [],
     dueVocab: [],
