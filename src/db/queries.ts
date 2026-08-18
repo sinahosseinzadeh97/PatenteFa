@@ -382,6 +382,37 @@ export async function insertExamAnswer(
     .run();
 }
 
+/** Record the first answer only while its owning session is still active. */
+export async function recordExamAnswer(
+  db: D1Database,
+  sessionId: number,
+  userId: number,
+  questionId: number,
+  userAnswer: 0 | 1,
+  isCorrect: 0 | 1
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `UPDATE exam_answers
+       SET user_answer = ?, is_correct = ?, answered_at = datetime('now')
+       WHERE session_id = ?
+         AND question_id = ?
+         AND user_answer IS NULL
+         AND EXISTS (
+           SELECT 1
+           FROM exam_sessions es
+           WHERE es.id = exam_answers.session_id
+             AND es.user_id = ?
+             AND es.finished_at IS NULL
+             AND es.abandoned_at IS NULL
+             AND es.started_at >= datetime('now', '-30 minutes')
+         )`
+    )
+    .bind(userAnswer, isCorrect, sessionId, questionId, userId)
+    .run();
+  return result.meta.changes === 1;
+}
+
 export async function updateAnswerFlag(
   db: D1Database,
   sessionId: number,
@@ -399,19 +430,40 @@ export async function updateAnswerFlag(
 export async function finishExamSession(
   db: D1Database,
   sessionId: number,
-  score: number,
-  wrongCount: number,
-  passed: number,
+  userId: number,
   durationSeconds: number
-): Promise<void> {
-  await db
+): Promise<boolean> {
+  const result = await db
     .prepare(
-      `UPDATE exam_sessions
-       SET finished_at = datetime('now'), score = ?, wrong_count = ?, passed = ?, duration_seconds = ?
-       WHERE id = ?`
+      `WITH result AS (
+         SELECT
+           COUNT(*) AS total_count,
+           COALESCE(SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_count,
+           COALESCE(SUM(CASE WHEN is_correct = 1 THEN 0 ELSE 1 END), 0) AS wrong_count
+         FROM exam_answers
+         WHERE session_id = ?
+       )
+       UPDATE exam_sessions
+       SET finished_at = datetime('now'),
+           score = (SELECT correct_count FROM result),
+           wrong_count = (SELECT wrong_count FROM result),
+           passed = (
+             SELECT CASE
+               WHEN wrong_count <= CASE WHEN total_count BETWEEN 1 AND 10 THEN 1 ELSE 3 END
+               THEN 1 ELSE 0
+             END
+             FROM result
+           ),
+           duration_seconds = ?
+       WHERE id = ?
+         AND user_id = ?
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL
+         AND started_at >= datetime('now', '-30 minutes')`
     )
-    .bind(score, wrongCount, passed, durationSeconds, sessionId)
+    .bind(sessionId, durationSeconds, sessionId, userId)
     .run();
+  return result.meta.changes === 1;
 }
 
 export async function getSessionAnswers(
@@ -439,15 +491,19 @@ export async function abandonExamSession(
   db: D1Database,
   sessionId: number,
   userId: number
-): Promise<void> {
-  await db
+): Promise<boolean> {
+  const result = await db
     .prepare(
       `UPDATE exam_sessions
-       SET abandoned_at = COALESCE(abandoned_at, datetime('now'))
-       WHERE id = ? AND user_id = ? AND finished_at IS NULL`
+       SET abandoned_at = datetime('now')
+       WHERE id = ?
+         AND user_id = ?
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL`
     )
     .bind(sessionId, userId)
     .run();
+  return result.meta.changes === 1;
 }
 
 /** Close stale unfinished sessions before dealing a new one to this user. */

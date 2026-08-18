@@ -127,8 +127,11 @@ tutor.post("/chat", async (c) => {
   const answerRow = answers.find((a) => a.question_id === body.questionId);
   const q = await getQuestionById(c.env.DB, body.questionId);
 
-  if (!q) {
-    return c.json({ error: "Question not found" }, 404);
+  if (!q || !answerRow) {
+    return c.json({ error: "Question not found in this session" }, 404);
+  }
+  if (answerRow?.user_answer == null && !session.finished_at) {
+    return c.json({ error: "Answer required before tutor chat", answerRequired: true }, 409);
   }
 
   const responseText = await chatWithTutor(
@@ -137,7 +140,7 @@ tutor.post("/chat", async (c) => {
       questionId: q.id,
       textIt: q.text_it,
       correctAnswer: q.correct_answer,
-      userAnswer: answerRow ? answerRow.user_answer : null,
+      userAnswer: answerRow.user_answer,
     },
     body.history || [],
     body.userMessage.trim(),

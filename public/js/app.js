@@ -119,6 +119,7 @@ App.renderRichText = function(el, text) {
     reelsLoading: false,
     reelsAnswered: {},
     reelsLiked: new Set(),
+    reelTranslationRequests: {},
   };
 
   // ── Screen routing (with slide transition) ───────────────────────────────────
@@ -976,15 +977,11 @@ App.renderRichText = function(el, text) {
     try {
       App.toast('در حال لود آزمون فصل… ⏳');
       const data = await api('POST', '/topics/' + topicId + '/exam');
-      state.sessionId = data.sessionId;
-      state.questions = data.questions || [];
-      state.currentIndex = 0;
-      state.answers = {};
-      state.flags = new Set();
-      state.startedAt = Date.now();
-      state.secondsLeft = 600; // 10 minutes for 15 chapter questions
-      state.examMode = 'topic_practice';
-      state.examReturnScreen = returnScreen;
+      App.initializeExamState(data, {
+        secondsLeft: 600,
+        mode: 'topic_practice',
+        returnScreen: returnScreen
+      });
 
       App.showScreen('exam');
       const nav = document.getElementById('bottom-nav');
@@ -1940,14 +1937,23 @@ App.renderRichText = function(el, text) {
       const needsTranslation = !!textEl && textEl.textContent.includes('در حال دریافت');
       const needsExplanation = !!explEl && !explEl.textContent.trim();
       if (textEl && (needsTranslation || needsExplanation)) {
+        let pending = state.reelTranslationRequests[questionId];
+        if (!pending) {
+          pending = api('POST', '/translate/' + questionId);
+          state.reelTranslationRequests[questionId] = pending;
+        }
         try {
-          const res = await api('POST', '/translate/' + questionId);
+          const res = await pending;
           if (res.translatedText) {
             textEl.textContent = res.translatedText;
           }
           if (explEl && res.explanation) App.renderRichText(explEl, res.explanation);
         } catch (e) {
           if (needsTranslation) textEl.textContent = 'خطا در دریافت ترجمه';
+        } finally {
+          if (state.reelTranslationRequests[questionId] === pending) {
+            delete state.reelTranslationRequests[questionId];
+          }
         }
       }
     } else {

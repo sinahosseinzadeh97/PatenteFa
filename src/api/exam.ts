@@ -15,6 +15,7 @@ import {
   getSessionAnswers,
   getSessionById,
   insertExamAnswer,
+  recordExamAnswer,
   updateAnswerFlag,
   upsertReviewQueue,
   clearReviewItems,
@@ -104,7 +105,10 @@ exam.post("/:sessionId/abandon", async (c) => {
     return c.json({ error: "Session not found" }, 404);
   }
 
-  await abandonExamSession(c.env.DB, sessionId, userId);
+  const abandoned = await abandonExamSession(c.env.DB, sessionId, userId);
+  if (!abandoned) {
+    return c.json({ error: "Session is no longer active", abandoned: false }, 409);
+  }
   return c.json({ abandoned: true });
 });
 
@@ -112,7 +116,20 @@ exam.post("/:sessionId/abandon", async (c) => {
 exam.post("/:sessionId/answer", async (c) => {
   const userId: number = c.get("userId" as never);
   const sessionId = Number(c.req.param("sessionId"));
-  const body = await c.req.json<{ questionId: number; answer: 0 | 1 }>();
+  const body = (await c.req.json().catch(() => null)) as {
+    questionId?: unknown;
+    answer?: unknown;
+  } | null;
+
+  if (
+    !body ||
+    typeof body.questionId !== "number" ||
+    !Number.isInteger(body.questionId) ||
+    body.questionId <= 0 ||
+    (body.answer !== 0 && body.answer !== 1)
+  ) {
+    return c.json({ error: "questionId and a binary answer (0 or 1) are required" }, 400);
+  }
 
   const session = await getSessionById(c.env.DB, sessionId);
   if (!session || session.user_id !== userId) {
@@ -132,16 +149,18 @@ exam.post("/:sessionId/answer", async (c) => {
   const question = await getQuestionById(c.env.DB, body.questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
 
-  const isCorrect = body.answer === question.correct_answer ? 1 : 0;
-
-  await c.env.DB
-    .prepare(
-      `UPDATE exam_answers
-       SET user_answer = ?, is_correct = ?, answered_at = datetime('now')
-       WHERE session_id = ? AND question_id = ?`
-    )
-    .bind(body.answer, isCorrect, sessionId, body.questionId)
-    .run();
+  const isCorrect: 0 | 1 = body.answer === question.correct_answer ? 1 : 0;
+  const recorded = await recordExamAnswer(
+    c.env.DB,
+    sessionId,
+    userId,
+    body.questionId,
+    body.answer,
+    isCorrect
+  );
+  if (!recorded) {
+    return c.json({ error: "Answer already recorded or session is no longer active" }, 409);
+  }
 
   // Don't reveal correct/incorrect until finish (matches real exam)
   return c.json({ recorded: true });
@@ -189,37 +208,28 @@ exam.post("/:sessionId/finish", async (c) => {
     return c.json({ error: "Session expired" }, 400);
   }
 
-  const answers = await getSessionAnswers(c.env.DB, sessionId);
+  const durationSeconds =
+    typeof body.durationSeconds === "number" && Number.isFinite(body.durationSeconds)
+      ? Math.max(0, Math.floor(body.durationSeconds))
+      : 0;
 
-  // Score the session
-  let correctCount = 0;
-  let wrongCount = 0;
-  const wrongQuestionIds: number[] = [];
-  const correctQuestionIds: number[] = [];
-
-  for (const a of answers) {
-    if (a.is_correct === 1) {
-      correctCount++;
-      correctQuestionIds.push(a.question_id);
-    } else {
-      wrongCount++;
-      wrongQuestionIds.push(a.question_id);
-    }
+  // The score and terminal transition happen in one conditional SQL statement.
+  // Whichever request wins (finish or abandon) prevents the other from mutating
+  // the session, and answers cannot change after this transition commits.
+  const finished = await finishExamSession(c.env.DB, sessionId, userId, durationSeconds);
+  if (!finished) {
+    return c.json({ error: "Session is no longer active" }, 409);
   }
 
-  const totalQ = answers.length || 30;
-  const allowedWrong = totalQ <= 10 ? 1 : 3;
-  const passed = wrongCount <= allowedWrong ? 1 : 0;
-  const durationSeconds = body.durationSeconds ?? 0;
-
-  await finishExamSession(
-    c.env.DB,
-    sessionId,
-    correctCount,
-    wrongCount,
-    passed,
-    durationSeconds
-  );
+  const [answers, finishedSession] = await Promise.all([
+    getSessionAnswers(c.env.DB, sessionId),
+    getSessionById(c.env.DB, sessionId),
+  ]);
+  const correctCount = finishedSession?.score ?? 0;
+  const wrongCount = finishedSession?.wrong_count ?? answers.length;
+  const passed = finishedSession?.passed ?? 0;
+  const wrongQuestionIds = answers.filter((a) => a.is_correct !== 1).map((a) => a.question_id);
+  const correctQuestionIds = answers.filter((a) => a.is_correct === 1).map((a) => a.question_id);
 
   // Wrong questions come back tomorrow; questions the user finally got right
   // leave the queue so it stops replaying the same mistakes forever.

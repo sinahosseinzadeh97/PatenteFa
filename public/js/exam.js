@@ -9,6 +9,26 @@
 'use strict';
 
   // ── Start exam ──────────────────────────────────────────────────────────────
+  App.initializeExamState = function(data, options) {
+    options = options || {};
+    state.sessionId = data.sessionId;
+    state.questions = data.questions || [];
+    state.currentIndex = 0;
+    state.answers = {};
+    state.recordedAnswers = new Set();
+    state.flags = new Set();
+    state.startedAt = Date.now();
+    state.translateOpen = false;
+    state.translationCache = {};
+    state.theoryCache = {};
+    state.grammarCache = {};
+    state.aiPendingRequests = {};
+    state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
+    state.secondsLeft = options.secondsLeft || 1200;
+    state.examMode = options.mode || data.mode || 'exam';
+    state.examReturnScreen = options.returnScreen || 'home';
+  };
+
   App.startExam = async function(mode) {
     mode = mode || 'exam';
     const returnScreen = state.currentScreen && state.currentScreen !== 'exam'
@@ -16,20 +36,7 @@
       : 'home';
     try {
       const data = await api('POST', '/exam/start', { mode });
-      state.sessionId = data.sessionId;
-      state.questions = data.questions;
-      state.currentIndex = 0;
-      state.answers = {};
-      state.recordedAnswers = new Set();
-      state.flags = new Set();
-      state.startedAt = Date.now();
-      state.translateOpen = false;
-      state.translationCache = {};
-      state.aiPendingRequests = {};
-      state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
-      state.secondsLeft = 1200;
-      state.examMode = mode;
-      state.examReturnScreen = returnScreen;
+      App.initializeExamState(data, { mode: mode, returnScreen: returnScreen });
 
       App.showScreen('exam');
       document.getElementById('bottom-nav').style.display = 'none';

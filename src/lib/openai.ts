@@ -444,7 +444,7 @@ function italianSurfaceTokens(value: string): string[] {
   // The bank frequently writes the verb `è` as `E'`. Canonicalize only that
   // standalone form before splitting apostrophes so it cannot collapse into the
   // conjunction `e` (which has a different meaning and vocabulary identity).
-  const canonical = value.replace(/\b[eE]['’](?=\s|$)/gu, "è");
+  const canonical = value.normalize("NFC").replace(/\b[eE]['’](?=\s|$)/gu, "è");
   return (canonical.replace(/[’']/g, " ").match(/\p{Script=Latin}+/gu) ?? [])
     .map((token) => token.toLocaleLowerCase("it"));
 }
