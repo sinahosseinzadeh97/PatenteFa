@@ -201,6 +201,7 @@
     if (state.answerPending[q.questionId]) return;
 
     const sessionId = state.sessionId;
+    const answeredIndex = state.currentIndex;
     state.answerPending[q.questionId] = true;
 
     document.getElementById('btn-vero').classList.add('btn-disabled');
@@ -233,8 +234,11 @@
       document.getElementById('btn-vero').classList.remove('btn-disabled');
       document.getElementById('btn-falso').classList.remove('btn-disabled');
 
-      if (state.currentIndex < state.questions.length - 1) {
-        state.currentIndex++;
+      // The user may have opened another numbered tab while persistence was in
+      // flight. Never advance or finish from a different tab than the one answered.
+      if (state.currentIndex !== answeredIndex) return;
+      if (answeredIndex < state.questions.length - 1) {
+        state.currentIndex = answeredIndex + 1;
         App.renderExamTabs();
         App.renderQuestion();
       } else {

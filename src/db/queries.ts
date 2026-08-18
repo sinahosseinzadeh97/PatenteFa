@@ -357,8 +357,25 @@ export async function getQuestionCount(db: D1Database): Promise<number> {
 export async function replaceActiveExamSession(
   db: D1Database,
   userId: number,
-  mode: "exam" | "review" | "topic_practice"
+  mode: "exam" | "review" | "topic_practice",
+  questionIds: number[]
 ): Promise<number> {
+  if (questionIds.length === 0) throw new Error("Cannot create an exam without questions");
+
+  const answerStatements = questionIds.map((questionId, index) =>
+    db
+      .prepare(
+        `INSERT INTO exam_answers
+           (session_id, question_id, position, user_answer, is_correct, answered_at)
+         SELECT es.id, ?, ?, NULL, NULL, NULL
+         FROM exam_sessions es
+         WHERE es.user_id = ? AND es.finished_at IS NULL AND es.abandoned_at IS NULL
+         ORDER BY es.id DESC
+         LIMIT 1`
+      )
+      .bind(questionId, index + 1, userId)
+  );
+
   const results = await db.batch<{ id: number }>([
     db
       .prepare(
@@ -370,6 +387,7 @@ export async function replaceActiveExamSession(
     db
       .prepare(`INSERT INTO exam_sessions (user_id, mode) VALUES (?, ?) RETURNING id`)
       .bind(userId, mode),
+    ...answerStatements,
   ]);
   const created = results[1]?.results[0];
   if (!created) throw new Error("Failed to replace active exam session");

@@ -13,7 +13,6 @@ import {
   finishExamSession,
   getSessionAnswers,
   getSessionById,
-  insertExamAnswer,
   recordExamAnswer,
   updateAnswerFlag,
   upsertReviewQueue,
@@ -38,8 +37,20 @@ function isExamSessionExpired(startedAt: string): boolean {
 // ── POST /api/exam/start ──────────────────────────────────────────────────────
 exam.post("/start", async (c) => {
   const userId: number = c.get("userId" as never);
-  const body = await c.req.json<{ mode?: "exam" | "review" | "topic_practice" }>();
-  const mode = body.mode ?? "exam";
+  const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (!body || Array.isArray(body)) {
+    return c.json({ error: "Invalid exam start request" }, 400);
+  }
+  const requestedMode = body.mode;
+  if (
+    requestedMode !== undefined &&
+    requestedMode !== "exam" &&
+    requestedMode !== "review" &&
+    requestedMode !== "topic_practice"
+  ) {
+    return c.json({ error: "Invalid exam mode" }, 400);
+  }
+  const mode: "exam" | "review" | "topic_practice" = requestedMode ?? "exam";
 
   let questions;
   if (mode === "review") {
@@ -74,12 +85,12 @@ exam.post("/start", async (c) => {
 
   // Only supersede an old session once this start request is known to succeed.
   // Its answers remain available for progress stats, but it is never scored.
-  const sessionId = await replaceActiveExamSession(c.env.DB, userId, mode);
-
-  // Pre-insert all answer rows with null answers so position is established
-  for (let i = 0; i < questions.length; i++) {
-    await insertExamAnswer(c.env.DB, sessionId, questions[i].id, i + 1, null, null);
-  }
+  const sessionId = await replaceActiveExamSession(
+    c.env.DB,
+    userId,
+    mode,
+    questions.map((question) => question.id)
+  );
 
   return c.json({
     sessionId,

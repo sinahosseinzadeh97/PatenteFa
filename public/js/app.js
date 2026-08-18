@@ -2234,7 +2234,10 @@ App.renderRichText = function(el, text) {
 
       if (res.response) {
         state.tutorChatHistory[q.questionId].push({ role: 'assistant', content: res.response });
-        App.renderTutorChatHistory(q.questionId);
+        const currentTutorQuestion = state.tutorQuestions[state.tutorCurrentIndex];
+        if (currentTutorQuestion?.questionId === q.questionId) {
+          App.renderTutorChatHistory(q.questionId);
+        }
       }
     } catch (err) {
       App.toast('خطا در پاسخ استاد: ' + (err.message || err));

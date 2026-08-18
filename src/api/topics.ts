@@ -10,7 +10,6 @@ import {
   getAllTopicsWithStats,
   drawQuestionsFromTopics,
   replaceActiveExamSession,
-  insertExamAnswer,
 } from "../db/queries.js";
 
 export const topics = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
@@ -51,11 +50,12 @@ topics.post("/:topicId/exam", async (c) => {
 
   // Match /api/exam/start: only retire a previous session after the new draw is
   // known to contain questions, so a failed chapter start cannot discard work.
-  const sessionId = await replaceActiveExamSession(c.env.DB, userId, "topic_practice");
-
-  for (let i = 0; i < questions.length; i++) {
-    await insertExamAnswer(c.env.DB, sessionId, questions[i].id, i + 1, null, null);
-  }
+  const sessionId = await replaceActiveExamSession(
+    c.env.DB,
+    userId,
+    "topic_practice",
+    questions.map((question) => question.id)
+  );
 
   return c.json({
     ok: true,

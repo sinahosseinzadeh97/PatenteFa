@@ -440,8 +440,8 @@ test("chapter exams reuse the canonical session lifecycle and client reset", () 
     querySource.indexOf("export async function insertExamAnswer")
   );
 
-  assert.match(topicsRoute, /replaceActiveExamSession\(c\.env\.DB,\s*userId/);
-  assert.match(examRoute, /replaceActiveExamSession\(c\.env\.DB,\s*userId/);
+  assert.match(topicsRoute, /replaceActiveExamSession\(\s*c\.env\.DB,\s*userId/);
+  assert.match(examRoute, /replaceActiveExamSession\(\s*c\.env\.DB,\s*userId/);
   assert.match(replaceSessionQuery, /db\.batch/);
   assert.match(replaceSessionQuery, /UPDATE\s+exam_sessions/i);
   assert.match(replaceSessionQuery, /INSERT\s+INTO\s+exam_sessions/i);
