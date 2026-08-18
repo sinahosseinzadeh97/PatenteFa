@@ -304,13 +304,6 @@
   // Opening always shows tab 0 (translation) and fires its request.
   // Tabs 1 and 2 only fire when the user explicitly taps them.
   App.toggleTranslate = async function() {
-    if (!App.canUseAiForCurrentQuestion()) {
-      state.translateOpen = false;
-      const toggle = document.getElementById('translate-toggle');
-      if (toggle) toggle.checked = false;
-      App.toast('کمک AI بعد از ثبت پاسخ این سؤال فعال می‌شود');
-      return;
-    }
     state.translateOpen = !state.translateOpen;
     const panel = document.getElementById('translate-panel');
     if (!state.translateOpen) {
@@ -325,8 +318,6 @@
 
   // switchAiTab: show the selected tab content; lazy-load if not yet fetched.
   App.switchAiTab = async function(tabIndex) {
-    if (!App.canUseAiForCurrentQuestion()) return;
-
     // Update tab button styles
     for (let i = 0; i <= 2; i++) {
       const btn = document.getElementById('ai-tab-btn-' + i);
@@ -510,15 +501,6 @@
     btn.setAttribute('aria-pressed', flagged ? 'true' : 'false');
   };
 
-  App.canUseAiForCurrentQuestion = function() {
-    const q = state.questions[state.currentIndex];
-    return (
-      !!q &&
-      state.answers[q.questionId] !== undefined &&
-      state.recordedAnswers.has(q.questionId)
-    );
-  };
-
   App.isAiRequestCurrent = function(questionId, requestGeneration) {
     const q = state.questions[state.currentIndex];
     return (
@@ -545,19 +527,13 @@
   };
 
   App._updateAiAvailability = function() {
-    const available = App.canUseAiForCurrentQuestion();
     const toggle = document.getElementById('translate-toggle');
     const label = toggle ? toggle.closest('.ai-toggle-label') : null;
     const sub = document.getElementById('ai-toggle-sub');
 
-    if (toggle) {
-      toggle.disabled = !available;
-      if (!available) toggle.checked = false;
-    }
-    if (label) label.classList.toggle('locked', !available);
-    if (sub) {
-      sub.textContent = available ? '🤖 ۳ متخصص' : 'پس از پاسخ فعال می‌شود';
-    }
+    if (toggle) toggle.disabled = false;
+    if (label) label.classList.remove('locked');
+    if (sub) sub.textContent = 'همین حالا قابل استفاده است';
   };
 
   App._resetAiPanel = function() {

@@ -10,7 +10,6 @@ import { Hono } from "hono";
 import type { AppEnv, AppVariables } from "../types.js";
 import {
   getCachedTranslation,
-  hasUnansweredActiveExamQuestion,
   getQuestionById,
   getSignCardForImage,
   insertTranslation,
@@ -41,15 +40,6 @@ translate.post("/:questionId", async (c) => {
   const question = await getQuestionById(c.env.DB, questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
   const userId: number = c.get("userId" as never);
-  if (await hasUnansweredActiveExamQuestion(c.env.DB, userId, questionId)) {
-    return c.json(
-      {
-        error: "برای دیدن پاسخ و توضیح، ابتدا به این سؤال در آزمون فعال پاسخ دهید",
-        answerRequired: true,
-      },
-      409
-    );
-  }
 
   // §14.1: cache-first — trust only if translated_text is present and substantial.
   // The explanation must be present too: migration 0007 nulled explanations
@@ -121,16 +111,6 @@ translate.post("/:questionId/theory", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
   const userId: number = c.get("userId" as never);
-
-  if (await hasUnansweredActiveExamQuestion(c.env.DB, userId, questionId)) {
-    return c.json(
-      {
-        error: "برای دیدن پاسخ و توضیح، ابتدا به این سؤال در آزمون فعال پاسخ دهید",
-        answerRequired: true,
-      },
-      409
-    );
-  }
 
   const cached = await getCachedTranslation(c.env.DB, questionId, lang);
   if (cached && cached.theory_text && cached.theory_text.length > 10) {

@@ -568,34 +568,6 @@ export async function abandonOpenExamSessions(
     .run();
 }
 
-/**
- * True when this question is currently dealt to the user but has not been
- * answered yet. Answer-bearing AI endpoints use this guard before cache reads,
- * so a direct API call cannot bypass the exam UI lock.
- */
-export async function hasUnansweredActiveExamQuestion(
-  db: D1Database,
-  userId: number,
-  questionId: number
-): Promise<boolean> {
-  const row = await db
-    .prepare(
-      `SELECT 1 AS found
-       FROM exam_answers ea
-       JOIN exam_sessions es ON es.id = ea.session_id
-       WHERE es.user_id = ?
-         AND es.finished_at IS NULL
-         AND es.abandoned_at IS NULL
-         AND es.started_at >= datetime('now', '-30 minutes')
-         AND ea.question_id = ?
-         AND ea.user_answer IS NULL
-       LIMIT 1`
-    )
-    .bind(userId, questionId)
-    .first<{ found: number }>();
-  return row?.found === 1;
-}
-
 // ── Review queue ─────────────────────────────────────────────────────────────
 
 export async function upsertReviewQueue(

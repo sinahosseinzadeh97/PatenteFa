@@ -48,10 +48,10 @@ export function renderExamScreen(): string {
 
   <!-- §15.3 — AI panel toggle row -->
   <div class="ai-toggle-row">
-    <label class="ai-toggle-label locked" for="translate-toggle">
+    <label class="ai-toggle-label" for="translate-toggle">
       <span class="ai-toggle-text">کمک AI</span>
-      <input type="checkbox" id="translate-toggle" onchange="App.toggleTranslate()" class="ai-toggle-checkbox" aria-describedby="ai-toggle-sub" disabled />
-      <span id="ai-toggle-sub" class="ai-toggle-sub">پس از پاسخ فعال می‌شود</span>
+      <input type="checkbox" id="translate-toggle" onchange="App.toggleTranslate()" class="ai-toggle-checkbox" aria-describedby="ai-toggle-sub" />
+      <span id="ai-toggle-sub" class="ai-toggle-sub">همین حالا قابل استفاده است</span>
     </label>
   </div>
 
