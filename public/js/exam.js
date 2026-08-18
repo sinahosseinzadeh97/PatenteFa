@@ -24,12 +24,15 @@
     state.grammarCache = {};
     state.aiPendingRequests = {};
     state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
+    state.answerPending = {};
     state.secondsLeft = options.secondsLeft || 1200;
     state.examMode = options.mode || data.mode || 'exam';
     state.examReturnScreen = options.returnScreen || 'home';
   };
 
   App.startExam = async function(mode) {
+    if (state.examStartPending) return;
+    state.examStartPending = true;
     mode = mode || 'exam';
     const returnScreen = state.currentScreen && state.currentScreen !== 'exam'
       ? state.currentScreen
@@ -46,6 +49,8 @@
       App.startTimer();
     } catch (e) {
       App.toast('خطا: ' + e.message);
+    } finally {
+      state.examStartPending = false;
     }
   };
 
@@ -193,27 +198,38 @@
     const q = state.questions[state.currentIndex];
     if (!q) return;
     if (state.answers[q.questionId] !== undefined) return; // already answered
+    if (state.answerPending[q.questionId]) return;
 
-    state.answers[q.questionId] = value;
+    const sessionId = state.sessionId;
+    state.answerPending[q.questionId] = true;
 
     document.getElementById('btn-vero').classList.add('btn-disabled');
     document.getElementById('btn-falso').classList.add('btn-disabled');
 
-    // Update road immediately on answer
-    App.renderExamTabs();
-
     try {
-      await api('POST', '/exam/' + state.sessionId + '/answer', {
+      await api('POST', '/exam/' + sessionId + '/answer', {
         questionId: q.questionId,
         answer: value,
       });
+      if (state.sessionId !== sessionId) return;
+      state.answers[q.questionId] = value;
       state.recordedAnswers.add(q.questionId);
+      App.renderExamTabs();
       App._updateAiAvailability();
     } catch (e) {
-      // Offline — continue locally
+      const message = e && typeof e.status === 'number'
+        ? 'پاسخ ذخیره نشد: ' + e.message
+        : 'وضعیت شبکه نامشخص است؛ برای تلاش دوباره پاسخ را بزنید.';
+      App.toast(message);
+      document.getElementById('btn-vero').classList.remove('btn-disabled');
+      document.getElementById('btn-falso').classList.remove('btn-disabled');
+      return;
+    } finally {
+      if (state.sessionId === sessionId) delete state.answerPending[q.questionId];
     }
 
     setTimeout(function() {
+      if (state.sessionId !== sessionId) return;
       document.getElementById('btn-vero').classList.remove('btn-disabled');
       document.getElementById('btn-falso').classList.remove('btn-disabled');
 

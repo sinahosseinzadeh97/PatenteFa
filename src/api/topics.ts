@@ -9,8 +9,7 @@ import type { AppEnv, AppVariables } from "../types.js";
 import {
   getAllTopicsWithStats,
   drawQuestionsFromTopics,
-  abandonOpenExamSessions,
-  createExamSession,
+  replaceActiveExamSession,
   insertExamAnswer,
 } from "../db/queries.js";
 
@@ -52,8 +51,7 @@ topics.post("/:topicId/exam", async (c) => {
 
   // Match /api/exam/start: only retire a previous session after the new draw is
   // known to contain questions, so a failed chapter start cannot discard work.
-  await abandonOpenExamSessions(c.env.DB, userId);
-  const sessionId = await createExamSession(c.env.DB, userId, "topic_practice");
+  const sessionId = await replaceActiveExamSession(c.env.DB, userId, "topic_practice");
 
   for (let i = 0; i < questions.length; i++) {
     await insertExamAnswer(c.env.DB, sessionId, questions[i].id, i + 1, null, null);

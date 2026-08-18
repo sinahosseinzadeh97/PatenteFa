@@ -72,7 +72,10 @@ App.renderRichText = function(el, text) {
         if (state.currentScreen !== 'support') App.showPendingScreen(err.error);
         throw new Error(err.error || 'در انتظار تایید مدیریت');
       }
-      throw new Error(err.error || 'درخواست ناموفق بود');
+      const apiError = new Error(err.error || 'درخواست ناموفق بود');
+      apiError.status = res.status;
+      apiError.payload = err;
+      throw apiError;
     }
     // Trial clock rides along on every API response; absent for paid/admin users.
     App.renderTrialBanner(res.headers.get('X-Trial-Ms-Left'));
@@ -100,6 +103,8 @@ App.renderRichText = function(el, text) {
     grammarCache: {},   // §15.3: per-question grammar+vocab (lazy)
     aiPendingRequests: {},
     aiRequestGeneration: 0,
+    examStartPending: false,
+    answerPending: {},
     // Vocab
     vocabItems: [],
     dueVocab: [],
@@ -973,6 +978,8 @@ App.renderRichText = function(el, text) {
   };
 
   App.startTopicExam = async function(topicId) {
+    if (state.examStartPending) return;
+    state.examStartPending = true;
     const returnScreen = state.currentScreen || 'topics';
     try {
       App.toast('در حال لود آزمون فصل… ⏳');
@@ -992,6 +999,8 @@ App.renderRichText = function(el, text) {
       App.startTimer();
     } catch(e) {
       App.toast(e.message || 'خطا در شروع آزمون فصل');
+    } finally {
+      state.examStartPending = false;
     }
   };
 
@@ -2220,7 +2229,7 @@ App.renderRichText = function(el, text) {
         sessionId: state.tutorSessionId,
         questionId: q.questionId,
         userMessage: userMessage,
-        history: state.tutorChatHistory[q.questionId],
+        history: state.tutorChatHistory[q.questionId].slice(0, -1).slice(-6),
       });
 
       if (res.response) {

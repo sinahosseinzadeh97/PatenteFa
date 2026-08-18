@@ -8,8 +8,7 @@ import { Hono } from "hono";
 import type { AppEnv, AppVariables } from "../types.js";
 import {
   abandonExamSession,
-  abandonOpenExamSessions,
-  createExamSession,
+  replaceActiveExamSession,
   drawExamQuestions,
   finishExamSession,
   getSessionAnswers,
@@ -75,8 +74,7 @@ exam.post("/start", async (c) => {
 
   // Only supersede an old session once this start request is known to succeed.
   // Its answers remain available for progress stats, but it is never scored.
-  await abandonOpenExamSessions(c.env.DB, userId);
-  const sessionId = await createExamSession(c.env.DB, userId, mode);
+  const sessionId = await replaceActiveExamSession(c.env.DB, userId, mode);
 
   // Pre-insert all answer rows with null answers so position is established
   for (let i = 0; i < questions.length; i++) {
@@ -150,7 +148,7 @@ exam.post("/:sessionId/answer", async (c) => {
   if (!question) return c.json({ error: "Question not found" }, 404);
 
   const isCorrect: 0 | 1 = body.answer === question.correct_answer ? 1 : 0;
-  const recorded = await recordExamAnswer(
+  const recordResult = await recordExamAnswer(
     c.env.DB,
     sessionId,
     userId,
@@ -158,12 +156,15 @@ exam.post("/:sessionId/answer", async (c) => {
     body.answer,
     isCorrect
   );
-  if (!recorded) {
-    return c.json({ error: "Answer already recorded or session is no longer active" }, 409);
+  if (recordResult === "conflict") {
+    return c.json({ error: "A different answer was already recorded" }, 409);
+  }
+  if (recordResult === "inactive") {
+    return c.json({ error: "Session is no longer active" }, 409);
   }
 
   // Don't reveal correct/incorrect until finish (matches real exam)
-  return c.json({ recorded: true });
+  return c.json({ recorded: true, duplicate: recordResult === "duplicate" });
 });
 
 // ── POST /api/exam/:sessionId/flag ────────────────────────────────────────────

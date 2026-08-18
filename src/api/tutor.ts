@@ -17,6 +17,8 @@ import {
 import { translateQuestion, chatWithTutor, resolveImageUrl, type TutorChatMessage } from "../lib/openai.js";
 
 const tutor = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
+const MAX_TUTOR_HISTORY_MESSAGES = 6;
+const MAX_TUTOR_MESSAGE_LENGTH = 2_000;
 
 // ── POST /api/tutor/explain-wrong ─────────────────────────────────────────────
 tutor.post("/explain-wrong", async (c) => {
@@ -107,15 +109,42 @@ tutor.post("/explain-wrong", async (c) => {
 // ── POST /api/tutor/chat ──────────────────────────────────────────────────────
 tutor.post("/chat", async (c) => {
   const userId: number = c.get("userId" as never);
-  const body = await c.req.json<{
-    sessionId: number;
-    questionId: number;
-    userMessage: string;
-    history?: TutorChatMessage[];
-  }>();
+  const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (
+    !body ||
+    typeof body.sessionId !== "number" ||
+    !Number.isInteger(body.sessionId) ||
+    typeof body.questionId !== "number" ||
+    !Number.isInteger(body.questionId) ||
+    typeof body.userMessage !== "string" ||
+    !body.userMessage.trim() ||
+    body.userMessage.length > MAX_TUTOR_MESSAGE_LENGTH
+  ) {
+    return c.json({ error: "Invalid tutor chat request" }, 400);
+  }
 
-  if (!body.sessionId || !body.questionId || !body.userMessage?.trim()) {
-    return c.json({ error: "Missing required fields" }, 400);
+  if (
+    body.history !== undefined &&
+    (!Array.isArray(body.history) || body.history.length > MAX_TUTOR_HISTORY_MESSAGES)
+  ) {
+    return c.json({ error: "Invalid tutor chat history" }, 400);
+  }
+
+  const history: TutorChatMessage[] = [];
+  for (const candidate of body.history ?? []) {
+    if (!candidate || typeof candidate !== "object") {
+      return c.json({ error: "Invalid tutor chat history" }, 400);
+    }
+    const message = candidate as Record<string, unknown>;
+    if (
+      (message.role !== "user" && message.role !== "assistant") ||
+      typeof message.content !== "string" ||
+      !message.content.trim() ||
+      message.content.length > MAX_TUTOR_MESSAGE_LENGTH
+    ) {
+      return c.json({ error: "Invalid tutor chat history" }, 400);
+    }
+    history.push({ role: message.role, content: message.content.trim() });
   }
 
   const session = await getSessionById(c.env.DB, body.sessionId);
@@ -142,7 +171,7 @@ tutor.post("/chat", async (c) => {
       correctAnswer: q.correct_answer,
       userAnswer: answerRow.user_answer,
     },
-    body.history || [],
+    history,
     body.userMessage.trim(),
     c.env.DB,
     userId

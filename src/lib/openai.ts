@@ -880,7 +880,7 @@ ${coverageTokens.join("، ")}
 }
 
 export interface TutorChatMessage {
-  role: "system" | "user" | "assistant";
+  role: "user" | "assistant";
   content: string;
 }
 
@@ -923,7 +923,7 @@ export async function chatWithTutor(
 ۳. در انتهای پاسخ، یک نکته یا کلیدواژه طلایی برای حفظ کردن پیشنهاد دهید.
 ۴. همیشه به زبان فارسی روان پاسخ دهید. کلمات ایتالیایی را شفاف در متن نگه دارید.`;
 
-  const messages: TutorChatMessage[] = [
+  const messages: Array<TutorChatMessage | { role: "system"; content: string }> = [
     { role: "system", content: systemPrompt },
     ...history.slice(-6),
     { role: "user", content: userMessage },
