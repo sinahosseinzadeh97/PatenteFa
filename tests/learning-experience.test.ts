@@ -106,6 +106,17 @@ test("a cached translation can regenerate only its explanation", async (t) => {
 
   const routeSource = readFileSync("src/api/translate.ts", "utf8");
   assert.match(routeSource, /translateQuestion\([\s\S]*cached\?\.translated_text/);
+
+  const tutorSource = readFileSync("src/api/tutor.ts", "utf8");
+  const tutorTranslationCall = tutorSource.slice(
+    tutorSource.indexOf("const generated = await translateQuestion"),
+    tutorSource.indexOf("await insertTranslation")
+  );
+  assert.match(
+    tutorTranslationCall,
+    /trans\?\.translated_text/,
+    "the tutor path must also preserve a valid cached translation"
+  );
 });
 
 test("image-backed learning prompts keep the verified sign identity and usable image URL", async (t) => {
@@ -325,6 +336,17 @@ test("exam AI help is gated until an answer exists and results render structured
 
   const screenMarkup = renderExamScreen();
   assert.match(screenMarkup, /id="translate-toggle"[^>]*disabled/);
+});
+
+test("slow AI responses cannot overwrite a different question and requests are deduplicated", () => {
+  const examClient = readFileSync("public/js/exam.js", "utf8");
+
+  assert.match(examClient, /state\.aiPendingRequests/);
+  assert.match(examClient, /App\.isAiRequestCurrent\s*=\s*function/);
+  assert.ok(
+    (examClient.match(/App\.isAiRequestCurrent\(/g) ?? []).length >= 4,
+    "translation, theory, grammar, and the helper definition must check request identity"
+  );
 });
 
 test("admin labels vocabulary repair usage in Persian", () => {
