@@ -365,6 +365,7 @@ test("answer-bearing AI routes enforce the answered state on the server", () => 
   assert.match(querySource, /hasUnansweredActiveExamQuestion/);
   assert.match(querySource, /finished_at\s+IS\s+NULL/i);
   assert.match(querySource, /user_answer\s+IS\s+NULL/i);
+  assert.match(querySource, /started_at\s*>=\s*datetime\('now',\s*'-30 minutes'\)/i);
   assert.ok(
     (routeSource.match(/hasUnansweredActiveExamQuestion\(/g) ?? []).length >= 2,
     "both translation/explanation and theory endpoints must enforce the server-side guard"
@@ -380,11 +381,14 @@ test("abandoned sessions stop blocking study content without becoming scored exa
   assert.ok(existsSync("migrations/0013_backfill_abandoned_sessions.sql"));
   assert.match(querySource, /abandoned_at\s+IS\s+NULL/i);
   assert.match(examRouteSource, /\/:sessionId\/abandon/);
+  assert.match(examRouteSource, /ACTIVE_EXAM_SESSION_MS\s*=\s*30\s*\*\s*60\s*\*\s*1000/);
+  assert.match(examRouteSource, /isExamSessionExpired/);
   assert.match(examClient, /\/exam\/['"]?\s*\+\s*state\.sessionId\s*\+\s*['"]\/abandon/);
 });
 
 test("Reels regenerate missing explanations and render their structure safely", () => {
   const appClient = readFileSync("public/js/app.js", "utf8");
+  const querySource = readFileSync("src/db/queries.ts", "utf8");
 
   assert.match(appClient, /needsExplanation/);
   assert.match(appClient, /App\.renderRichText\(explEl,\s*res\.explanation/);
@@ -392,6 +396,13 @@ test("Reels regenerate missing explanations and render their structure safely", 
     appClient,
     /if\s*\(explEl\s*&&\s*res\.explanation\)\s*explEl\.textContent\s*=/
   );
+  const reelsQuery = querySource.slice(
+    querySource.indexOf("export async function getReelsFeedItems"),
+    querySource.indexOf("const goldenTips")
+  );
+  assert.match(reelsQuery, /ea\.user_answer\s+IS\s+NULL/i);
+  assert.match(reelsQuery, /es\.user_id\s*=\s*\?/i);
+  assert.match(reelsQuery, /\.bind\(userId,\s*limit\)/);
 });
 
 test("admin labels vocabulary repair usage in Persian", () => {
