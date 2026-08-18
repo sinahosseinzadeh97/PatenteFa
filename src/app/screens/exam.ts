@@ -128,6 +128,9 @@ export function renderExamScreen(): string {
     <button class="btn btn-falso btn-full" id="btn-falso" onclick="App.answer(0)">✗ FALSO</button>
     <button class="btn btn-vero btn-full"  id="btn-vero"  onclick="App.answer(1)">✓ VERO</button>
   </div>
+  <button class="btn btn-primary btn-full exam-finish-btn" id="btn-finish-exam" onclick="App.finishExam()">
+    پایان آزمون و دیدن نتیجه
+  </button>
 </div>
 `;
 }

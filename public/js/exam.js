@@ -88,8 +88,14 @@
     }
 
     clearInterval(state.timerInterval);
-    if (state.sessionId) {
-      api('POST', '/exam/' + state.sessionId + '/abandon').catch(function() {});
+    const abandonedSessionId = state.sessionId;
+    // Invalidate first: delayed answer/finish callbacks capture the old ID and
+    // must become no-ops before the asynchronous abandon request is sent.
+    state.sessionId = null;
+    state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
+    state.answerPending = {};
+    if (abandonedSessionId) {
+      api('POST', '/exam/' + abandonedSessionId + '/abandon').catch(function() {});
     }
     state.examMode = null;
     App.applyExamMode();
@@ -191,6 +197,19 @@
 
     // §15.3: reset AI panel on question switch (uses centralized helper)
     App._resetAiPanel();
+    App.updateFinishAvailability();
+  };
+
+  App.updateFinishAvailability = function() {
+    const btn = document.getElementById('btn-finish-exam');
+    if (!btn) return;
+    const lastQuestion = state.questions[state.questions.length - 1];
+    const canFinish = !!(
+      state.sessionId &&
+      lastQuestion &&
+      state.recordedAnswers.has(lastQuestion.questionId)
+    );
+    btn.style.display = canFinish ? 'inline-flex' : 'none';
   };
 
   // ── Answer ──────────────────────────────────────────────────────────────────
@@ -217,6 +236,7 @@
       state.recordedAnswers.add(q.questionId);
       App.renderExamTabs();
       App._updateAiAvailability();
+      App.updateFinishAvailability();
     } catch (e) {
       const message = e && typeof e.status === 'number'
         ? 'پاسخ ذخیره نشد: ' + e.message
