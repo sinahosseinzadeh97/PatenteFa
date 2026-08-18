@@ -5,6 +5,9 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
+    "test:coverage": "node --import tsx --test --test-concurrency=1 --experimental-test-coverage tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
     "types": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply patente-fa-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply patente-fa-db --remote",
