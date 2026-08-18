@@ -28,8 +28,8 @@ import type { VocabularySuggestion } from "../lib/openai.js";
 const translate = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
 // ── POST /api/translate/:questionId ─────────────────────────────────────────
-// Tab 1 — ترجمه — existing §14.1 endpoint, unchanged behaviour.
-// Loads immediately when the panel opens.
+// Tab 1 — ترجمه — loads immediately when the panel opens, including before
+// the current question is answered (explicit study-mode choice from §19.2).
 translate.post("/:questionId", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";

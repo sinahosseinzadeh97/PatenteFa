@@ -531,6 +531,7 @@
     const label = toggle ? toggle.closest('.ai-toggle-label') : null;
     const sub = document.getElementById('ai-toggle-sub');
 
+    // Keep older cached markup usable when it is paired with this newer script.
     if (toggle) toggle.disabled = false;
     if (label) label.classList.remove('locked');
     if (sub) sub.textContent = 'همین حالا قابل استفاده است';

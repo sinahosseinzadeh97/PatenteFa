@@ -755,10 +755,8 @@ html, body {
 
 .ai-toggle-row { display: flex; align-items: center; justify-content: flex-end; padding: 6px 16px 0; }
 .ai-toggle-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.82rem; color: var(--ink-muted); }
-.ai-toggle-label.locked { cursor: not-allowed; opacity: 0.62; }
 .ai-toggle-text { font-family: 'Public Sans', system-ui, sans-serif; }
 .ai-toggle-checkbox { width: 36px; height: 20px; cursor: pointer; accent-color: var(--amber); }
-.ai-toggle-checkbox:disabled { cursor: not-allowed; }
 .ai-toggle-sub { font-size: 0.72rem; }
 
 .ai-tabs-bar { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 12px; gap: 0; }
