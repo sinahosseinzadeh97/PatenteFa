@@ -250,8 +250,11 @@ App.renderRichText = function(el, text) {
     });
     var actionLabels = {
       'translate_question': '🌐 ترجمه سوال',
+      'translate_question_text': '🌐 ترجمه متن سوال',
+      'translate_question_explanation': '💡 توضیح پاسخ',
       'theory_explain':     '🎓 توضیح تئوری',
       'grammar_analyze':    '📚 آنالیز گرامر',
+      'grammar_vocab_repair': '📚 تکمیل لغات جاافتاده',
       'tutor_chat':         '💬 مکالمه مربی',
       'suggest_vocab':      '📖 پیشنهاد لغت'
     };

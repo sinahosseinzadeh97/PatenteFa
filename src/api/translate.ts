@@ -23,6 +23,7 @@ import {
   hasCompleteVocabularyCoverage,
   resolveImageUrl,
 } from "../lib/openai.js";
+import type { VocabularySuggestion } from "../lib/openai.js";
 
 const translate = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
@@ -79,7 +80,10 @@ translate.post("/:questionId", async (c) => {
       resolvedImageUrl,
       c.env.DB,
       userId,
-      sign
+      sign,
+      cached?.translated_text && cached.translated_text.length > 10
+        ? cached.translated_text
+        : null
     );
 
     await insertTranslation(c.env.DB, questionId, lang, result.translated_text, result.explanation);
@@ -161,7 +165,7 @@ translate.post("/:questionId/grammar", async (c) => {
     cached.grammar_analysis &&
     cached.grammar_analysis.length > 10
   ) {
-    let vocabSuggestions: Array<{ term_it: string; term_fa: string }> = [];
+    let vocabSuggestions: VocabularySuggestion[] = [];
     try {
       if (cached.vocab_suggestions) {
         vocabSuggestions = JSON.parse(cached.vocab_suggestions);

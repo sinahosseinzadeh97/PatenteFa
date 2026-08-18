@@ -41,7 +41,7 @@ CREATE TABLE IF NOT EXISTS translations_cache (
   explanation TEXT,
   theory_text TEXT,                    -- 🎓 مربی تئوری (full theory explanation)
   grammar_analysis TEXT,               -- 📚 معلم گرامر (grammar analysis)
-  vocab_suggestions TEXT,              -- JSON array [{term_it, term_fa}]
+  vocab_suggestions TEXT,              -- JSON array with term, translation, POS, and infinitive
   created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (question_id, lang)
 );

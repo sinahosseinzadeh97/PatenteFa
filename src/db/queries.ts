@@ -88,7 +88,7 @@ export interface DbTranslation {
   // §15.2 — three-tab AI panel columns (nullable, populated independently per tab)
   theory_text: string | null;
   grammar_analysis: string | null;
-  vocab_suggestions: string | null; // JSON array of {term_it, term_fa}
+  vocab_suggestions: string | null; // JSON array of vocabulary items + grammatical metadata
   created_at: string;
 }
 

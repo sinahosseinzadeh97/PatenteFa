@@ -182,6 +182,7 @@
     if (state.answers[q.questionId] !== undefined) return; // already answered
 
     state.answers[q.questionId] = value;
+    App._updateAiAvailability();
 
     document.getElementById('btn-vero').classList.add('btn-disabled');
     document.getElementById('btn-falso').classList.add('btn-disabled');
@@ -247,6 +248,13 @@
   // Opening always shows tab 0 (translation) and fires its request.
   // Tabs 1 and 2 only fire when the user explicitly taps them.
   App.toggleTranslate = async function() {
+    if (!App.canUseAiForCurrentQuestion()) {
+      state.translateOpen = false;
+      const toggle = document.getElementById('translate-toggle');
+      if (toggle) toggle.checked = false;
+      App.toast('کمک AI بعد از ثبت پاسخ این سؤال فعال می‌شود');
+      return;
+    }
     state.translateOpen = !state.translateOpen;
     const panel = document.getElementById('translate-panel');
     if (!state.translateOpen) {
@@ -261,6 +269,8 @@
 
   // switchAiTab: show the selected tab content; lazy-load if not yet fetched.
   App.switchAiTab = async function(tabIndex) {
+    if (!App.canUseAiForCurrentQuestion()) return;
+
     // Update tab button styles
     for (let i = 0; i <= 2; i++) {
       const btn = document.getElementById('ai-tab-btn-' + i);
@@ -418,6 +428,27 @@
     btn.setAttribute('aria-pressed', flagged ? 'true' : 'false');
   };
 
+  App.canUseAiForCurrentQuestion = function() {
+    const q = state.questions[state.currentIndex];
+    return !!q && state.answers[q.questionId] !== undefined;
+  };
+
+  App._updateAiAvailability = function() {
+    const available = App.canUseAiForCurrentQuestion();
+    const toggle = document.getElementById('translate-toggle');
+    const label = toggle ? toggle.closest('.ai-toggle-label') : null;
+    const sub = document.getElementById('ai-toggle-sub');
+
+    if (toggle) {
+      toggle.disabled = !available;
+      if (!available) toggle.checked = false;
+    }
+    if (label) label.classList.toggle('locked', !available);
+    if (sub) {
+      sub.textContent = available ? '🤖 ۳ متخصص' : 'پس از پاسخ فعال می‌شود';
+    }
+  };
+
   App._resetAiPanel = function() {
     state.translateOpen = false;
     const tog = document.getElementById('translate-toggle');
@@ -425,6 +456,7 @@
     const panel = document.getElementById('translate-panel');
     if (panel) panel.classList.remove('open');
     document.getElementById('exam-question-text').className = 'question-text';
+    App._updateAiAvailability();
   };
 
 
@@ -598,11 +630,18 @@
         '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">' +
         (isVero ? '✅' : '❌') + ' پاسخ: ' + label + '</span></div>';
       content += '<div class="result-translation-text">🌐 ' + App.escapeHtml(data.translatedText) + '</div>';
-      if (data.explanation) {
-        content += '<div class="result-translation-explanation">💡 ' + App.escapeHtml(data.explanation) + '</div>';
-      }
-
       block.innerHTML = content;
+      if (data.explanation) {
+        const explanationBlock = document.createElement('div');
+        explanationBlock.className = 'result-translation-explanation';
+        const explanationIcon = document.createElement('span');
+        explanationIcon.textContent = '💡 ';
+        const explanationBody = document.createElement('div');
+        App.renderRichText(explanationBody, data.explanation);
+        explanationBlock.appendChild(explanationIcon);
+        explanationBlock.appendChild(explanationBody);
+        block.appendChild(explanationBlock);
+      }
       container.insertBefore(block, btn);
       btn.style.display = 'none';
       // The row grows a lot when the explanation lands — bring it into view.

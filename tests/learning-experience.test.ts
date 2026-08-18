@@ -197,7 +197,14 @@ test("grammar scans a long sentence through its final vocabulary item and repair
       return responseWithContent(
         JSON.stringify({
           grammar_analysis: "تحلیل اولیه",
-          vocab_suggestions: [{ term_it: "conducente", term_fa: "راننده" }],
+          vocab_suggestions: [
+            {
+              term_it: "conducente",
+              term_fa: "راننده",
+              part_of_speech: "other",
+              infinitive: null,
+            },
+          ],
         })
       );
     }
@@ -205,18 +212,19 @@ test("grammar scans a long sentence through its final vocabulary item and repair
     return responseWithContent(
       JSON.stringify({
         vocab_suggestions: [
-          { term_it: "deve (مصدر: dovere)", term_fa: "باید" },
-          { term_it: "rallentare", term_fa: "سرعت کم کردن" },
-          { term_it: "quando", term_fa: "وقتی که" },
-          { term_it: "si avvicina (مصدر: avvicinarsi)", term_fa: "نزدیک می‌شود" },
-          { term_it: "incrocio", term_fa: "تقاطع" },
-          { term_it: "controllare", term_fa: "بررسی کردن" },
-          { term_it: "entrambi i lati", term_fa: "هر دو طرف" },
-          { term_it: "proseguire", term_fa: "ادامه دادن" },
-          { term_it: "soltanto", term_fa: "فقط" },
-          { term_it: "può (مصدر: potere)", term_fa: "می‌تواند" },
-          { term_it: "farlo (مصدر: fare)", term_fa: "آن کار را انجام دهد" },
-          { term_it: "sicurezza", term_fa: "ایمنی" },
+          { term_it: "deve", term_fa: "باید", part_of_speech: "verb", infinitive: "dovere" },
+          { term_it: "rallentare", term_fa: "سرعت کم کردن", part_of_speech: "verb", infinitive: "rallentare" },
+          { term_it: "quando", term_fa: "وقتی که", part_of_speech: "other", infinitive: null },
+          { term_it: "si avvicina", term_fa: "نزدیک می‌شود", part_of_speech: "verb", infinitive: "avvicinarsi" },
+          { term_it: "incrocio", term_fa: "تقاطع", part_of_speech: "other", infinitive: null },
+          { term_it: "controllare", term_fa: "بررسی کردن", part_of_speech: "verb", infinitive: "controllare" },
+          { term_it: "entrambi i lati", term_fa: "هر دو طرف", part_of_speech: "other", infinitive: null },
+          { term_it: "e", term_fa: "و", part_of_speech: "other", infinitive: null },
+          { term_it: "proseguire", term_fa: "ادامه دادن", part_of_speech: "verb", infinitive: "proseguire" },
+          { term_it: "soltanto", term_fa: "فقط", part_of_speech: "other", infinitive: null },
+          { term_it: "può", term_fa: "می‌تواند", part_of_speech: "verb", infinitive: "potere" },
+          { term_it: "farlo", term_fa: "آن کار را انجام دهد", part_of_speech: "verb", infinitive: "fare" },
+          { term_it: "sicurezza", term_fa: "ایمنی", part_of_speech: "other", infinitive: null },
         ],
       })
     );
@@ -235,6 +243,11 @@ test("grammar scans a long sentence through its final vocabulary item and repair
   assert.doesNotMatch(firstPrompt, /فقط آنهایی که یادگیری‌شان واقعاً کمک می‌کند/);
   assert.ok((requests[0]?.max_tokens ?? 0) >= 1200);
   assert.ok(requests.length >= 2, "an incomplete first result must trigger a coverage repair call");
+  assert.match(
+    result.vocab_suggestions.find((item) => item.term_it.startsWith("deve"))?.term_it ?? "",
+    /dovere/,
+    "a conjugated verb must carry its infinitive into the saved vocabulary term"
+  );
   assert.equal(result.vocab_suggestions.at(-1)?.term_it, "sicurezza");
 });
 
@@ -246,13 +259,24 @@ test("vocabulary coverage preserves meaningful accented verbs and rejects empty 
   assert.ok(coverage.includes("autostrada"), "contracted articles must not hide their noun");
   assert.equal(
     hasCompleteVocabularyCoverage(sentence, [
-      { term_it: "strada", term_fa: "جاده" },
-      { term_it: "è (مصدر: essere)", term_fa: "است" },
-      { term_it: "stretta", term_fa: "باریک" },
-      { term_it: "termina (مصدر: terminare)", term_fa: "تمام می‌شود" },
-      { term_it: "autostrada", term_fa: "" },
+      { term_it: "strada", term_fa: "جاده", part_of_speech: "other", infinitive: null },
+      { term_it: "è (مصدر: essere)", term_fa: "است", part_of_speech: "verb", infinitive: "essere" },
+      { term_it: "stretta", term_fa: "باریک", part_of_speech: "other", infinitive: null },
+      { term_it: "e", term_fa: "و", part_of_speech: "other", infinitive: null },
+      { term_it: "termina (مصدر: terminare)", term_fa: "تمام می‌شود", part_of_speech: "verb", infinitive: "terminare" },
+      { term_it: "autostrada", term_fa: "", part_of_speech: "other", infinitive: null },
     ]),
-    false
+    false,
+    "an empty Persian meaning must not count as vocabulary coverage"
+  );
+  assert.equal(
+    hasCompleteVocabularyCoverage("Il conducente deve rallentare", [
+      { term_it: "conducente", term_fa: "راننده", part_of_speech: "other", infinitive: null },
+      { term_it: "deve", term_fa: "باید", part_of_speech: "verb", infinitive: null },
+      { term_it: "rallentare", term_fa: "کم کردن سرعت", part_of_speech: "verb", infinitive: "rallentare" },
+    ]),
+    false,
+    "a conjugated verb without its infinitive must not be accepted as complete"
   );
 });
 
@@ -266,8 +290,8 @@ test("vocabulary coverage distinguishes E' and è from e and retains meaning-cha
 
   assert.equal(
     hasCompleteVocabularyCoverage("La strada è stretta e termina", [
-      { term_it: "strada", term_fa: "جاده" },
-      { term_it: "stretta e termina", term_fa: "باریک است و تمام می‌شود" },
+      { term_it: "strada", term_fa: "جاده", part_of_speech: "other", infinitive: null },
+      { term_it: "stretta e termina", term_fa: "باریک است و تمام می‌شود", part_of_speech: "other", infinitive: null },
     ]),
     false,
     "a conjunction e in another suggestion must not falsely cover verb è"

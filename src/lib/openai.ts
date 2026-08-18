@@ -123,7 +123,8 @@ export async function translateQuestion(
   imageUrl?: string | null,
   db?: D1Database,
   userId?: number,
-  sign?: SignAnchor | null
+  sign?: SignAnchor | null,
+  existingTranslatedText?: string | null
 ): Promise<TranslationResult> {
   const answerIt = correctAnswer === 1 ? "VERO" : "FALSO";
   const currentModel = model(env);
@@ -245,18 +246,27 @@ ${
       body: JSON.stringify(body),
     });
 
-  // Run both in parallel — they're independent
+  type CompletionData = {
+    choices: { message: { content: string } }[];
+    usage?: { prompt_tokens: number; completion_tokens: number };
+  };
+
+  // The cache can contain a good translation whose explanation was invalidated
+  // by a prompt upgrade. Preserve that human-visible text and spend only on the
+  // missing explanation; otherwise run the independent calls in parallel.
   const [translationRes, explanationRes] = await Promise.all([
-    callOpenAI({
-      model: currentModel,
-      messages: [
-        { role: "system", content: translationSystemPrompt },
-        translationUserMessage,
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.4, // §17.3
-      max_tokens: 250,
-    }),
+    existingTranslatedText
+      ? Promise.resolve(null)
+      : callOpenAI({
+          model: currentModel,
+          messages: [
+            { role: "system", content: translationSystemPrompt },
+            translationUserMessage,
+          ],
+          response_format: { type: "json_object" },
+          temperature: 0.4, // §17.3
+          max_tokens: 250,
+        }),
     callOpenAI({
       // §20.1: image questions escalate to the vision model — mini misreads signs.
       model: imageUrl ? explanationModel : currentModel,
@@ -272,7 +282,7 @@ ${
     }),
   ]);
 
-  if (!translationRes.ok) {
+  if (translationRes && !translationRes.ok) {
     const body = await translationRes.text();
     throw new Error(`OpenAI translation error ${translationRes.status}: ${body}`);
   }
@@ -282,8 +292,8 @@ ${
   }
 
   const [translationData, explanationData] = await Promise.all([
-    translationRes.json() as Promise<{ choices: { message: { content: string } }[]; usage?: { prompt_tokens: number; completion_tokens: number } }>,
-    explanationRes.json() as Promise<{ choices: { message: { content: string } }[]; usage?: { prompt_tokens: number; completion_tokens: number } }>,
+    translationRes ? (translationRes.json() as Promise<CompletionData>) : Promise.resolve(null),
+    explanationRes.json() as Promise<CompletionData>,
   ]);
 
   // Log combined usage
@@ -291,8 +301,8 @@ ${
     // §20.1: the two calls can now run on different models, so the model has to
     // be passed in — logging both as `currentModel` would under-report the cost
     // of every image explanation on the admin dashboard.
-    const logUsage = (data: typeof translationData, action: string, usedModel: string) => {
-      if (!data.usage) return;
+    const logUsage = (data: CompletionData | null, action: string, usedModel: string) => {
+      if (!data?.usage) return;
       const pTokens = data.usage.prompt_tokens || 0;
       const cTokens = data.usage.completion_tokens || 0;
       const cost = calculateCost(usedModel, pTokens, cTokens);
@@ -312,11 +322,15 @@ ${
     );
   }
 
-  const translatedParsed = JSON.parse(translationData.choices[0]?.message?.content ?? "{}") as { translated_text?: string };
+  const translatedParsed = translationData
+    ? (JSON.parse(translationData.choices[0]?.message?.content ?? "{}") as {
+        translated_text?: string;
+      })
+    : null;
   const explanationParsed = JSON.parse(explanationData.choices[0]?.message?.content ?? "{}") as { explanation?: string };
 
   return {
-    translated_text: translatedParsed.translated_text ?? textIt,
+    translated_text: existingTranslatedText ?? translatedParsed?.translated_text ?? textIt,
     explanation: explanationParsed.explanation ?? "",
   };
 }
@@ -391,10 +405,15 @@ export interface TheoryResult {
 
 export interface GrammarResult {
   grammar_analysis: string;
-  vocab_suggestions: Array<{ term_it: string; term_fa: string }>;
+  vocab_suggestions: VocabularySuggestion[];
 }
 
-type VocabularySuggestion = GrammarResult["vocab_suggestions"][number];
+export interface VocabularySuggestion {
+  term_it: string;
+  term_fa: string;
+  part_of_speech: "verb" | "other";
+  infinitive: string | null;
+}
 
 // Closed-class words do not make useful standalone vocabulary cards. Everything
 // else must be represented in the grammar result, including words at the end of
@@ -409,8 +428,10 @@ const ITALIAN_VOCAB_STOP_WORDS = new Set([
   "dal", "dallo", "dalla", "dai", "dagli", "dalle",
   "nel", "nello", "nella", "nei", "negli", "nelle",
   "sul", "sullo", "sulla", "sui", "sugli", "sulle",
-  "e", "ed", "o", "od", "ma", "si", "ci", "vi", "ne",
+  "si", "ci", "vi", "ne",
 ]);
+
+const MEANINGFUL_SINGLE_CHARACTER_TOKENS = new Set(["è", "e", "o"]);
 
 function normalizeItalianToken(value: string): string {
   return value
@@ -420,27 +441,35 @@ function normalizeItalianToken(value: string): string {
 }
 
 function italianSurfaceTokens(value: string): string[] {
-  return (value.replace(/[’']/g, " ").match(/\p{Script=Latin}+/gu) ?? [])
+  // The bank frequently writes the verb `è` as `E'`. Canonicalize only that
+  // standalone form before splitting apostrophes so it cannot collapse into the
+  // conjunction `e` (which has a different meaning and vocabulary identity).
+  const canonical = value.replace(/\b[eE]['’](?=\s|$)/gu, "è");
+  return (canonical.replace(/[’']/g, " ").match(/\p{Script=Latin}+/gu) ?? [])
     .map((token) => token.toLocaleLowerCase("it"));
 }
 
+function italianTokenKey(surfaceToken: string): string {
+  return surfaceToken === "è" ? "verb:essere:è" : normalizeItalianToken(surfaceToken);
+}
+
 function italianTokens(value: string): string[] {
-  return italianSurfaceTokens(value).map(normalizeItalianToken);
+  return italianSurfaceTokens(value).map(italianTokenKey);
 }
 
 /** Content-bearing tokens that the vocabulary list must cover, in source order. */
 export function vocabularyCoverageTokens(textIt: string): string[] {
   const seen = new Set<string>();
   return italianSurfaceTokens(textIt).filter((surfaceToken) => {
-    const normalized = normalizeItalianToken(surfaceToken);
+    const key = italianTokenKey(surfaceToken);
     if (
-      (normalized.length < 2 && surfaceToken !== "è") ||
+      (surfaceToken.length < 2 && !MEANINGFUL_SINGLE_CHARACTER_TOKENS.has(surfaceToken)) ||
       ITALIAN_VOCAB_STOP_WORDS.has(surfaceToken) ||
-      seen.has(normalized)
+      seen.has(key)
     ) {
       return false;
     }
-    seen.add(normalized);
+    seen.add(key);
     return true;
   });
 }
@@ -460,7 +489,7 @@ export function findUncoveredVocabularyTokens(
       .flatMap((suggestion) => italianTokens(suggestion.term_it))
   );
   return vocabularyCoverageTokens(textIt).filter(
-    (token) => !covered.has(normalizeItalianToken(token))
+    (token) => !covered.has(italianTokenKey(token))
   );
 }
 
@@ -468,29 +497,70 @@ export function hasCompleteVocabularyCoverage(
   textIt: string,
   suggestions: VocabularySuggestion[]
 ): boolean {
-  return findUncoveredVocabularyTokens(textIt, suggestions).length === 0;
+  return (
+    suggestions.every(hasValidVocabularyMetadata) &&
+    findUncoveredVocabularyTokens(textIt, suggestions).length === 0
+  );
+}
+
+function hasValidVocabularyMetadata(item: VocabularySuggestion): boolean {
+  if (item.part_of_speech !== "verb" && item.part_of_speech !== "other") return false;
+  if (item.part_of_speech === "other") return item.infinitive === null;
+  if (typeof item.infinitive !== "string" || item.infinitive.trim().length === 0) return false;
+  const termTokens = italianTokens(item.term_it);
+  return italianTokens(item.infinitive).every((token) => termTokens.includes(token));
+}
+
+function normalizeVocabularySuggestion(
+  item: VocabularySuggestion
+): VocabularySuggestion | null {
+  if (
+    !item ||
+    typeof item.term_it !== "string" ||
+    typeof item.term_fa !== "string" ||
+    item.term_it.trim().length === 0 ||
+    item.term_fa.trim().length === 0 ||
+    (item.part_of_speech !== "verb" && item.part_of_speech !== "other")
+  ) {
+    return null;
+  }
+
+  const termIt = item.term_it.trim();
+  const termFa = item.term_fa.trim();
+  if (item.part_of_speech === "other") {
+    return { term_it: termIt, term_fa: termFa, part_of_speech: "other", infinitive: null };
+  }
+
+  const infinitive = typeof item.infinitive === "string" ? item.infinitive.trim() : "";
+  if (!infinitive) return null;
+  const termTokens = italianTokens(termIt);
+  const containsInfinitive = italianTokens(infinitive).every((token) =>
+    termTokens.includes(token)
+  );
+
+  return {
+    term_it: containsInfinitive ? termIt : `${termIt} (مصدر: ${infinitive})`,
+    term_fa: termFa,
+    part_of_speech: "verb",
+    infinitive,
+  };
 }
 
 function mergeAndOrderVocabulary(
   textIt: string,
   batches: VocabularySuggestion[][]
 ): VocabularySuggestion[] {
-  const sourceOrder = vocabularyCoverageTokens(textIt).map(normalizeItalianToken);
+  const sourceOrder = vocabularyCoverageTokens(textIt).map(italianTokenKey);
   const seen = new Set<string>();
-  const merged = batches.flat().filter((item) => {
-    if (
-      !item ||
-      typeof item.term_it !== "string" ||
-      typeof item.term_fa !== "string" ||
-      item.term_fa.trim().length === 0
-    ) {
-      return false;
-    }
-    const key = normalizeItalianToken(item.term_it.trim());
-    if (!key || seen.has(key)) return false;
+  const merged: VocabularySuggestion[] = [];
+  for (const item of batches.flat()) {
+    const normalizedItem = normalizeVocabularySuggestion(item);
+    if (!normalizedItem) continue;
+    const key = italianTokens(normalizedItem.term_it).join("|");
+    if (!key || seen.has(key)) continue;
     seen.add(key);
-    return true;
-  });
+    merged.push(normalizedItem);
+  }
 
   return merged
     .map((item, stableIndex) => {
@@ -658,7 +728,7 @@ export async function analyzeGrammar(
 {
   "grammar_analysis": "توضیح گرامری به فارسی (متن آزاد)",
   "vocab_suggestions": [
-    {"term_it": "واژه ایتالیایی", "term_fa": "ترجمه فارسی"},
+    {"term_it": "شکل دقیق واژه در جمله", "term_fa": "ترجمه فارسی", "part_of_speech": "verb یا other", "infinitive": "مصدر فعل یا null"},
     ...
   ]
 }
@@ -669,6 +739,8 @@ export async function analyzeGrammar(
 - ترتیب vocab_suggestions باید دقیقاً از ابتدای جمله به انتهای جمله باشد
 - term_it باید شکل دقیق واژه یا عبارت در همین جمله را حفظ کند تا پوشش آن قابل بررسی باشد
 - term_fa باید معنی کوتاه و روشن همان واژه در بافت همین جمله باشد
+- part_of_speech برای هر آیتم اجباری است: فقط verb برای فعل صرف‌شده و other برای بقیه
+- infinitive برای verb اجباری است و باید مصدر ایتالیایی باشد؛ برای other حتماً null باشد
 - هر دو بخش ضروری هستند
 - انفینیتیو (مصدر) فقط برای افعال (§19.3 + تمایز فعل/اسم):
   • فقط برای شکل‌های صرف‌شده افعال (verbi coniugati) مصدر بنویسید — مثال: "avviene (مصدر: avvenire)"
@@ -766,7 +838,7 @@ ${coverageTokens.join("، ")}
       messages: [
         {
           role: "system",
-          content: `شما بازبین پوشش لغات ایتالیایی هستید. فقط واژه‌های جاافتاده‌ای را که کاربر مشخص کرده، با معنی ساده فارسی برگردانید. شکل دقیق موجود در جمله را در term_it نگه دارید و برای فعل صرف‌شده مصدر را هم اضافه کنید. خروجی فقط JSON با کلید vocab_suggestions باشد.`,
+          content: `شما بازبین پوشش لغات ایتالیایی هستید. فقط واژه‌های جاافتاده‌ای را که کاربر مشخص کرده، با معنی ساده فارسی برگردانید. شکل دقیق موجود در جمله را در term_it نگه دارید. هر آیتم باید part_of_speech برابر verb یا other داشته باشد؛ برای verb فیلد infinitive اجباری است و برای other مقدار آن null است. خروجی فقط JSON با کلید vocab_suggestions باشد.`,
         },
         {
           role: "user",
@@ -776,7 +848,7 @@ ${coverageTokens.join("، ")}
 
 موارد موجود (تکرار نکنید): ${JSON.stringify(suggestions)}
 
-خروجی: {"vocab_suggestions":[{"term_it":"...","term_fa":"..."}]}`,
+خروجی: {"vocab_suggestions":[{"term_it":"...","term_fa":"...","part_of_speech":"verb|other","infinitive":"...|null"}]}`,
         },
       ],
       response_format: { type: "json_object" },
