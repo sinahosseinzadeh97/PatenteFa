@@ -118,7 +118,7 @@
     // Update the summary label
     const posEl = document.getElementById('exam-position');
     if (posEl) {
-      posEl.textContent = 'Q ' + (state.currentIndex + 1) + ' / ' + total;
+      posEl.textContent = (state.currentIndex + 1) + ' / ' + total;
     }
 
     state.questions.forEach(function(q, i) {
@@ -317,7 +317,7 @@
       verdictEl.style.display = 'block';
     }
     document.getElementById('translate-text').textContent = data.translatedText || '';
-    document.getElementById('translate-explanation').textContent = data.explanation || '';
+    App.renderRichText(document.getElementById('translate-explanation'), data.explanation || '');
     document.getElementById('exam-question-text').classList.add('translated');
   };
 
@@ -612,4 +612,3 @@
       btn.disabled = false;
     }
   };
-

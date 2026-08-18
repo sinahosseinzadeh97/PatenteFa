@@ -11,8 +11,11 @@ export function renderExamScreen(): string {
       <!-- Collapsible question tabs -->
       <details id="tabs-details" style="flex:1;min-width:0;">
         <summary class="tabs-summary">
-          <span id="exam-position" class="exam-position">Q 1 / 30</span>
-          <span class="exam-tabs-hint"> — ببین</span>
+          <span class="exam-position-badge">
+            <span class="exam-position-label">سؤال جاری</span>
+            <span id="exam-position" class="exam-position" aria-live="polite" aria-atomic="true">1 / 30</span>
+          </span>
+          <span class="exam-tabs-hint">فهرست سؤال‌ها</span>
         </summary>
         <div class="question-tabs" id="exam-tabs"></div>
       </details>

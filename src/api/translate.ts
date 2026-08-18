@@ -16,7 +16,13 @@ import {
   updateTheoryCache,
   updateGrammarCache,
 } from "../db/queries.js";
-import { translateQuestion, explainTheory, analyzeGrammar, resolveImageUrl } from "../lib/openai.js";
+import {
+  translateQuestion,
+  explainTheory,
+  analyzeGrammar,
+  hasCompleteVocabularyCoverage,
+  resolveImageUrl,
+} from "../lib/openai.js";
 
 const translate = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
@@ -143,6 +149,12 @@ translate.post("/:questionId/grammar", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
 
+  // The source text is required to verify that a cached vocabulary list covers
+  // the whole sentence. Old prompt versions intentionally returned only 3–6
+  // words, so grammar_analysis alone is not evidence that the cache is complete.
+  const question = await getQuestionById(c.env.DB, questionId);
+  if (!question) return c.json({ error: "Question not found" }, 404);
+
   const cached = await getCachedTranslation(c.env.DB, questionId, lang);
   if (
     cached &&
@@ -157,16 +169,15 @@ translate.post("/:questionId/grammar", async (c) => {
     } catch {
       vocabSuggestions = [];
     }
-    return c.json({
-      questionId,
-      grammarAnalysis: cached.grammar_analysis,
-      vocabSuggestions,
-      cached: true,
-    });
+    if (hasCompleteVocabularyCoverage(question.text_it, vocabSuggestions)) {
+      return c.json({
+        questionId,
+        grammarAnalysis: cached.grammar_analysis,
+        vocabSuggestions,
+        cached: true,
+      });
+    }
   }
-
-  const question = await getQuestionById(c.env.DB, questionId);
-  if (!question) return c.json({ error: "Question not found" }, 404);
 
   const userId: number | undefined = c.get("userId" as never);
   const result = await analyzeGrammar(c.env, question.text_it, c.env.DB, userId);

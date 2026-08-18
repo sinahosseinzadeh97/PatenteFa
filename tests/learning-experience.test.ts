@@ -6,7 +6,12 @@ import { renderExamScreen } from "../src/app/screens/exam.js";
 import {
   analyzeGrammar,
   explainTheory,
+  hasCompleteVocabularyCoverage,
+  resolveImageUrl,
+  signAnchorBlock,
+  suggestVocabTranslation,
   translateQuestion,
+  vocabularyCoverageTokens,
   type Env,
 } from "../src/lib/openai.js";
 
@@ -34,7 +39,7 @@ test("the current question number is exposed as a prominent live badge", () => {
 
   assert.match(markup, /class="exam-position-badge"/);
   assert.match(markup, /id="exam-position"[^>]*aria-live="polite"/);
-  assert.match(positionRule, /font-size:\s*1\.[2-9]rem/);
+  assert.match(positionRule, /font-size:\s*1\.[2-9]\d*rem/);
   assert.match(positionRule, /font-weight:\s*(?:700|800|900)/);
   assert.match(positionRule, /color:\s*var\(--ink\)/);
   assert.doesNotMatch(positionRule, /var\(--ink-muted\)/);
@@ -67,6 +72,63 @@ test("translation explanations are prompted for first-read clarity", async (t) =
   assert.match(prompt, /هر جمله.*یک مفهوم|یک مفهوم.*هر جمله/);
   assert.match(prompt, /مثال/);
   assert.ok((explanationRequest?.max_tokens ?? 0) >= 450);
+});
+
+test("image-backed learning prompts keep the verified sign identity and usable image URL", async (t) => {
+  const requests: OpenAIRequest[] = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_input, init) => {
+    const body = JSON.parse(String(init?.body)) as OpenAIRequest;
+    requests.push(body);
+    const system = String(body.messages?.[0]?.content ?? "");
+    if (system.includes("مترجم تخصصی")) {
+      return responseWithContent(JSON.stringify({ translated_text: "ترجمه تصویری" }));
+    }
+    if (system.includes("توضیح‌دهنده")) {
+      return responseWithContent(JSON.stringify({ explanation: "توضیح تصویری" }));
+    }
+    return responseWithContent("توضیح تئوری تصویری");
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const imageUrl = resolveImageUrl("https://example.test/app", "/images/signs/54.png");
+  assert.equal(imageUrl, "https://example.test/images/signs/54.png");
+  assert.equal(resolveImageUrl(undefined, "/images/signs/54.png"), null);
+  assert.equal(resolveImageUrl("https://example.test/app", "https://cdn.test/54.png"), "https://cdn.test/54.png");
+
+  const sign = {
+    nameIt: "DARE PRECEDENZA",
+    nameFa: "رعایت حق تقدم",
+    meaningFa: "باید به خودروهای مسیر دیگر راه بدهید.",
+  };
+  assert.match(signAnchorBlock(sign), /DARE PRECEDENZA/);
+
+  await translateQuestion(
+    { ...env, OPENAI_VISION_MODEL: "vision-model" },
+    "Il segnale raffigurato impone di dare la precedenza.",
+    1,
+    imageUrl,
+    undefined,
+    undefined,
+    sign
+  );
+  await explainTheory(
+    { ...env, OPENAI_VISION_MODEL: "vision-model" },
+    "Il segnale raffigurato impone di dare la precedenza.",
+    1,
+    undefined,
+    undefined,
+    imageUrl,
+    sign
+  );
+
+  const imageRequests = requests.filter((request) => Array.isArray(request.messages?.[1]?.content));
+  assert.equal(imageRequests.length, 3);
+  assert.equal(imageRequests[1]?.max_tokens, 600);
+  assert.equal(imageRequests[2]?.max_tokens, 1100);
+  assert.match(JSON.stringify(imageRequests), /DARE PRECEDENZA/);
 });
 
 test("theory explanations teach the rule step by step with a concrete example", async (t) => {
@@ -136,10 +198,45 @@ test("grammar scans a long sentence through its final vocabulary item and repair
 
   assert.match(firstPrompt, /ابتدا تا انتها|اولین.*آخرین/s);
   assert.match(firstPrompt, /همه.*واژه|تمام.*واژه/s);
-  assert.doesNotMatch(firstPrompt, /۳ تا ۶/);
+  assert.doesNotMatch(firstPrompt, /فقط آنهایی که یادگیری‌شان واقعاً کمک می‌کند/);
   assert.ok((requests[0]?.max_tokens ?? 0) >= 1200);
   assert.ok(requests.length >= 2, "an incomplete first result must trigger a coverage repair call");
   assert.equal(result.vocab_suggestions.at(-1)?.term_it, "sicurezza");
+});
+
+test("vocabulary coverage preserves meaningful accented verbs and rejects empty translations", () => {
+  const sentence = "La strada è stretta e termina nell'autostrada";
+  const coverage = vocabularyCoverageTokens(sentence);
+
+  assert.ok(coverage.includes("è"), "the verb è must not be mistaken for conjunction e");
+  assert.ok(coverage.includes("autostrada"), "contracted articles must not hide their noun");
+  assert.equal(
+    hasCompleteVocabularyCoverage(sentence, [
+      { term_it: "strada", term_fa: "جاده" },
+      { term_it: "è (مصدر: essere)", term_fa: "است" },
+      { term_it: "stretta", term_fa: "باریک" },
+      { term_it: "termina (مصدر: terminare)", term_fa: "تمام می‌شود" },
+      { term_it: "autostrada", term_fa: "" },
+    ]),
+    false
+  );
+});
+
+test("single-term vocabulary suggestions remain available for manual saves", async (t) => {
+  let request: OpenAIRequest | undefined;
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (_input, init) => {
+    request = JSON.parse(String(init?.body)) as OpenAIRequest;
+    return responseWithContent("  حق تقدم  ");
+  };
+  t.after(() => {
+    globalThis.fetch = originalFetch;
+  });
+
+  const result = await suggestVocabTranslation(env, "precedenza");
+
+  assert.equal(result, "حق تقدم");
+  assert.match(JSON.stringify(request), /precedenza/);
 });
 
 test("the cache-reset migration invalidates all outdated learning content", () => {

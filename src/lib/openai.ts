@@ -113,8 +113,8 @@ export function calculateCost(model: string, promptTokens: number, completionTok
  * §14.1: simplified to just translated_text + explanation (no driving/grammar agents).
  * §14.2: when imageUrl is provided, sends the sign image via vision so the
  *         translation is grounded in the actual road sign shown.
- *         gpt-4o-mini supports vision natively — no model change needed.
- *         detail:"low" keeps image cost to ~85 tokens (~$0.00001).
+ *         Translation uses low detail; the answer explanation uses the configured
+ *         vision model at high detail so small sign/diagram features stay legible.
  */
 export async function translateQuestion(
   env: Env,
@@ -197,33 +197,37 @@ export async function translateQuestion(
   // questions usually have NO deciding word — the deciding factor is which sign
   // is depicted. Demanding one forced the model to pick an arbitrary word and
   // invent a justification around it.
-  const explanationSystemPrompt = `شما توضیح‌دهنده قوانین آزمون پاتنته B هستید و برای فارسی‌زبانان توضیح می‌دهید.
+  const explanationSystemPrompt = `شما توضیح‌دهنده قوانین آزمون پاتنته B هستید و برای یک فارسی‌زبان بدون دانش قبلی از قوانین رانندگی توضیح می‌دهید.
+
+هدف: کاربر باید دلیل پاسخ را با یک بار خواندن بفهمد. زبان روزمره و جمله‌های کوتاه به کار ببرید؛ هر جمله فقط یک مفهوم داشته باشد. هر اصطلاح ایتالیایی را فقط وقتی لازم است بیاورید و همان بار اول معنی ساده فارسی آن را داخل پرانتز بنویسید.
 ${
   imageUrl
     ? `
-این سوال یک تصویر دارد (تابلو یا شکل تقاطع) که برای شما ارسال شده است. تصویر منبع اصلی پاسخ است، نه متن.
+این سوال تصویر دارد و تصویر منبع اصلی پاسخ است.
 
-ساختار پاسخ (۲ تا ۳ جمله، بدون تیتر):
-۱. اول دقیقاً بگویید در تصویر چه چیزی می‌بینید — نام رسمی ایتالیایی تابلو را داخل «» بیاورید (مثلاً «STRADA DEFORMATA»)، یا در شکل‌های تقاطع، موقعیت و مسیر هر وسیله نقلیه با حرف آن.
-۲. چرا با توجه به همین تصویر، پاسخ ${answerIt} است.
-۳. قانون واقعی مربوط به همین تابلو یا همین وضعیت — با عدد و شرط مشخص در صورت وجود.
+پاسخ را در سه بخش کوتاه بنویسید:
+**دلیل ساده:** با واژه‌های روزمره بگویید چه چیزی در تصویر دیده می‌شود و چرا پاسخ ${answerIt} است.
+**قانون به زبان ساده:** وضعیت، کاری که راننده باید انجام دهد، و نتیجه را قدم‌به‌قدم توضیح دهید. عدد یا استثنا را فقط اگر مستقیماً به همین سوال مربوط است اضافه کنید.
+**مثال:** یک موقعیت ملموس یک‌جمله‌ای از رانندگی واقعی بنویسید.
 
 قانون قطعی درباره تصویر:
 • هرگز فرض نکنید تابلوی داخل تصویر همان چیزی است که در متن سوال ادعا شده — اغلب پاسخ دقیقاً به همین دلیل FALSO است
 • اگر تصویر را با اطمینان تشخیص نمی‌دهید، همین را بنویسید و فقط چیزی را که واقعاً می‌بینید (شکل، رنگ، نماد) توصیف کنید. حدس زدن نام تابلو بدتر از نگفتن آن است
-• درباره «کلمه تعیین‌کننده» در متن حرف نزنید مگر آنکه واقعاً یک کلمه متن پاسخ را عوض کند — در سوال‌های تصویری معمولاً تصویر تعیین‌کننده است، نه کلمه`
+• نام رسمی ایتالیایی تابلو را فقط همراه با معنی ساده فارسی آن بنویسید`
     : `
-ساختار پاسخ (۲ تا ۳ جمله، بدون تیتر):
-۱. کدام کلمه یا شرط دقیق در جمله ایتالیایی، پاسخ را ${answerIt} می‌کند (کلمه ایتالیایی را داخل «» بیاورید).
-۲. قانون واقعی چیست — با عدد و شرط مشخص (سرعت، فاصله، مهلت، نوع جاده، نوع وسیله نقلیه، استثنا).
-۳. اگر جمله ${correctAnswer === 1 ? "FALSO" : "VERO"} می‌بود، چه چیزی باید فرق می‌کرد.`
+پاسخ را در سه بخش کوتاه بنویسید:
+**دلیل ساده:** کلمه یا شرط تعیین‌کننده را معنی کنید و در یک جمله بگویید چرا پاسخ ${answerIt} است.
+**قانون به زبان ساده:** وضعیت، کاری که راننده باید انجام دهد، و نتیجه را قدم‌به‌قدم توضیح دهید. فقط شرط‌ها، عددها و استثناهای مرتبط با همین سوال را بگویید.
+**مثال:** یک موقعیت ملموس یک‌جمله‌ای از رانندگی واقعی بنویسید.`
 }
 
 ممنوع:
 • جمله‌های کلی مثل «طبق قوانین راهنمایی و رانندگی»، «باید احتیاط کرد»، «این یک قانون مهم است» — این‌ها هیچ اطلاعاتی نمی‌دهند
 • تکرار خود سوال به عنوان توضیح
-• ذکر شماره ماده قانونی مگر آنکه مطمئن باشید — در غیر این صورت فقط خود قانون را بنویسید
-• شروع با «پاسخ صحیح ${answerIt} است» — این را کاربر می‌بیند، مستقیم سراغ دلیل بروید`;
+• اصطلاح حقوقی، جمله رسمی و ترجمه کلمه‌به‌کلمه
+• اطلاعات اضافی درباره حالت‌هایی که به این سوال ربط ندارند
+• ذکر شماره ماده قانونی؛ کاربر به فهم قانون نیاز دارد، نه شماره آن
+• شروع با «پاسخ صحیح ${answerIt} است» — مستقیم سراغ دلیل بروید`;
 
   const explanationUserText = `سوال ایتالیایی: "${textIt}"
 پاسخ صحیح: ${answerIt}${imageUrl ? "\n(تصویر این سوال ضمیمه شده است — اول آن را بخوانید.)" : ""}${signAnchorBlock(sign)}
@@ -264,7 +268,7 @@ ${
       temperature: 0.2,
       // Image answers must name the sign before reasoning — that costs tokens the
       // old text-only budget didn't allow for.
-      max_tokens: imageUrl ? 500 : 350,
+      max_tokens: imageUrl ? 600 : 500,
     }),
   ]);
 
@@ -390,13 +394,121 @@ export interface GrammarResult {
   vocab_suggestions: Array<{ term_it: string; term_fa: string }>;
 }
 
+type VocabularySuggestion = GrammarResult["vocab_suggestions"][number];
+
+// Closed-class words do not make useful standalone vocabulary cards. Everything
+// else must be represented in the grammar result, including words at the end of
+// long questions. Keep this deliberately small: words such as "non", "sempre",
+// "quando" and "salvo" change exam meaning and therefore must never be filtered.
+const ITALIAN_VOCAB_STOP_WORDS = new Set([
+  "il", "lo", "la", "i", "gli", "le", "un", "uno", "una",
+  "di", "a", "da", "in", "con", "su", "per", "tra", "fra",
+  "del", "dello", "della", "dei", "degli", "delle",
+  "dell", "all", "dall", "nell", "sull",
+  "al", "allo", "alla", "ai", "agli", "alle",
+  "dal", "dallo", "dalla", "dai", "dagli", "dalle",
+  "nel", "nello", "nella", "nei", "negli", "nelle",
+  "sul", "sullo", "sulla", "sui", "sugli", "sulle",
+  "e", "ed", "o", "od", "ma", "si", "ci", "vi", "ne",
+]);
+
+function normalizeItalianToken(value: string): string {
+  return value
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLocaleLowerCase("it");
+}
+
+function italianSurfaceTokens(value: string): string[] {
+  return (value.replace(/[’']/g, " ").match(/\p{Script=Latin}+/gu) ?? [])
+    .map((token) => token.toLocaleLowerCase("it"));
+}
+
+function italianTokens(value: string): string[] {
+  return italianSurfaceTokens(value).map(normalizeItalianToken);
+}
+
+/** Content-bearing tokens that the vocabulary list must cover, in source order. */
+export function vocabularyCoverageTokens(textIt: string): string[] {
+  const seen = new Set<string>();
+  return italianSurfaceTokens(textIt).filter((surfaceToken) => {
+    const normalized = normalizeItalianToken(surfaceToken);
+    if (
+      (normalized.length < 2 && surfaceToken !== "è") ||
+      ITALIAN_VOCAB_STOP_WORDS.has(surfaceToken) ||
+      seen.has(normalized)
+    ) {
+      return false;
+    }
+    seen.add(normalized);
+    return true;
+  });
+}
+
+export function findUncoveredVocabularyTokens(
+  textIt: string,
+  suggestions: VocabularySuggestion[]
+): string[] {
+  const covered = new Set(
+    suggestions
+      .filter(
+        (suggestion) =>
+          typeof suggestion?.term_it === "string" &&
+          typeof suggestion?.term_fa === "string" &&
+          suggestion.term_fa.trim().length > 0
+      )
+      .flatMap((suggestion) => italianTokens(suggestion.term_it))
+  );
+  return vocabularyCoverageTokens(textIt).filter(
+    (token) => !covered.has(normalizeItalianToken(token))
+  );
+}
+
+export function hasCompleteVocabularyCoverage(
+  textIt: string,
+  suggestions: VocabularySuggestion[]
+): boolean {
+  return findUncoveredVocabularyTokens(textIt, suggestions).length === 0;
+}
+
+function mergeAndOrderVocabulary(
+  textIt: string,
+  batches: VocabularySuggestion[][]
+): VocabularySuggestion[] {
+  const sourceOrder = vocabularyCoverageTokens(textIt).map(normalizeItalianToken);
+  const seen = new Set<string>();
+  const merged = batches.flat().filter((item) => {
+    if (
+      !item ||
+      typeof item.term_it !== "string" ||
+      typeof item.term_fa !== "string" ||
+      item.term_fa.trim().length === 0
+    ) {
+      return false;
+    }
+    const key = normalizeItalianToken(item.term_it.trim());
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+
+  return merged
+    .map((item, stableIndex) => {
+      const termTokens = italianTokens(item.term_it);
+      const sourceIndex = sourceOrder.findIndex((token) => termTokens.includes(token));
+      return { item, stableIndex, sourceIndex: sourceIndex < 0 ? Number.MAX_SAFE_INTEGER : sourceIndex };
+    })
+    .sort((a, b) => a.sourceIndex - b.sourceIndex || a.stableIndex - b.stableIndex)
+    .map(({ item }) => item);
+}
+
 /**
  * 🎓 مربی تئوری — Full Theory Explanation
  * Persona: an experienced Italian driving-school instructor (scuola guida) who
  * teaches Persian-speaking students. Explains the exact traffic-code rule
  * (Codice della Strada) behind this question, why it's a common mistake, and
  * what mental tip (trucchetto) will help the student remember it.
- * Token budget: 700 (independent — never competes with translation or grammar).
+ * Token budget: 1100 (independent — never competes with translation or grammar).
  * §20.1: vision when the question has an image. This used to be text-only on the
  * reasoning that we're explaining the rule, not the sign — which is true for text
  * questions and false for the ~4k image ones, where the sign IS the rule. Blind,
@@ -415,13 +527,15 @@ export async function explainTheory(
   // §20.1: image questions escalate to the vision model — see visionModel().
   const currentModel = imageUrl ? visionModel(env) : model(env);
 
-  const systemPrompt = `شما «مربی تئوری» (مربی آزمون پاتنته B ایتالیا) هستید — یک مربی کارآزموده مدرسه رانندگی که به زبان فارسی روان به دانش‌آموزان ایرانی آموزش می‌دهد.
+  const systemPrompt = `شما «مربی تئوری» (مربی آزمون پاتنته B ایتالیا) هستید — یک مربی کارآزموده مدرسه رانندگی که به زبان فارسی روان به دانش‌آموزان ایرانی آموزش می‌دهد. فرض کنید دانش‌آموز هیچ پیش‌زمینه‌ای از این مبحث ندارد.
 
-اصل حاکم بر کل پاسخ شما: **مشخص بودن**. هر جمله باید یک اطلاعات قابل استفاده بدهد. اگر جمله‌ای را می‌شود بدون تغییر زیر یک سوال کاملاً متفاوت هم گذاشت، آن جمله بی‌ارزش است و باید حذف شود.
+پیش از نوشتن پاسخ، بی‌صدا این چهار مورد را بررسی کنید: ادعای دقیق جمله، پاسخ ${answerIt}، شرط‌ها و استثناهای واقعاً مرتبط، و سازگاری نتیجه با تصویر یا اطلاعات قطعی تابلو. فرایند بررسی درونی را ننویسید؛ فقط استدلال آموزشی روشن و قابل بررسی را نشان دهید.
+
+اصل حاکم بر پاسخ: مفهوم را قدم‌به‌قدم بسازید. هر جمله باید یک اطلاعات قابل استفاده بدهد. اگر جمله‌ای را می‌شود بدون تغییر زیر یک سوال کاملاً متفاوت هم گذاشت، آن جمله را حذف کنید.
 ${
   imageUrl
     ? `
-این سوال یک تصویر دارد که برای شما ارسال شده است. تصویر منبع اصلی پاسخ است. قبل از هر چیز آن را بخوانید و هرگز فرض نکنید محتوای تصویر همان چیزی است که متن سوال ادعا می‌کند — اغلب پاسخ دقیقاً به همین دلیل ${answerIt} است. اگر تصویر را با اطمینان تشخیص نمی‌دهید، همین را صادقانه بنویسید و فقط شکل، رنگ و نماد قابل مشاهده را توصیف کنید؛ حدس زدن نام تابلو بدتر از نگفتن آن است.
+این سوال یک تصویر دارد و تصویر منبع اصلی پاسخ است. هرگز فرض نکنید محتوای تصویر همان چیزی است که متن ادعا می‌کند. اگر تصویر را با اطمینان تشخیص نمی‌دهید، فقط شکل، رنگ و نماد قابل مشاهده را بگویید؛ نام تابلو را حدس نزنید.
 `
     : ""
 }
@@ -429,29 +543,27 @@ ${
 
 ${
   imageUrl
-    ? `**۱. تابلو یا شکل چیست**
-در تصویر دقیقاً چه می‌بینید؟ نام رسمی ایتالیایی تابلو را داخل «» بنویسید (مثلاً «STRADA DEFORMATA») و شکل و رنگ و نماد آن را توصیف کنید. در شکل‌های تقاطع، موقعیت و مسیر هر وسیله نقلیه را با حرف آن بنویسید. سپس بگویید چرا همین تصویر پاسخ را ${answerIt} می‌کند.`
-    : `**۱. کلمه تعیین‌کننده**
-دقیقاً کدام کلمه یا عبارت ایتالیایی در این جمله پاسخ را ${answerIt} می‌کند؟ آن را داخل «» بنویسید و بگویید چرا. (مثلاً «sempre»، «salvo»، «obbligatorio»، «può»، یک عدد، یا نام یک نوع جاده.)`
+    ? `**۱. اول تصویر و حکم**
+با زبان ساده بگویید چه می‌بینیم و چرا همین مشاهده پاسخ را ${answerIt} می‌کند. نام ایتالیایی تابلو را همراه با معنی فارسی آن بنویسید. در شکل تقاطع، مسیر خودروها را با حرفشان توضیح دهید.`
+    : `**۱. اول معنی سوال و حکم**
+در یک یا دو جمله ساده بگویید سوال واقعاً چه ادعایی دارد و کدام کلمه، عبارت یا شرط پاسخ را ${answerIt} می‌کند. عبارت ایتالیایی را همراه با معنی فارسی آن بنویسید.`
 }
 
-**۲. قانون**
-قانون واقعی را با جزئیات عددی و شرطی بنویسید — سرعت مجاز، فاصله بر حسب متر، مهلت زمانی، نوع جاده (autostrada / strada extraurbana / centro abitato)، دسته وسیله نقلیه، و استثناهای قانون. اگر قانون بسته به شرایط فرق می‌کند، همه حالت‌ها را فهرست کنید.
+**۲. قانون قدم‌به‌قدم**
+قانون را با این ترتیب آموزش دهید: «وضعیت» چه زمانی است؛ «قانون» از راننده چه می‌خواهد؛ «نتیجه» چه می‌شود. فقط عدد، شرط و استثنایی را اضافه کنید که مستقیماً برای همین سوال لازم است. اگر اصطلاح ایتالیایی ضروری است، معنی فارسی آن را همان بار اول داخل پرانتز بیاورید.
 
-**۳. تله سوال**
-دانش‌آموز چه چیزی را اشتباه می‌خواند و چرا؟ و مهم‌تر: ${
-  imageUrl
-    ? `این جمله دقیقاً درباره کدام تابلوی دیگر ${answerIt === "VERO" ? "FALSO" : "VERO"} می‌شد؟ آن تابلو را نام ببرید و بگویید با تابلوی این تصویر چه فرقی دارد (شکل، رنگ، یا نماد).`
-    : `اگر جمله ${answerIt === "VERO" ? "FALSO" : "VERO"} می‌بود، چه کلمه‌ای باید عوض می‌شد؟ نسخه برعکس جمله را بنویسید.`
-}
+**۳. مثال ملموس**
+یک مثال واقعی و کوتاه از رانندگی روزمره بسازید. در مثال مشخص کنید راننده کجاست، چه چیزی می‌بیند، و دقیقاً چه کاری انجام می‌دهد. مثال باید همان قانون بخش ۲ را نشان دهد، نه یک توصیه کلی.
 
-**۴. نکته طلایی**
-یک جمله کوتاه و مشخص برای حفظ کردن — شامل عدد یا کلمه کلیدی باشد، نه یک توصیه عمومی.
+**۴. تله سوال و یادآوری**
+بگویید دانش‌آموز معمولاً کدام واژه یا تفاوت را اشتباه می‌خواند. سپس یک جمله کوتاه و مشخص برای حفظ کردن بنویسید.
 
 ممنوعیت‌های قطعی:
 • جمله‌های توخالی: «طبق کدیچه دلا استرادا»، «رعایت این قانون برای ایمنی مهم است»، «باید همیشه احتیاط کرد»، «این نکته را به خاطر بسپارید» — هیچ‌کدام را ننویسید
 • بازنویسی صورت سوال به عنوان توضیح
-• شماره ماده قانونی را فقط وقتی بنویسید که واقعاً مطمئن هستید؛ در غیر این صورت اصلاً ماده ذکر نکنید و فقط خود قانون را توضیح دهید. حدس زدن شماره ماده بدتر از ننوشتن آن است
+• انباشتن همه حالت‌های ممکن قانون وقتی به این سوال ربط ندارند
+• جمله‌های طولانی و اصطلاح حقوقی بدون معنی ساده فارسی
+• شماره ماده قانونی؛ خود قانون را آموزش دهید، نه شماره آن را
 • مقدمه و نتیجه‌گیری — با بخش ۱ شروع کنید و با بخش ۴ تمام کنید
 
 زبان: فارسی روان و ساده. اصطلاحات ایتالیایی آزمون را عیناً در متن نگه دارید (با ترجمه کوتاه در پرانتز بار اول).`;
@@ -520,9 +632,10 @@ ${
  * 📚 معلم گرامر — Grammar & Vocabulary Analysis
  * Persona: a Persian-speaking Italian language teacher who specialises in
  * traffic-exam Italian. Breaks down the grammar of the sentence and extracts
- * key vocabulary terms the student should know, each with a Persian translation.
+ * every content-bearing vocabulary term, in sentence order, with a Persian translation.
  * Returns a JSON object so vocab words can be rendered as individual save-able chips.
- * Token budget: 700 (independent — never competes with translation or theory).
+ * Token budget scales from 1200–2400; deterministic coverage checks trigger up
+ * to two targeted repair calls rather than accepting or caching a partial list.
  * §15.4: text-only even for image questions.
  */
 export async function analyzeGrammar(
@@ -532,12 +645,14 @@ export async function analyzeGrammar(
   userId?: number
 ): Promise<GrammarResult> {
   const currentModel = model(env);
+  const coverageTokens = vocabularyCoverageTokens(textIt);
+  const maxTokens = Math.min(2400, Math.max(1200, coverageTokens.length * 55));
 
   const systemPrompt = `شما «معلم گرامر» هستید — یک استاد زبان ایتالیایی که تخصص در متون آزمون پاتنته B دارد و به دانش‌آموزان فارسی‌زبان تدریس می‌کند.
 
 وظیفه شما دو بخش دارد:
 ۱. **تحلیل گرامری**: ساختار دستوری جمله ایتالیایی را با لحن آموزشی توضیح دهید — زمان فعل، نکات نحوی مهم، کلمات کلیدی مثل «salvo», «qualora», «purché» و غیره که معنا را تغییر می‌دهند.
-۲. **لغات کلیدی**: فهرستی از مهم‌ترین کلمات و عبارات ایتالیایی در این جمله که دانش‌آموز باید بداند.
+۲. **پوشش کامل لغات**: جمله را از ابتدا تا انتها و از اولین واژه تا آخرین واژه اسکن کنید. همه واژه‌ها و عبارت‌های معنادار را به ترتیب ظاهرشدن توضیح دهید؛ هیچ واژه‌ای را به دلیل طول جمله یا قرارگرفتن در نیمه دوم حذف نکنید. فقط حروف تعریف، حروف اضافه ساده و ضمیرهای دستوری که به تنهایی کارت آموزشی مفیدی نیستند می‌توانند حذف شوند.
 
 خروجی دقیقاً به صورت JSON با این ساختار:
 {
@@ -550,7 +665,10 @@ export async function analyzeGrammar(
 
 قوانین:
 - grammar_analysis: فارسی روان، حداکثر ۳-۴ جمله، آموزشی نه تکنیکال
-- vocab_suggestions: ۳ تا ۶ واژه مهم‌ترین — نه همه کلمات، فقط آنهایی که یادگیری‌شان واقعاً کمک می‌کند
+- vocab_suggestions: تعداد ثابت یا سقف ۳ تا ۶ ندارد؛ تمام واژه‌های معنادار فهرست پوشش را برگردانید
+- ترتیب vocab_suggestions باید دقیقاً از ابتدای جمله به انتهای جمله باشد
+- term_it باید شکل دقیق واژه یا عبارت در همین جمله را حفظ کند تا پوشش آن قابل بررسی باشد
+- term_fa باید معنی کوتاه و روشن همان واژه در بافت همین جمله باشد
 - هر دو بخش ضروری هستند
 - انفینیتیو (مصدر) فقط برای افعال (§19.3 + تمایز فعل/اسم):
   • فقط برای شکل‌های صرف‌شده افعال (verbi coniugati) مصدر بنویسید — مثال: "avviene (مصدر: avvenire)"
@@ -561,59 +679,131 @@ export async function analyzeGrammar(
 
   const userPrompt = `جمله ایتالیایی آزمون: «${textIt}»
 
-تحلیل گرامری و لغات کلیدی را به صورت JSON برگردانید:`;
+فهرست کنترل پوشش (هر مورد باید در term_it یکی از آیتم‌ها دیده شود):
+${coverageTokens.join("، ")}
 
-  const res = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${env.OPENAI_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: currentModel,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userPrompt },
-      ],
-      response_format: { type: "json_object" },
-      temperature: 0.3,
-      max_tokens: 700,
-    }),
-  });
+تحلیل گرامری و پوشش کامل لغات را به صورت JSON برگردانید. پیش از پاسخ، بررسی کنید آخرین واژه معنادار جمله هم پوشش داده شده باشد:`;
 
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${body}`);
-  }
+  const callOpenAI = async (body: object) => {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${env.OPENAI_API_KEY}`,
+      },
+      body: JSON.stringify(body),
+    });
 
-  const data = (await res.json()) as {
-    choices: { message: { content: string } }[];
-    usage?: { prompt_tokens: number; completion_tokens: number };
+    if (!response.ok) {
+      const bodyText = await response.text();
+      throw new Error(`OpenAI error ${response.status}: ${bodyText}`);
+    }
+
+    return (await response.json()) as {
+      choices: { message: { content: string } }[];
+      usage?: { prompt_tokens: number; completion_tokens: number };
+    };
   };
 
-  if (db && data.usage) {
-    const pTokens = data.usage.prompt_tokens || 0;
-    const cTokens = data.usage.completion_tokens || 0;
-    const cost = calculateCost(currentModel, pTokens, cTokens);
+  const logUsage = async (
+    data: { usage?: { prompt_tokens: number; completion_tokens: number } },
+    action: "grammar_analyze" | "grammar_vocab_repair"
+  ) => {
+    if (!db || !data.usage) return;
+    const promptTokens = data.usage.prompt_tokens || 0;
+    const completionTokens = data.usage.completion_tokens || 0;
+    const cost = calculateCost(currentModel, promptTokens, completionTokens);
     await db
       .prepare(
         `INSERT INTO api_usage_logs (user_id, service, model, action, prompt_tokens, completion_tokens, estimated_cost_usd)
          VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
-      .bind(userId || null, "openai", currentModel, "grammar_analyze", pTokens, cTokens, cost)
+      .bind(
+        userId || null,
+        "openai",
+        currentModel,
+        action,
+        promptTokens,
+        completionTokens,
+        cost
+      )
       .run()
       .catch(() => {});
+  };
+
+  const initialData = await callOpenAI({
+    model: currentModel,
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    response_format: { type: "json_object" },
+    temperature: 0.2,
+    max_tokens: maxTokens,
+  });
+  await logUsage(initialData, "grammar_analyze");
+
+  const parsed = JSON.parse(initialData.choices[0]?.message?.content ?? "{}") as {
+    grammar_analysis?: string;
+    vocab_suggestions?: VocabularySuggestion[];
+  };
+
+  let suggestions = mergeAndOrderVocabulary(
+    textIt,
+    [Array.isArray(parsed.vocab_suggestions) ? parsed.vocab_suggestions : []]
+  );
+
+  // Models occasionally stop halfway through a long list even with a generous
+  // token budget. Detect that deterministically from the source sentence and ask
+  // only for the omissions. Two targeted repair passes keep incomplete results
+  // out of the permanent cache without multiplying normal requests.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const missing = findUncoveredVocabularyTokens(textIt, suggestions);
+    if (missing.length === 0) break;
+
+    const repairData = await callOpenAI({
+      model: currentModel,
+      messages: [
+        {
+          role: "system",
+          content: `شما بازبین پوشش لغات ایتالیایی هستید. فقط واژه‌های جاافتاده‌ای را که کاربر مشخص کرده، با معنی ساده فارسی برگردانید. شکل دقیق موجود در جمله را در term_it نگه دارید و برای فعل صرف‌شده مصدر را هم اضافه کنید. خروجی فقط JSON با کلید vocab_suggestions باشد.`,
+        },
+        {
+          role: "user",
+          content: `جمله کامل: «${textIt}»
+
+واژه‌های جاافتاده که همه باید پوشش داده شوند: ${missing.join("، ")}
+
+موارد موجود (تکرار نکنید): ${JSON.stringify(suggestions)}
+
+خروجی: {"vocab_suggestions":[{"term_it":"...","term_fa":"..."}]}`,
+        },
+      ],
+      response_format: { type: "json_object" },
+      temperature: 0.1,
+      max_tokens: Math.min(1800, Math.max(500, missing.length * 55)),
+    });
+    await logUsage(repairData, "grammar_vocab_repair");
+
+    const repaired = JSON.parse(
+      repairData.choices[0]?.message?.content ?? "{}"
+    ) as { vocab_suggestions?: VocabularySuggestion[] };
+    suggestions = mergeAndOrderVocabulary(textIt, [
+      suggestions,
+      Array.isArray(repaired.vocab_suggestions) ? repaired.vocab_suggestions : [],
+    ]);
   }
 
-  const content = data.choices[0]?.message?.content ?? "{}";
-  const parsed = JSON.parse(content) as {
-    grammar_analysis?: string;
-    vocab_suggestions?: Array<{ term_it: string; term_fa: string }>;
-  };
+  const stillMissing = findUncoveredVocabularyTokens(textIt, suggestions);
+  if (stillMissing.length > 0) {
+    throw new Error(
+      `OpenAI vocabulary coverage incomplete; missing: ${stillMissing.join(", ")}`
+    );
+  }
 
   return {
     grammar_analysis: parsed.grammar_analysis ?? "",
-    vocab_suggestions: Array.isArray(parsed.vocab_suggestions) ? parsed.vocab_suggestions : [],
+    vocab_suggestions: suggestions,
   };
 }
 
@@ -707,4 +897,3 @@ export async function chatWithTutor(
 
   return (data.choices[0]?.message?.content ?? "").trim();
 }
-
