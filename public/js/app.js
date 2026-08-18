@@ -105,6 +105,7 @@ App.renderRichText = function(el, text) {
     aiRequestGeneration: 0,
     examStartPending: false,
     answerPending: {},
+    finishPending: false,
     // Vocab
     vocabItems: [],
     dueVocab: [],

@@ -25,6 +25,7 @@
     state.aiPendingRequests = {};
     state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
     state.answerPending = {};
+    state.finishPending = false;
     state.secondsLeft = options.secondsLeft || 1200;
     state.examMode = options.mode || data.mode || 'exam';
     state.examReturnScreen = options.returnScreen || 'home';
@@ -94,6 +95,7 @@
     state.sessionId = null;
     state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
     state.answerPending = {};
+    state.finishPending = false;
     if (abandonedSessionId) {
       api('POST', '/exam/' + abandonedSessionId + '/abandon').catch(function() {});
     }
@@ -606,15 +608,36 @@
 
   // ── Finish exam ─────────────────────────────────────────────────────────────
   App.finishExam = async function() {
+    const finishingSessionId = state.sessionId;
+    if (!finishingSessionId || state.finishPending) return;
+    if (Object.keys(state.answerPending).length > 0) {
+      setTimeout(function() {
+        if (state.sessionId === finishingSessionId) App.finishExam();
+      }, 250);
+      return;
+    }
+
+    state.finishPending = true;
+    const finishBtn = document.getElementById('btn-finish-exam');
+    if (finishBtn) finishBtn.disabled = true;
     clearInterval(state.timerInterval);
     const durationSeconds = Math.round((Date.now() - state.startedAt) / 1000);
     let data;
     try {
-      data = await api('POST', '/exam/' + state.sessionId + '/finish', { durationSeconds });
+      data = await api('POST', '/exam/' + finishingSessionId + '/finish', { durationSeconds });
     } catch (e) {
-      App.toast('خطا در ثبت نتایج: ' + e.message);
+      if (state.sessionId === finishingSessionId) {
+        App.toast('خطا در ثبت نتایج: ' + e.message);
+      }
       return;
+    } finally {
+      if (state.sessionId === finishingSessionId) {
+        state.finishPending = false;
+        if (finishBtn) finishBtn.disabled = false;
+      }
     }
+    if (state.sessionId !== finishingSessionId) return;
+    state.sessionId = null;
     document.getElementById('bottom-nav').style.display = '';
     state.examMode = null;
     App.applyExamMode();
