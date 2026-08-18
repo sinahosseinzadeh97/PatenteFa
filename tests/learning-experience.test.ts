@@ -289,6 +289,15 @@ test("vocabulary coverage preserves meaningful accented verbs and rejects empty 
     false,
     "a conjugated verb without its infinitive must not be accepted as complete"
   );
+  assert.equal(
+    hasCompleteVocabularyCoverage("Il conducente da\u0300 precedenza", [
+      { term_it: "conducente", term_fa: "راننده", part_of_speech: "other", infinitive: null },
+      { term_it: "da", term_fa: "از", part_of_speech: "other", infinitive: null },
+      { term_it: "precedenza", term_fa: "حق تقدم", part_of_speech: "other", infinitive: null },
+    ]),
+    false,
+    "a canonically decomposed dà must remain distinct from the preposition da"
+  );
 });
 
 test("vocabulary coverage distinguishes E' and è from e and retains meaning-changing conjunctions", () => {
@@ -361,6 +370,7 @@ test("slow AI responses cannot overwrite a different question and requests are d
 test("answer-bearing AI routes enforce the answered state on the server", () => {
   const querySource = readFileSync("src/db/queries.ts", "utf8");
   const routeSource = readFileSync("src/api/translate.ts", "utf8");
+  const tutorSource = readFileSync("src/api/tutor.ts", "utf8");
 
   assert.match(querySource, /hasUnansweredActiveExamQuestion/);
   assert.match(querySource, /finished_at\s+IS\s+NULL/i);
@@ -370,6 +380,8 @@ test("answer-bearing AI routes enforce the answered state on the server", () => 
     (routeSource.match(/hasUnansweredActiveExamQuestion\(/g) ?? []).length >= 2,
     "both translation/explanation and theory endpoints must enforce the server-side guard"
   );
+  assert.match(tutorSource, /answerRow\?\.user_answer\s*==\s*null\s*&&\s*!session\.finished_at/);
+  assert.match(tutorSource, /Answer required before tutor chat/);
 });
 
 test("abandoned sessions stop blocking study content without becoming scored exams", () => {
@@ -386,11 +398,53 @@ test("abandoned sessions stop blocking study content without becoming scored exa
   assert.match(examClient, /\/exam\/['"]?\s*\+\s*state\.sessionId\s*\+\s*['"]\/abandon/);
 });
 
+test("exam answers are validated, immutable, and terminal transitions are atomic", () => {
+  const querySource = readFileSync("src/db/queries.ts", "utf8");
+  const examRouteSource = readFileSync("src/api/exam.ts", "utf8");
+  const recordAnswerQuery = querySource.slice(
+    querySource.indexOf("export async function recordExamAnswer"),
+    querySource.indexOf("export async function updateAnswerFlag")
+  );
+  const finishQuery = querySource.slice(
+    querySource.indexOf("export async function finishExamSession"),
+    querySource.indexOf("export async function getSessionAnswers")
+  );
+  const abandonQuery = querySource.slice(
+    querySource.indexOf("export async function abandonExamSession"),
+    querySource.indexOf("export async function abandonOpenExamSessions")
+  );
+
+  assert.match(examRouteSource, /body\.answer\s*!==\s*0\s*&&\s*body\.answer\s*!==\s*1/);
+  assert.match(recordAnswerQuery, /user_answer\s+IS\s+NULL/i);
+  assert.match(recordAnswerQuery, /finished_at\s+IS\s+NULL/i);
+  assert.match(recordAnswerQuery, /abandoned_at\s+IS\s+NULL/i);
+  assert.match(recordAnswerQuery, /meta\.changes/);
+  assert.match(finishQuery, /finished_at\s+IS\s+NULL/i);
+  assert.match(finishQuery, /abandoned_at\s+IS\s+NULL/i);
+  assert.match(finishQuery, /meta\.changes/);
+  assert.match(abandonQuery, /finished_at\s+IS\s+NULL/i);
+  assert.match(abandonQuery, /abandoned_at\s+IS\s+NULL/i);
+  assert.match(abandonQuery, /meta\.changes/);
+});
+
+test("chapter exams reuse the canonical session lifecycle and client reset", () => {
+  const topicsRoute = readFileSync("src/api/topics.ts", "utf8");
+  const appClient = readFileSync("public/js/app.js", "utf8");
+  const examClient = readFileSync("public/js/exam.js", "utf8");
+
+  assert.match(topicsRoute, /abandonOpenExamSessions\(c\.env\.DB,\s*userId\)/);
+  assert.match(examClient, /App\.initializeExamState\s*=\s*function/);
+  assert.match(examClient, /state\.recordedAnswers\s*=\s*new Set\(\)/);
+  assert.match(appClient, /App\.initializeExamState\(data,/);
+});
+
 test("Reels regenerate missing explanations and render their structure safely", () => {
   const appClient = readFileSync("public/js/app.js", "utf8");
   const querySource = readFileSync("src/db/queries.ts", "utf8");
 
   assert.match(appClient, /needsExplanation/);
+  assert.match(appClient, /state\.reelTranslationRequests/);
+  assert.match(appClient, /reelTranslationRequests\[questionId\]/);
   assert.match(appClient, /App\.renderRichText\(explEl,\s*res\.explanation/);
   assert.doesNotMatch(
     appClient,
