@@ -344,16 +344,16 @@ test("single-term vocabulary suggestions remain available for manual saves", asy
   assert.match(JSON.stringify(request), /precedenza/);
 });
 
-test("exam AI help is gated until an answer exists and results render structured explanations", () => {
+test("exam AI help is available immediately and results render structured explanations", () => {
   const examClient = readFileSync("public/js/exam.js", "utf8");
 
-  assert.match(examClient, /App\.canUseAiForCurrentQuestion\s*=\s*function/);
-  assert.match(examClient, /state\.answers\[q\.questionId\]\s*!==\s*undefined/);
-  assert.match(examClient, /App\.toggleTranslate[\s\S]*App\.canUseAiForCurrentQuestion\(\)/);
+  assert.doesNotMatch(examClient, /App\.canUseAiForCurrentQuestion/);
+  assert.doesNotMatch(examClient, /کمک AI بعد از ثبت پاسخ/);
   assert.match(examClient, /App\.renderRichText\(explanationBody,\s*data\.explanation\)/);
 
   const screenMarkup = renderExamScreen();
-  assert.match(screenMarkup, /id="translate-toggle"[^>]*disabled/);
+  assert.doesNotMatch(screenMarkup, /id="translate-toggle"[^>]*disabled/);
+  assert.match(screenMarkup, /همین حالا قابل استفاده است/);
 });
 
 test("slow AI responses cannot overwrite a different question and requests are deduplicated", () => {
@@ -367,19 +367,14 @@ test("slow AI responses cannot overwrite a different question and requests are d
   );
 });
 
-test("answer-bearing AI routes enforce the answered state on the server", () => {
+test("exam AI routes allow help before answering while tutor chat remains post-answer", () => {
   const querySource = readFileSync("src/db/queries.ts", "utf8");
   const routeSource = readFileSync("src/api/translate.ts", "utf8");
   const tutorSource = readFileSync("src/api/tutor.ts", "utf8");
 
-  assert.match(querySource, /hasUnansweredActiveExamQuestion/);
-  assert.match(querySource, /finished_at\s+IS\s+NULL/i);
-  assert.match(querySource, /user_answer\s+IS\s+NULL/i);
-  assert.match(querySource, /started_at\s*>=\s*datetime\('now',\s*'-30 minutes'\)/i);
-  assert.ok(
-    (routeSource.match(/hasUnansweredActiveExamQuestion\(/g) ?? []).length >= 2,
-    "both translation/explanation and theory endpoints must enforce the server-side guard"
-  );
+  assert.doesNotMatch(querySource, /hasUnansweredActiveExamQuestion/);
+  assert.doesNotMatch(routeSource, /hasUnansweredActiveExamQuestion/);
+  assert.doesNotMatch(routeSource, /answerRequired/);
   assert.match(tutorSource, /answerRow\?\.user_answer\s*==\s*null\s*&&\s*!session\.finished_at/);
   assert.match(tutorSource, /Answer required before tutor chat/);
 });
