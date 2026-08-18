@@ -27,6 +27,13 @@ import { nextMorningISO } from "../lib/srs.js";
 import { sendMessage, buildMiniAppButton } from "../lib/telegram.js";
 
 const exam = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
+const ACTIVE_EXAM_SESSION_MS = 30 * 60 * 1000;
+
+function isExamSessionExpired(startedAt: string): boolean {
+  const iso = startedAt.includes("T") ? startedAt : startedAt.replace(" ", "T") + "Z";
+  const startedMs = Date.parse(iso);
+  return !Number.isFinite(startedMs) || Date.now() - startedMs >= ACTIVE_EXAM_SESSION_MS;
+}
 
 // ── POST /api/exam/start ──────────────────────────────────────────────────────
 exam.post("/start", async (c) => {
@@ -117,6 +124,10 @@ exam.post("/:sessionId/answer", async (c) => {
   if (session.abandoned_at) {
     return c.json({ error: "Session was abandoned" }, 400);
   }
+  if (isExamSessionExpired(session.started_at)) {
+    await abandonExamSession(c.env.DB, sessionId, userId);
+    return c.json({ error: "Session expired" }, 400);
+  }
 
   const question = await getQuestionById(c.env.DB, body.questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
@@ -146,6 +157,12 @@ exam.post("/:sessionId/flag", async (c) => {
   if (!session || session.user_id !== userId) {
     return c.json({ error: "Session not found" }, 404);
   }
+  if (session.finished_at || session.abandoned_at || isExamSessionExpired(session.started_at)) {
+    if (!session.finished_at && !session.abandoned_at) {
+      await abandonExamSession(c.env.DB, sessionId, userId);
+    }
+    return c.json({ error: "Session is no longer active" }, 400);
+  }
 
   await updateAnswerFlag(c.env.DB, sessionId, body.questionId, body.flagged ? 1 : 0);
   return c.json({ ok: true });
@@ -166,6 +183,10 @@ exam.post("/:sessionId/finish", async (c) => {
   }
   if (session.abandoned_at) {
     return c.json({ error: "Session was abandoned" }, 400);
+  }
+  if (isExamSessionExpired(session.started_at)) {
+    await abandonExamSession(c.env.DB, sessionId, userId);
+    return c.json({ error: "Session expired" }, 400);
   }
 
   const answers = await getSessionAnswers(c.env.DB, sessionId);

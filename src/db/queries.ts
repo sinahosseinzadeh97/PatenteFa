@@ -483,6 +483,7 @@ export async function hasUnansweredActiveExamQuestion(
        WHERE es.user_id = ?
          AND es.finished_at IS NULL
          AND es.abandoned_at IS NULL
+         AND es.started_at >= datetime('now', '-30 minutes')
          AND ea.question_id = ?
          AND ea.user_answer IS NULL
        LIMIT 1`
@@ -970,10 +971,21 @@ export async function getReelsFeedItems(
        FROM questions q
        LEFT JOIN topics t ON q.topic_id = t.id
        LEFT JOIN translations_cache tr ON tr.question_id = q.id AND tr.lang = 'fa'
+       WHERE NOT EXISTS (
+         SELECT 1
+         FROM exam_answers ea
+         JOIN exam_sessions es ON es.id = ea.session_id
+         WHERE ea.question_id = q.id
+           AND es.user_id = ?
+           AND es.finished_at IS NULL
+           AND es.abandoned_at IS NULL
+           AND es.started_at >= datetime('now', '-30 minutes')
+           AND ea.user_answer IS NULL
+       )
        ORDER BY RANDOM()
        LIMIT ?`
     )
-    .bind(limit)
+    .bind(userId, limit)
     .all<{
       question_id: number;
       text_it: string;
