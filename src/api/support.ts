@@ -4,13 +4,13 @@
  *
  * Mounted *before* the approval-gated /api group in src/index.ts, and does its
  * own initData check, because the users who most need to reach support are the
- * ones the gate turns away: pending accounts, expired trials, and blocked
- * users. Verified Telegram identity is required; approval is not.
+ * ones the gate turns away: pending and blocked users. Verified Telegram
+ * identity is required; approval is not.
  */
 
 import { Hono } from "hono";
 import type { AppEnv } from "../types.js";
-import { verifyInitData } from "../lib/auth.js";
+import { verifyInitData, isPrimaryAdminUser } from "../lib/auth.js";
 import {
   upsertUser,
   insertSupportMessage,
@@ -32,11 +32,11 @@ async function resolveUser(c: any) {
   if (!initData) return null;
   try {
     const { user } = await verifyInitData(initData, c.env.TELEGRAM_BOT_TOKEN);
-    const isAdmin = (c.env.ALLOWED_TELEGRAM_USER_IDS || "")
-      .split(",")
-      .map((s: string) => Number(s.trim()))
-      .filter(Boolean)
-      .includes(user.id);
+    const isAdmin = isPrimaryAdminUser(
+      user.id,
+      c.env.PRIMARY_ADMIN_TELEGRAM_USER_ID,
+      c.env.ALLOWED_TELEGRAM_USER_IDS
+    );
     const dbUser = await upsertUser(c.env.DB, user.id, user.first_name, user.username, isAdmin);
     return { dbUser, tgUser: user };
   } catch {

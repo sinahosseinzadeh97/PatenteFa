@@ -1,36 +1,12 @@
-/**
- * src/app/screens/stats.ts
- * Legacy stats screen (per-topic accuracy) — superseded by the profile
- * screen and no longer linked from any button or nav item, but kept (not
- * deleted) since it's still reachable via /app?screen=stats and App.loadStats
- * is still live code. See final report for the "keep vs. delete" call.
- */
+/** Legacy topic statistics route retained for deep links. */
 export function renderStatsScreen(): string {
   return `
-<div id="screen-stats" class="screen" style="padding:0 0 80px;">
-  <div class="stats-content">
-    <div class="screen-header-bar">
-      <button type="button" onclick="App.handleBackNavigation()" class="screen-back-btn" aria-label="بازگشت به خانه">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="screen-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
-      </button>
-      <h1 class="stats-title screen-header-title">📊 آمار</h1>
-    </div>
-
-    <div class="stats-chip-row">
-      <div class="stat-chip"><div class="stat-chip-value" id="stats-streak">0</div><div class="stat-chip-label">🔥 روز</div></div>
-      <div class="stat-chip"><div class="stat-chip-value" id="stats-sessions">0</div><div class="stat-chip-label">آزمون</div></div>
-      <div class="stat-chip"><div class="stat-chip-value" id="stats-pass-rate">—</div><div class="stat-chip-label">% قبولی</div></div>
-    </div>
-
-    <h2 class="stats-section-heading">دقت بر اساس موضوع</h2>
-    <div id="stats-topic-bars"></div>
-
-    <div class="stats-profile-cta-wrap">
-      <button class="btn btn-full btn-profile-entry" onclick="App.showScreen('profile')">
-        👤 مشاهده پروفایل کامل و تحلیل عملکرد
-      </button>
-    </div>
-  </div>
-</div>
-`;
+<div id="screen-stats" class="screen screen-with-nav">
+  <main class="page-container stats-content">
+    <header class="page-header"><button type="button" onclick="App.handleBackNavigation()" class="icon-button" aria-label="بازگشت به خانه"><svg class="ui-icon"><use href="#i-chevron-right"/></svg></button><div><span class="page-kicker">نمای سریع</span><h1>آمار مطالعه</h1></div></header>
+    <section class="stats-chip-row" aria-label="آمار کلی"><div class="stat-chip"><strong id="stats-streak">۰</strong><span>روز پیوسته</span></div><div class="stat-chip"><strong id="stats-sessions">۰</strong><span>آزمون</span></div><div class="stat-chip"><strong id="stats-pass-rate">—</strong><span>قبولی</span></div></section>
+    <section class="analysis-block"><div class="analysis-block-heading"><span>دقت بر اساس موضوع</span></div><div id="stats-topic-bars"></div></section>
+    <button class="btn btn-primary btn-full" onclick="App.showScreen('profile')">مشاهده تحلیل کامل</button>
+  </main>
+</div>`;
 }

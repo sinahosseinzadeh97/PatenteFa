@@ -15,6 +15,7 @@ export interface DbUser {
   daily_reminder_hour: number;
   timezone: string;
   is_approved: number;
+  access_expires_at: string | null;
   created_at: string;
 }
 
@@ -136,10 +137,31 @@ export async function setUserApproval(
   isApproved: number
 ): Promise<DbUser | null> {
   await db
-    .prepare(`UPDATE users SET is_approved = ? WHERE telegram_user_id = ?`)
-    .bind(isApproved, telegramUserId)
+    .prepare(
+      `UPDATE users
+       SET is_approved = ?,
+           access_expires_at = CASE WHEN ? = 1 THEN NULL ELSE access_expires_at END
+       WHERE telegram_user_id = ?`
+    )
+    .bind(isApproved, isApproved, telegramUserId)
     .run();
   return getUserByTelegramId(db, telegramUserId);
+}
+
+export async function setUserAccessExpiration(
+  db: D1Database,
+  userId: number,
+  accessExpiresAt: string | null
+): Promise<DbUser | null> {
+  await db
+    .prepare(
+      `UPDATE users
+       SET is_approved = 1, access_expires_at = ?
+       WHERE id = ?`
+    )
+    .bind(accessExpiresAt, userId)
+    .run();
+  return getUserById(db, userId);
 }
 
 export async function getUserByTelegramId(
@@ -1321,6 +1343,7 @@ export async function logApiUsage(
 export async function getAdminOverviewStats(db: D1Database): Promise<{
   totalUsers: number;
   activeTodayUsers: number;
+  activeNowUsers: number;
   pendingUsers: number;
   totalExams: number;
   overallPassRate: number | null;
@@ -1328,15 +1351,34 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
   totalApiCostUsd: number;
   totalApiCalls: number;
   totalEventsLogged: number;
+  totalInteractions: number;
 }> {
-  const [userRow, activeTodayRow, pendingRow, examRow, minutesRow, apiRow, eventsRow] = await Promise.all([
+  const [userRow, activeTodayRow, activeNowRow, pendingRow, examRow, minutesRow, apiRow, eventsRow, interactionsRow] = await Promise.all([
     db.prepare(`SELECT COUNT(*) as count FROM users`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= date('now')`).first<{ count: number }>(),
+    db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= datetime('now', '-5 minutes')`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(*) as count FROM users WHERE is_approved = 0`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(*) as total, SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as passed FROM exam_sessions WHERE finished_at IS NOT NULL`).first<{ total: number; passed: number }>(),
-    db.prepare(`SELECT COALESCE(SUM(duration_seconds), 0) / 60 as total_mins FROM user_events`).first<{ total_mins: number }>(),
+    db.prepare(
+      `SELECT COALESCE(SUM(
+         CASE WHEN tracked_seconds >= exam_seconds THEN tracked_seconds ELSE exam_seconds END
+       ), 0) / 60 AS total_mins
+       FROM (
+         SELECT
+           u.id,
+           (SELECT COALESCE(SUM(e.duration_seconds), 0)
+              FROM user_events e
+             WHERE e.user_id = u.id
+               AND e.event_type IN ('active_time', 'heartbeat')) AS tracked_seconds,
+           (SELECT COALESCE(SUM(s.duration_seconds), 0)
+              FROM exam_sessions s
+             WHERE s.user_id = u.id) AS exam_seconds
+         FROM users u
+       ) active_by_user`
+    ).first<{ total_mins: number }>(),
     db.prepare(`SELECT COUNT(*) as calls, COALESCE(SUM(estimated_cost_usd), 0) as total_cost FROM api_usage_logs`).first<{ calls: number; total_cost: number }>(),
     db.prepare(`SELECT COUNT(*) as count FROM user_events`).first<{ count: number }>(),
+    db.prepare(`SELECT COUNT(*) as count FROM user_events WHERE event_type = 'interaction'`).first<{ count: number }>(),
   ]);
 
   const totalExams = examRow?.total ?? 0;
@@ -1346,6 +1388,7 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
   return {
     totalUsers: userRow?.count ?? 0,
     activeTodayUsers: activeTodayRow?.count ?? 0,
+    activeNowUsers: activeNowRow?.count ?? 0,
     pendingUsers: pendingRow?.count ?? 0,
     totalExams,
     overallPassRate,
@@ -1353,6 +1396,7 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
     totalApiCostUsd: parseFloat((apiRow?.total_cost ?? 0).toFixed(4)),
     totalApiCalls: apiRow?.calls ?? 0,
     totalEventsLogged: eventsRow?.count ?? 0,
+    totalInteractions: interactionsRow?.count ?? 0,
   };
 }
 
@@ -1362,16 +1406,21 @@ export interface AdminUserListItem {
   first_name: string | null;
   username: string | null;
   is_approved: number;
+  access_expires_at: string | null;
   created_at: string;
   last_active_at: string | null;
   total_exams: number;
   passed_exams: number;
   total_active_minutes: number;
+  tracked_active_minutes: number;
+  exam_active_minutes: number;
   total_api_calls: number;
+  total_api_tokens: number;
   total_api_cost_usd: number;
   // §18.5: vocab depth
   vocab_count: number;
   vocab_due: number;
+  review_due: number;
   // §18.4: waste signal — API calls per finished exam
   api_per_exam: number;
 }
@@ -1392,28 +1441,39 @@ export async function getAdminUsersList(
       u.first_name,
       u.username,
       u.is_approved,
+      u.access_expires_at,
       u.created_at,
       (SELECT MAX(e.created_at)  FROM user_events e  WHERE e.user_id = u.id) AS last_active_at,
       (SELECT COALESCE(SUM(e.duration_seconds), 0) / 60
-         FROM user_events e WHERE e.user_id = u.id)                           AS total_active_minutes,
+         FROM user_events e
+        WHERE e.user_id = u.id
+          AND e.event_type IN ('active_time', 'heartbeat'))                   AS tracked_active_minutes,
+      (SELECT COALESCE(SUM(s.duration_seconds), 0) / 60
+         FROM exam_sessions s WHERE s.user_id = u.id)                         AS exam_active_minutes,
       (SELECT COUNT(*) FROM exam_sessions s
          WHERE s.user_id = u.id AND s.finished_at IS NOT NULL)                AS total_exams,
       (SELECT COUNT(*) FROM exam_sessions s
          WHERE s.user_id = u.id AND s.finished_at IS NOT NULL AND s.passed = 1) AS passed_exams,
       (SELECT COUNT(*) FROM api_usage_logs api WHERE api.user_id = u.id)      AS total_api_calls,
+      (SELECT COALESCE(SUM(api.prompt_tokens + api.completion_tokens), 0)
+         FROM api_usage_logs api WHERE api.user_id = u.id)                    AS total_api_tokens,
       (SELECT COALESCE(SUM(api.estimated_cost_usd), 0)
          FROM api_usage_logs api WHERE api.user_id = u.id)                    AS total_api_cost_usd,
       (SELECT COUNT(*) FROM vocab_items v WHERE v.user_id = u.id)             AS vocab_count,
       (SELECT COUNT(*) FROM vocab_items v
          WHERE v.user_id = u.id
            AND (v.next_review_at <= date('now') OR v.next_review_at IS NULL)) AS vocab_due
+      ,(SELECT COUNT(*) FROM review_queue rq
+          WHERE rq.user_id = u.id AND rq.cleared = 0)                         AS review_due
     FROM users u
     WHERE 1=1
   `;
   const params: any[] = [];
 
   if (statusFilter === "approved") {
-    query += ` AND u.is_approved = 1`;
+    query += ` AND u.is_approved = 1 AND (u.access_expires_at IS NULL OR u.access_expires_at > datetime('now'))`;
+  } else if (statusFilter === "expired") {
+    query += ` AND u.is_approved = 1 AND u.access_expires_at IS NOT NULL AND u.access_expires_at <= datetime('now')`;
   } else if (statusFilter === "pending") {
     query += ` AND u.is_approved = 0`;
   } else if (statusFilter === "blocked") {
@@ -1433,12 +1493,18 @@ export async function getAdminUsersList(
   return result.results.map((row) => {
     const exams = row.total_exams || 0;
     const apiCalls = row.total_api_calls || 0;
+    const trackedMinutes = row.tracked_active_minutes || 0;
+    const examMinutes = row.exam_active_minutes || 0;
     return {
       ...row,
-      total_active_minutes: Math.round(row.total_active_minutes || 0),
+      tracked_active_minutes: Math.round(trackedMinutes),
+      exam_active_minutes: Math.round(examMinutes),
+      total_active_minutes: Math.round(Math.max(trackedMinutes, examMinutes)),
+      total_api_tokens: row.total_api_tokens || 0,
       total_api_cost_usd: parseFloat((row.total_api_cost_usd || 0).toFixed(4)),
       vocab_count: row.vocab_count || 0,
       vocab_due: row.vocab_due || 0,
+      review_due: row.review_due || 0,
       api_per_exam: exams > 0 ? parseFloat((apiCalls / exams).toFixed(1)) : apiCalls,
     };
   });
@@ -1454,19 +1520,84 @@ export async function getUserActivityTimeline(
   events: DbUserEvent[];
   sessions: DbExamSession[];
   apiLogs: DbApiUsageLog[];
+  interactionSummary: Array<{
+    screen: string;
+    control: string;
+    action: string | null;
+    clicks: number;
+    last_clicked_at: string;
+  }>;
+  summary: {
+    totalActiveMinutes: number;
+    trackedActiveMinutes: number;
+    examActiveMinutes: number;
+    totalInteractions: number;
+    totalApiCalls: number;
+    totalApiTokens: number;
+    totalApiCostUsd: number;
+  };
 }> {
-  const [user, events, sessions, apiLogs] = await Promise.all([
+  const [user, events, sessions, apiLogs, interactionSummary, eventSummary, examSummary, apiSummary] = await Promise.all([
     db.prepare(`SELECT * FROM users WHERE id = ?`).bind(userId).first<DbUser>(),
     db.prepare(`SELECT * FROM user_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`).bind(userId, limit).all<DbUserEvent>(),
     db.prepare(`SELECT * FROM exam_sessions WHERE user_id = ? ORDER BY started_at DESC LIMIT ?`).bind(userId, 20).all<DbExamSession>(),
     db.prepare(`SELECT * FROM api_usage_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`).bind(userId, 20).all<DbApiUsageLog>(),
+    db.prepare(
+      `SELECT
+         COALESCE(json_extract(event_data, '$.screen'), 'unknown') AS screen,
+         COALESCE(json_extract(event_data, '$.control'), 'unknown') AS control,
+         json_extract(event_data, '$.action') AS action,
+         COUNT(*) AS clicks,
+         MAX(created_at) AS last_clicked_at
+       FROM user_events
+       WHERE user_id = ? AND event_type = 'interaction'
+       GROUP BY screen, control, action
+       ORDER BY clicks DESC, last_clicked_at DESC
+       LIMIT 20`
+    ).bind(userId).all<{
+      screen: string;
+      control: string;
+      action: string | null;
+      clicks: number;
+      last_clicked_at: string;
+    }>(),
+    db.prepare(
+      `SELECT
+         COALESCE(SUM(CASE WHEN event_type IN ('active_time', 'heartbeat') THEN duration_seconds ELSE 0 END), 0) AS active_seconds,
+         SUM(CASE WHEN event_type = 'interaction' THEN 1 ELSE 0 END) AS interactions
+       FROM user_events WHERE user_id = ?`
+    ).bind(userId).first<{ active_seconds: number; interactions: number }>(),
+    db.prepare(
+      `SELECT COALESCE(SUM(duration_seconds), 0) AS active_seconds
+       FROM exam_sessions WHERE user_id = ?`
+    ).bind(userId).first<{ active_seconds: number }>(),
+    db.prepare(
+      `SELECT
+         COUNT(*) AS calls,
+         COALESCE(SUM(prompt_tokens + completion_tokens), 0) AS tokens,
+         COALESCE(SUM(estimated_cost_usd), 0) AS cost
+       FROM api_usage_logs WHERE user_id = ?`
+    ).bind(userId).first<{ calls: number; tokens: number; cost: number }>(),
   ]);
+
+  const trackedSeconds = eventSummary?.active_seconds ?? 0;
+  const examSeconds = examSummary?.active_seconds ?? 0;
 
   return {
     user,
     events: events.results,
     sessions: sessions.results,
     apiLogs: apiLogs.results,
+    interactionSummary: interactionSummary.results,
+    summary: {
+      trackedActiveMinutes: Math.round(trackedSeconds / 60),
+      examActiveMinutes: Math.round(examSeconds / 60),
+      totalActiveMinutes: Math.round(Math.max(trackedSeconds, examSeconds) / 60),
+      totalInteractions: eventSummary?.interactions ?? 0,
+      totalApiCalls: apiSummary?.calls ?? 0,
+      totalApiTokens: apiSummary?.tokens ?? 0,
+      totalApiCostUsd: parseFloat((apiSummary?.cost ?? 0).toFixed(4)),
+    },
   };
 }
 

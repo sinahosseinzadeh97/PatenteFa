@@ -136,6 +136,60 @@ export function checkAllowList(userId: number, allowedIds: string | undefined): 
   }
 }
 
+/**
+ * Resolve exactly one primary admin. New deployments should set the dedicated
+ * variable; the first legacy allow-list id keeps existing deployments working.
+ */
+export function resolvePrimaryAdminId(
+  primaryAdminId: string | undefined,
+  legacyAllowedIds: string | undefined
+): number | null {
+  const dedicated = Number((primaryAdminId || "").trim());
+  if (Number.isSafeInteger(dedicated) && dedicated > 0) return dedicated;
+
+  const fallback = (legacyAllowedIds || "")
+    .split(",")
+    .map((value) => Number(value.trim()))
+    .find((value) => Number.isSafeInteger(value) && value > 0);
+  return fallback ?? null;
+}
+
+export function isPrimaryAdminUser(
+  userId: number,
+  primaryAdminId: string | undefined,
+  legacyAllowedIds: string | undefined
+): boolean {
+  return resolvePrimaryAdminId(primaryAdminId, legacyAllowedIds) === userId;
+}
+
+export function checkPrimaryAdmin(
+  userId: number,
+  primaryAdminId: string | undefined,
+  legacyAllowedIds: string | undefined
+): void {
+  if (!isPrimaryAdminUser(userId, primaryAdminId, legacyAllowedIds)) {
+    throw new Response(JSON.stringify({ error: "Forbidden: primary admin only" }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+}
+
+/**
+ * Approved accounts may optionally have a UTC access deadline. Missing means
+ * unlimited (the backwards-compatible state); malformed values fail closed.
+ */
+export function isAccessExpired(
+  accessExpiresAt: string | null | undefined,
+  nowMs: number = Date.now()
+): boolean {
+  if (!accessExpiresAt) return false;
+  const raw = accessExpiresAt.trim().replace(" ", "T");
+  const normalized = /Z$|[+-]\d{2}:\d{2}$/.test(raw) ? raw : `${raw}Z`;
+  const expiryMs = Date.parse(normalized);
+  return !Number.isFinite(expiryMs) || expiryMs <= nowMs;
+}
+
 function unauthorised(msg: string): Response {
   return new Response(JSON.stringify({ error: msg }), {
     status: 401,

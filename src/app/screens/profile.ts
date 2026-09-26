@@ -1,152 +1,71 @@
-
-/**
- * src/app/screens/profile.ts
- * Profile & analysis screen — level/XP, coverage, needs-more-work, topic accuracy, score trend.
- */
+/** Profile and performance analysis. */
 export function renderProfileScreen(): string {
   return `
-<div id="screen-profile" class="screen" style="padding:0 0 90px;">
+<div id="screen-profile" class="screen screen-with-nav">
+  <main class="page-container profile-content">
+    <header class="page-header">
+      <button type="button" onclick="App.handleBackNavigation()" class="icon-button" aria-label="بازگشت به خانه"><svg class="ui-icon"><use href="#i-chevron-right"/></svg></button>
+      <div><span class="page-kicker">حساب و پیشرفت</span><h1>پروفایل</h1></div>
+    </header>
 
-  <!-- ── Profile header ── -->
-  <div class="profile-content">
+    <section class="profile-level-card" aria-label="سطح یادگیری">
+      <div class="shield-badge" id="profile-shield"><span class="shield-level" id="profile-level">۰</span><span class="shield-label">سطح</span></div>
+      <div class="profile-name-block">
+        <h2 id="profile-name" class="profile-name">…</h2>
+        <div id="profile-username" class="profile-username">@—</div>
+        <div class="profile-xp-row"><div class="xp-road-track"><div class="xp-road-fill" id="profile-xp-fill" style="width:0%;"></div></div><span id="profile-xp-label" class="profile-xp-label">۰ XP</span></div>
+        <div id="profile-xp-detail" class="profile-xp-detail">۰ از ۱۰۰ XP تا سطح بعد</div>
+      </div>
+    </section>
 
-    <!-- Back header bar -->
-    <div class="profile-header-bar">
-      <button type="button" onclick="App.handleBackNavigation()" class="profile-back-btn" aria-label="بازگشت به خانه">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="profile-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
+    <section class="profile-stat-row" aria-label="آمار کلی">
+      <div class="profile-stat-tile"><svg class="ui-icon"><use href="#i-target"/></svg><span class="tile-value" id="profile-streak">۰</span><span class="tile-label">روز پیوسته</span></div>
+      <div class="profile-stat-tile"><svg class="ui-icon"><use href="#i-exam"/></svg><span class="tile-value" id="profile-exams">۰</span><span class="tile-label">آزمون</span></div>
+      <div class="profile-stat-tile"><svg class="ui-icon"><use href="#i-trend"/></svg><span class="tile-value" id="profile-coverage-pct">۰٪</span><span class="tile-label">پوشش بانک</span></div>
+      <div class="profile-stat-tile"><svg class="ui-icon"><use href="#i-book"/></svg><span class="tile-value" id="profile-vocab">۰</span><span class="tile-label">واژه</span></div>
+    </section>
+
+    <div class="profile-link-list">
+      <button type="button" class="profile-link" onclick="App.openSupport()">
+        <svg class="ui-icon"><use href="#i-message"/></svg><span><strong>پشتیبانی</strong><small>سؤال، مشکل یا پیشنهادت را بنویس</small></span><span id="profile-support-badge" class="profile-support-badge" hidden></span><svg class="ui-icon link-chevron"><use href="#i-chevron-left"/></svg>
       </button>
-      <h1 class="profile-title">پروفایل</h1>
+      <button type="button" class="profile-link" id="btn-admin-panel" onclick="App.openAdminPanel()" style="display:none;">
+        <svg class="ui-icon"><use href="#i-settings"/></svg><span><strong>مدیریت کاربران</strong><small>دسترسی، پیام‌ها و هزینه API</small></span><svg class="ui-icon link-chevron"><use href="#i-chevron-left"/></svg>
+      </button>
     </div>
 
-    <!-- ── Level / XP card ── -->
-    <div class="card profile-level-card">
-      <div class="profile-level-row">
+    <section class="profile-analysis-section" aria-labelledby="profile-analysis-heading">
+      <div class="section-heading-row"><div><span class="section-kicker">داده‌های مطالعه</span><h2 id="profile-analysis-heading">تحلیل عملکرد</h2></div></div>
 
-        <!-- Autostrada shield badge -->
-        <div class="shield-badge" id="profile-shield">
-          <span class="shield-level" id="profile-level">0</span>
-          <span class="shield-label">LVL</span>
-        </div>
+      <section class="analysis-block">
+        <div class="analysis-block-heading"><span>پوشش بانک سؤال</span><strong id="profile-coverage-label">— از ۷٬۱۳۹</strong></div>
+        <div class="coverage-road" role="progressbar" aria-label="درصد پوشش بانک سؤال"><div class="coverage-road-fill" id="profile-coverage-fill" style="width:0%;"></div></div>
+        <p id="profile-coverage-sub" class="analysis-note">در حال بارگذاری…</p>
+      </section>
 
-        <!-- Name + XP progress -->
-        <div class="profile-name-block">
-          <div id="profile-name" class="profile-name">…</div>
-          <div id="profile-username" class="profile-username">@—</div>
+      <section class="analysis-block">
+        <div class="analysis-block-heading"><span>نیاز به تمرین بیشتر</span><small>بیشترین اشتباه</small></div>
+        <div id="profile-nmw-list" class="analysis-list"><div class="loading-note">در حال بارگذاری…</div></div>
+      </section>
 
-          <!-- XP bar -->
-          <div class="profile-xp-row">
-            <div class="xp-road-track profile-xp-track-wrap">
-              <div class="xp-road-fill" id="profile-xp-fill" style="width:0%;"></div>
-            </div>
-            <span id="profile-xp-label" class="profile-xp-label">0 XP</span>
-          </div>
-          <div class="profile-xp-detail">
-            <span id="profile-xp-detail">0 از 100 XP تا سطح بعد</span>
-          </div>
-        </div>
-      </div>
-    </div>
+      <section class="analysis-block">
+        <div class="analysis-block-heading"><span>دقت بر اساس موضوع</span><small>ضعیف‌ترین موضوع اول</small></div>
+        <div id="profile-topic-chart"><div class="loading-note">در حال بارگذاری…</div></div>
+      </section>
 
-    <!-- ── 4-icon stat row ── -->
-    <div class="profile-stat-row">
-      <div class="profile-stat-tile">
-        <span class="tile-icon" aria-hidden="true">🔥</span>
-        <span class="tile-value" id="profile-streak">0</span>
-        <span class="tile-label">روز استریک</span>
-      </div>
-      <div class="profile-stat-tile">
-        <span class="tile-icon" aria-hidden="true">📝</span>
-        <span class="tile-value" id="profile-exams">0</span>
-        <span class="tile-label">آزمون داده</span>
-      </div>
-      <div class="profile-stat-tile">
-        <span class="tile-icon" aria-hidden="true">🗺️</span>
-        <span class="tile-value" id="profile-coverage-pct">0%</span>
-        <span class="tile-label">پوشش بانک</span>
-      </div>
-      <div class="profile-stat-tile">
-        <span class="tile-icon" aria-hidden="true">📖</span>
-        <span class="tile-value" id="profile-vocab">0</span>
-        <span class="tile-label">لغت یادگرفته</span>
-      </div>
-    </div>
-
-    <!-- ── Contact support ── -->
-    <button type="button" class="card profile-support-card" onclick="App.openSupport()">
-      <span class="profile-support-icon" aria-hidden="true">💬</span>
-      <span class="profile-support-text">
-        <span class="profile-support-title">پشتیبانی و ارتباط با مدیریت</span>
-        <span class="profile-support-sub">سوال، مشکل یا پیشنهاد؟ همین‌جا بنویسید</span>
-      </span>
-      <span id="profile-support-badge" class="profile-support-badge" hidden></span>
-      <span class="profile-support-chevron" aria-hidden="true">‹</span>
-    </button>
-
-    <!-- ─────────────── ANALYSIS SECTION ─────────────── -->
-    <div class="profile-analysis-section">
-      <h2 class="profile-analysis-heading">📊 تحلیل عملکرد</h2>
-
-      <!-- Coverage bar -->
-      <div class="card profile-card">
-        <div class="profile-card-row">
-          <span class="profile-card-label">🗺️ پوشش بانک سوال</span>
-          <span id="profile-coverage-label" class="profile-coverage-value">— از ۷٬۱۳۹</span>
-        </div>
-        <div class="coverage-road" role="progressbar" aria-label="درصد پوشش بانک سوال">
-          <div class="coverage-road-fill" id="profile-coverage-fill" style="width:0%;"></div>
-        </div>
-        <div id="profile-coverage-sub" class="profile-coverage-note">در حال بارگذاری…</div>
-      </div>
-
-      <!-- Needs more work -->
-      <div class="card profile-card">
-        <div class="profile-card-row center">
-          <span class="profile-card-label warn">⚠️ نیاز به تمرین بیشتر</span>
-          <span class="profile-card-sub">بیشترین اشتباه</span>
-        </div>
-        <div id="profile-nmw-list" style="display:flex; flex-direction:column; gap:8px;">
-          <div class="profile-loading-note">در حال بارگذاری…</div>
-        </div>
-      </div>
-
-      <!-- Per-topic accuracy chart -->
-      <div class="card profile-card">
-        <div class="profile-topic-heading">📈 دقت بر اساس موضوع — بدترین اول</div>
-        <div id="profile-topic-chart">
-          <div class="profile-loading-note">در حال بارگذاری…</div>
-        </div>
-      </div>
-
-      <!-- Score trend sparkline -->
-      <div class="card profile-card">
-        <div class="profile-trend-heading-row">
-          <span class="profile-card-label">📉 روند نمره — ۱۵ آزمون اخیر</span>
-          <span class="profile-card-sub" id="profile-trend-range"></span>
-        </div>
+      <section class="analysis-block">
+        <div class="analysis-block-heading"><span>روند نمره</span><small id="profile-trend-range">۱۵ آزمون اخیر</small></div>
         <div class="sparkline-wrap">
-          <svg id="profile-sparkline" viewBox="0 0 300 80" preserveAspectRatio="none"
-               xmlns="http://www.w3.org/2000/svg" role="img" aria-label="نمودار روند نمره در ۱۵ آزمون اخیر">
-            <!-- pass line at score=27 (30 - 3 errors) -->
-            <line x1="0" y1="" x2="300" y2="" id="sparkline-pass-line"
-                  stroke="rgba(27,122,61,0.4)" stroke-width="1" stroke-dasharray="4 4"/>
-            <polyline id="sparkline-line" points="" fill="none"
-                      stroke="var(--amber)" stroke-width="2"
-                      stroke-linejoin="round" stroke-linecap="round"/>
+          <svg id="profile-sparkline" viewBox="0 0 300 80" preserveAspectRatio="none" role="img" aria-label="نمودار روند نمره در ۱۵ آزمون اخیر">
+            <line x1="0" y1="" x2="300" y2="" id="sparkline-pass-line" stroke="rgba(35,130,74,.55)" stroke-width="1" stroke-dasharray="4 4"/>
+            <polyline id="sparkline-line" points="" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
             <circle id="sparkline-dot" cx="0" cy="0" r="4" fill="var(--amber)"/>
-            <text id="sparkline-empty" x="150" y="42" text-anchor="middle"
-                  fill="rgba(255,255,255,0.3)" font-size="11"
-                  font-family="Vazirmatn, sans-serif">هنوز آزمونی نداده‌ای</text>
+            <text id="sparkline-empty" x="150" y="42" text-anchor="middle" fill="var(--ink-muted)" font-size="11" font-family="Vazirmatn, sans-serif">هنوز آزمونی ثبت نشده</text>
           </svg>
         </div>
-        <div class="profile-sparkline-footer">
-          <span id="sparkline-min-label">کمترین: —</span>
-          <span class="profile-sparkline-passline-label">خط قبولی (۲۷)</span>
-          <span id="sparkline-max-label">بیشترین: —</span>
-        </div>
-      </div>
-
-    </div>
-  </div>
-</div>
-`;
+        <div class="profile-sparkline-footer"><span id="sparkline-min-label">کمترین: —</span><span>خط قبولی: ۲۷</span><span id="sparkline-max-label">بیشترین: —</span></div>
+      </section>
+    </section>
+  </main>
+</div>`;
 }

@@ -6,6 +6,7 @@
 
 import { getAllUsers, getPendingReviewCount } from "../db/queries.js";
 import { sendMessage, buildMiniAppButton } from "../lib/telegram.js";
+import { isAccessExpired } from "../lib/auth.js";
 
 export interface ReminderEnv {
   DB: D1Database;
@@ -18,7 +19,7 @@ export async function runMorningReminder(env: ReminderEnv): Promise<void> {
   const users = await getAllUsers(env.DB);
 
   for (const user of users) {
-    if (user.is_approved !== 1) continue;
+    if (user.is_approved !== 1 || isAccessExpired(user.access_expires_at)) continue;
 
     const count = await getPendingReviewCount(env.DB, user.id);
     if (count === 0) continue;

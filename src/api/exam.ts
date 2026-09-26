@@ -174,8 +174,15 @@ exam.post("/:sessionId/answer", async (c) => {
     return c.json({ error: "Session is no longer active" }, 409);
   }
 
-  // Don't reveal correct/incorrect until finish (matches real exam)
-  return c.json({ recorded: true, duplicate: recordResult === "duplicate" });
+  // The choice is now immutable, so it is safe to reveal the result. Keeping
+  // this in the persisted-answer response prevents the client from guessing
+  // and lets the learner review before explicitly moving to the next question.
+  return c.json({
+    recorded: true,
+    duplicate: recordResult === "duplicate",
+    isCorrect: isCorrect === 1,
+    correctAnswer: question.correct_answer,
+  });
 });
 
 // ── POST /api/exam/:sessionId/flag ────────────────────────────────────────────

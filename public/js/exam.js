@@ -15,6 +15,7 @@
     state.questions = data.questions || [];
     state.currentIndex = 0;
     state.answers = {};
+    state.answerResults = {};
     state.recordedAnswers = new Set();
     state.flags = new Set();
     state.startedAt = Date.now();
@@ -129,7 +130,7 @@
     const s = state.secondsLeft % 60;
     const el = document.getElementById('exam-timer');
     el.textContent = m + ':' + String(s).padStart(2, '0');
-    el.className = 'timer';
+    el.className = 'timer exam-timer-inline';
     if (state.secondsLeft <= 60) el.classList.add('danger');
     else if (state.secondsLeft <= 300) el.classList.add('warning');
   };
@@ -199,7 +200,67 @@
 
     // §15.3: reset AI panel on question switch (uses centralized helper)
     App._resetAiPanel();
+    App.renderAnswerState(q);
     App.updateFinishAvailability();
+  };
+
+  App.renderAnswerState = function(q) {
+    const veroBtn = document.getElementById('btn-vero');
+    const falsoBtn = document.getElementById('btn-falso');
+    const feedback = document.getElementById('exam-answer-feedback');
+    const nextBtn = document.getElementById('btn-next-question');
+    const result = state.answerResults[q.questionId];
+    const answered = state.recordedAnswers.has(q.questionId);
+
+    [veroBtn, falsoBtn].forEach(function(btn) {
+      if (!btn) return;
+      btn.disabled = answered;
+      btn.classList.remove(
+        'btn-disabled',
+        'answer-selected',
+        'answer-correct-choice',
+        'answer-wrong-choice'
+      );
+    });
+
+    if (feedback) {
+      feedback.textContent = '';
+      feedback.className = 'exam-answer-feedback fa-text';
+      feedback.style.display = 'block';
+    }
+    if (nextBtn) {
+      nextBtn.style.display = answered && state.currentIndex < state.questions.length - 1
+        ? 'inline-flex'
+        : 'none';
+    }
+
+    if (!answered || !result) return;
+
+    const selectedBtn = state.answers[q.questionId] === 1 ? veroBtn : falsoBtn;
+    const correctBtn = result.correctAnswer === 1 ? veroBtn : falsoBtn;
+    if (selectedBtn) selectedBtn.classList.add('answer-selected');
+    if (correctBtn) correctBtn.classList.add('answer-correct-choice');
+    if (!result.isCorrect && selectedBtn) selectedBtn.classList.add('answer-wrong-choice');
+
+    if (feedback) {
+      const correctLabel = result.correctAnswer === 1 ? 'VERO' : 'FALSO';
+      feedback.textContent = result.isCorrect
+        ? 'درست انتخاب کردی — پاسخ صحیح: ' + correctLabel
+        : 'انتخابت نادرست بود — پاسخ صحیح: ' + correctLabel;
+      feedback.classList.add(result.isCorrect ? 'correct' : 'wrong', 'is-visible');
+    }
+  };
+
+  App.nextQuestion = function() {
+    const q = state.questions[state.currentIndex];
+    if (!q || !state.recordedAnswers.has(q.questionId)) return;
+    if (state.currentIndex >= state.questions.length - 1) {
+      App.finishExam();
+      return;
+    }
+    state.currentIndex += 1;
+    App.renderExamTabs();
+    App.renderQuestion();
   };
 
   App.updateFinishAvailability = function() {
@@ -222,23 +283,29 @@
     if (state.answerPending[q.questionId]) return;
 
     const sessionId = state.sessionId;
-    const answeredIndex = state.currentIndex;
     state.answerPending[q.questionId] = true;
 
     document.getElementById('btn-vero').classList.add('btn-disabled');
     document.getElementById('btn-falso').classList.add('btn-disabled');
 
     try {
-      await api('POST', '/exam/' + sessionId + '/answer', {
+      const result = await api('POST', '/exam/' + sessionId + '/answer', {
         questionId: q.questionId,
         answer: value,
       });
       if (state.sessionId !== sessionId) return;
       state.answers[q.questionId] = value;
+      state.answerResults[q.questionId] = {
+        isCorrect: result.isCorrect === true,
+        correctAnswer: result.correctAnswer === 1 ? 1 : 0,
+      };
       state.recordedAnswers.add(q.questionId);
       App.renderExamTabs();
-      App._updateAiAvailability();
       App.updateFinishAvailability();
+      const currentQuestion = state.questions[state.currentIndex];
+      if (currentQuestion && currentQuestion.questionId === q.questionId) {
+        App.renderAnswerState(q);
+      }
     } catch (e) {
       const message = e && typeof e.status === 'number'
         ? 'پاسخ ذخیره نشد: ' + e.message
@@ -250,23 +317,6 @@
     } finally {
       if (state.sessionId === sessionId) delete state.answerPending[q.questionId];
     }
-
-    setTimeout(function() {
-      if (state.sessionId !== sessionId) return;
-      document.getElementById('btn-vero').classList.remove('btn-disabled');
-      document.getElementById('btn-falso').classList.remove('btn-disabled');
-
-      // The user may have opened another numbered tab while persistence was in
-      // flight. Never advance or finish from a different tab than the one answered.
-      if (state.currentIndex !== answeredIndex) return;
-      if (answeredIndex < state.questions.length - 1) {
-        state.currentIndex = answeredIndex + 1;
-        App.renderExamTabs();
-        App.renderQuestion();
-      } else {
-        App.finishExam();
-      }
-    }, 320);
   };
 
   // ── Flag / bookmark ─────────────────────────────────────────────────────────
@@ -300,6 +350,8 @@
   };
 
   // ── §15.3 AI Panel — three independent tabs ──────────────────────────────────
+  // features.md §19.2 user override: all three tabs, including the verdict, are
+  // an open-book study aid on a live, unanswered question. No answer gate.
   // toggleTranslate: checkbox onchange — opens/closes the whole panel.
   // Opening always shows tab 0 (translation) and fires its request.
   // Tabs 1 and 2 only fire when the user explicitly taps them.
@@ -341,8 +393,10 @@
         App.showTranslation(state.translationCache[q.questionId]);
         return;
       }
-      document.getElementById('translate-text').textContent = '⏳ در حال ترجمه…';
+      document.getElementById('translate-text').textContent = 'در حال ترجمه…';
       document.getElementById('translate-explanation').textContent = '';
+      document.getElementById('translate-explanation').style.display = 'none';
+      document.getElementById('translate-verdict').style.display = 'none';
       try {
         const data = await App.getAiRequest(
           requestGeneration + ':translation:' + q.questionId,
@@ -353,7 +407,7 @@
         App.showTranslation(data);
       } catch (e) {
         if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
-        document.getElementById('translate-text').textContent = '⚠ خطا: ' + (e.message || 'ترجمه در دسترس نیست');
+        document.getElementById('translate-text').textContent = 'ترجمه در دسترس نیست: ' + (e.message || 'دوباره تلاش کنید');
       }
     } else if (tabIndex === 1) {
       // Theory tab — lazy: only fires on first tap for this question
@@ -365,22 +419,21 @@
   };
 
   App.showTranslation = function(data) {
-    // §19.2: render verdict badge ABOVE translated text
     const verdictEl = document.getElementById('translate-verdict');
+    const explanationEl = document.getElementById('translate-explanation');
+
+    // §19.2: verdict first, then the faithful translation, then the explanation.
     if (verdictEl) {
       const isVero = data.verdictVero === true;
       const label = isVero ? 'VERO' : 'FALSO';
-      const labelFa = 'پاسخ: ' + label;
-      verdictEl.innerHTML =
-        '<span class="fa-text" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.82rem;font-weight:700;' +
-        (isVero
-          ? 'background:rgba(22,163,74,0.15);color:var(--go);border:1px solid rgba(22,163,74,0.35);'
-          : 'background:rgba(220,38,38,0.12);color:var(--stop);border:1px solid rgba(220,38,38,0.3);') +
-        '">' + (isVero ? '✅' : '❌') + ' ' + labelFa + '</span>';
+      verdictEl.innerHTML = '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">پاسخ: ' + label + '</span>';
       verdictEl.style.display = 'block';
     }
     document.getElementById('translate-text').textContent = data.translatedText || '';
-    App.renderRichText(document.getElementById('translate-explanation'), data.explanation || '');
+    if (explanationEl) {
+      explanationEl.style.display = data.explanation ? 'block' : 'none';
+      App.renderRichText(explanationEl, data.explanation || '');
+    }
     document.getElementById('exam-question-text').classList.add('translated');
   };
 
@@ -467,19 +520,19 @@
     if (!vocabItems || vocabItems.length === 0) return;
     vocabItems.forEach(function(item) {
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);gap:8px;';
+      row.className = 'vocab-suggestion-row';
       const wordPair = document.createElement('div');
-      wordPair.style.cssText = 'display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;';
+      wordPair.className = 'vocab-suggestion-copy';
       const itSpan = document.createElement('span');
-      itSpan.style.cssText = 'font-family:"Public Sans",sans-serif;font-size:0.82rem;font-weight:600;color:var(--ink);';
+      itSpan.className = 'vocab-suggestion-it';
       itSpan.textContent = item.term_it || '';
       const faSpan = document.createElement('span');
-      faSpan.style.cssText = 'font-family:"Vazirmatn",sans-serif;font-size:0.75rem;color:var(--ink-muted);direction:rtl;';
+      faSpan.className = 'vocab-suggestion-fa';
       faSpan.textContent = item.term_fa || '';
       wordPair.appendChild(itSpan);
       wordPair.appendChild(faSpan);
       const addBtn = document.createElement('button');
-      addBtn.style.cssText = 'flex-shrink:0;padding:5px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--ink-muted);font-size:0.72rem;cursor:pointer;font-family:"Vazirmatn",sans-serif;transition:all 150ms;white-space:nowrap;';
+      addBtn.className = 'text-button vocab-suggestion-add';
       addBtn.textContent = '+ واژه‌نامه';
       addBtn.onclick = function() {
         // Reuse existing addVocabFromAgent — identical to long-press flow (§12.2)
@@ -534,7 +587,7 @@
     // Keep older cached markup usable when it is paired with this newer script.
     if (toggle) toggle.disabled = false;
     if (label) label.classList.remove('locked');
-    if (sub) sub.textContent = 'همین حالا قابل استفاده است';
+    if (sub) sub.textContent = 'ترجمه، تئوری و گرامر — همین حالا قابل استفاده است';
   };
 
   App._resetAiPanel = function() {
@@ -560,7 +613,7 @@
 
     if (btn) {
       btn.disabled = true;
-      btn.textContent = '⏳';
+      btn.textContent = 'در حال ذخیره…';
     }
     try {
       await api('POST', '/vocab', {
@@ -568,7 +621,7 @@
         termFa: termFa,
         sourceQuestionId: sourceQuestionId
       });
-      App.toast('به واژه‌نامه اضافه شد! 📚');
+      App.toast('به واژه‌نامه اضافه شد.');
       if (btn) {
         btn.textContent = '✓ اضافه شد';
         btn.style.color = 'var(--go-light)';
@@ -577,7 +630,7 @@
       App.toast('خطا در ثبت واژه');
       if (btn) {
         btn.disabled = false;
-        btn.textContent = '➕ افزودن';
+        btn.textContent = 'افزودن';
       }
     }
   };
@@ -627,33 +680,57 @@
     state.lastFinishedSessionId = data.sessionId;
 
     const tutorBanner = document.getElementById('results-tutor-banner');
+    const reviewBtn = document.getElementById('results-review-btn');
+    const nextStep = document.getElementById('results-next-step');
     if (tutorBanner) {
       if (data.wrongCount > 0) {
         tutorBanner.style.display = 'block';
+        if (nextStep) nextStep.style.display = 'block';
+        if (reviewBtn) reviewBtn.style.display = 'inline-flex';
         const bannerText = document.getElementById('results-tutor-banner-text');
         if (bannerText) {
           bannerText.textContent = 'تحلیل و رفع اشکال ' + data.wrongCount + ' سوال غلط با استاد AI';
         }
       } else {
         tutorBanner.style.display = 'none';
+        if (nextStep) nextStep.style.display = 'none';
+        if (reviewBtn) reviewBtn.style.display = 'none';
       }
     }
 
     const badge = document.getElementById('results-badge');
     badge.className = 'result-badge ' + (data.passed ? 'pass' : 'fail');
-    badge.textContent = data.passed ? 'قبول' : 'رد';
+    badge.textContent = data.passed ? 'قبول شدی' : 'نیاز به مرور';
 
     // New copy voice from design.md
     document.getElementById('results-score').textContent =
       data.score + ' از ۳۰';
     document.getElementById('results-detail').textContent =
       data.passed
-        ? data.wrongCount + ' اشتباه — قبول شدی! 🎉'
-        : data.wrongCount + ' اشتباه — بیشتر از ۳ — دوباره تلاش کن';
+        ? data.wrongCount + ' اشتباه؛ حد قبولی را رد نکردی.'
+        : data.wrongCount + ' اشتباه؛ برای قبولی حداکثر ۳ اشتباه مجاز است.';
+
+    const correctCount = Array.isArray(data.answers)
+      ? data.answers.filter(function(answer) { return Boolean(answer.isCorrect); }).length
+      : data.score;
+    const unansweredCount = Array.isArray(data.answers)
+      ? data.answers.filter(function(answer) { return answer.userAnswer === null; }).length
+      : Math.max(0, 30 - correctCount - data.wrongCount);
+    const answeredWrongCount = Array.isArray(data.answers)
+      ? data.answers.filter(function(answer) {
+          return answer.userAnswer !== null && !answer.isCorrect;
+        }).length
+      : Math.max(0, data.wrongCount - unansweredCount);
+    const correctEl = document.getElementById('results-correct-count');
+    const wrongEl = document.getElementById('results-wrong-count');
+    const unansweredEl = document.getElementById('results-unanswered-count');
+    if (correctEl) correctEl.textContent = String(correctCount);
+    if (wrongEl) wrongEl.textContent = String(answeredWrongCount);
+    if (unansweredEl) unansweredEl.textContent = String(unansweredCount);
 
     const min = Math.floor(data.durationSeconds / 60);
     const sec = String(data.durationSeconds % 60).padStart(2, '0');
-    document.getElementById('results-time').textContent = '⏱ ' + min + ':' + sec;
+    document.getElementById('results-time').textContent = 'زمان پاسخ‌گویی ' + min + ':' + sec;
 
     // Build result rows with sign-flip animation
     const list = document.getElementById('results-list');
@@ -694,8 +771,8 @@
       answerLine.className = 'result-answer-line';
       answerLine.dir = 'ltr';
       answerLine.textContent =
-        'Risposta: ' + (a.correctAnswer === 1 ? 'VERO' : 'FALSO') +
-        (a.userAnswer !== null ? ' · Tu: ' + (a.userAnswer === 1 ? 'VERO' : 'FALSO') : ' · Saltato');
+        'Risposta corretta: ' + (a.correctAnswer === 1 ? 'VERO' : 'FALSO') +
+        (a.userAnswer !== null ? ' · La tua risposta: ' + (a.userAnswer === 1 ? 'VERO' : 'FALSO') : ' · Senza risposta');
 
       const translateBtn = document.createElement('button');
       translateBtn.className = 'result-translate-btn';
@@ -723,7 +800,7 @@
   // §14.1: simplified — no more driving/grammar rendering in results
   App.translateResult = async function(questionId, btn) {
     btn.disabled = true;
-    btn.textContent = '⏳';
+    btn.textContent = 'در حال ترجمه…';
     try {
       const data = await api('POST', '/translate/' + questionId);
       const container = btn.parentElement;
@@ -737,14 +814,15 @@
       let content =
         '<div class="result-verdict-row">' +
         '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">' +
-        (isVero ? '✅' : '❌') + ' پاسخ: ' + label + '</span></div>';
-      content += '<div class="result-translation-text">🌐 ' + App.escapeHtml(data.translatedText) + '</div>';
+        (isVero ? 'درست: ' : 'نادرست: ') + label + '</span></div>';
+      content += '<div class="result-translation-label">ترجمه فارسی</div><div class="result-translation-text">' + App.escapeHtml(data.translatedText) + '</div>';
       block.innerHTML = content;
       if (data.explanation) {
         const explanationBlock = document.createElement('div');
         explanationBlock.className = 'result-translation-explanation';
         const explanationIcon = document.createElement('span');
-        explanationIcon.textContent = '💡 ';
+        explanationIcon.className = 'result-explanation-label';
+        explanationIcon.textContent = 'چرا؟';
         const explanationBody = document.createElement('div');
         App.renderRichText(explanationBody, data.explanation);
         explanationBlock.appendChild(explanationIcon);

@@ -45,6 +45,20 @@ test("the current question number is exposed as a prominent live badge", () => {
   assert.doesNotMatch(positionRule, /var\(--ink-muted\)/);
 });
 
+test("fullscreen Telegram chrome cannot cover the top of app content", () => {
+  const css = readFileSync("public/css/app.css", "utf8");
+  const client = readFileSync("public/js/app.js", "utf8");
+
+  assert.match(css, /--tg-safe-area-inset-top/);
+  assert.match(css, /--tg-content-safe-area-inset-top/);
+  assert.match(css, /#app-root\s*\{[^}]*padding-top:\s*var\(--app-content-safe-top\)/s);
+  assert.match(client, /contentSafeAreaInset/);
+  assert.match(client, /contentSafeAreaChanged/);
+  assert.match(client, /fullscreenChanged/);
+  assert.match(css, /--app-sdk-fullscreen-controls-top/);
+  assert.match(client, /--app-sdk-fullscreen-controls-top/);
+});
+
 test("translation explanations are prompted for first-read clarity", async (t) => {
   const requests: OpenAIRequest[] = [];
   const originalFetch = globalThis.fetch;
@@ -344,15 +358,18 @@ test("single-term vocabulary suggestions remain available for manual saves", asy
   assert.match(JSON.stringify(request), /precedenza/);
 });
 
-test("exam AI help is available immediately and results render structured explanations", () => {
+test("exam AI help is available immediately (features.md §19.2 user override)", () => {
   const examClient = readFileSync("public/js/exam.js", "utf8");
 
+  assert.doesNotMatch(examClient, /App\.canRevealAiAnswerForCurrentQuestion/);
   assert.doesNotMatch(examClient, /App\.canUseAiForCurrentQuestion/);
-  assert.doesNotMatch(examClient, /کمک AI بعد از ثبت پاسخ/);
+  assert.doesNotMatch(examClient, /answerLocked/);
   assert.match(examClient, /App\.renderRichText\(explanationBody,\s*data\.explanation\)/);
 
   const screenMarkup = renderExamScreen();
   assert.doesNotMatch(screenMarkup, /id="translate-toggle"[^>]*disabled/);
+  assert.doesNotMatch(screenMarkup, /id="ai-tab-btn-1"[^>]*aria-disabled="true"/);
+  assert.doesNotMatch(screenMarkup, /id="ai-answer-lock"/);
   assert.match(screenMarkup, /همین حالا قابل استفاده است/);
 });
 
@@ -485,17 +502,25 @@ test("answer persistence failures stay visible and ambiguous retries are idempot
     examClient.indexOf("App.answer = async function"),
     examClient.indexOf("// ── Flag / bookmark")
   );
+  const examRoute = readFileSync("src/api/exam.ts", "utf8");
 
   assert.match(appClient, /apiError\.status\s*=\s*res\.status/);
   assert.match(examClient, /state\.answerPending/);
   assert.doesNotMatch(answerFunction, /Offline — continue locally/);
   assert.ok(
     answerFunction.indexOf("await api(") < answerFunction.indexOf("state.answers[q.questionId] = value"),
-    "the client must only accept and advance an answer after persistence succeeds"
+    "the client must only accept an answer after persistence succeeds"
   );
   assert.match(answerFunction, /برای تلاش دوباره|دوباره/);
-  assert.match(answerFunction, /const answeredIndex\s*=\s*state\.currentIndex/);
-  assert.match(answerFunction, /state\.currentIndex\s*!==\s*answeredIndex/);
+  assert.doesNotMatch(answerFunction, /setTimeout\s*\(/);
+  assert.doesNotMatch(answerFunction, /state\.currentIndex\s*=\s*answeredIndex\s*\+\s*1/);
+  assert.match(answerFunction, /state\.answerResults\[q\.questionId\]/);
+  assert.match(answerFunction, /App\.renderAnswerState\(q\)/);
+  assert.match(answerFunction, /currentQuestion\.questionId\s*===\s*q\.questionId/);
+  assert.match(examRoute, /isCorrect:\s*isCorrect\s*===\s*1/);
+  assert.match(examRoute, /correctAnswer:\s*question\.correct_answer/);
+  assert.match(renderExamScreen(), /id="btn-next-question"/);
+  assert.match(examClient, /App\.nextQuestion\s*=\s*function/);
   assert.match(renderExamScreen(), /id="btn-finish-exam"/);
   assert.match(examClient, /App\.updateFinishAvailability\s*=\s*function/);
   assert.match(answerFunction, /App\.updateFinishAvailability\(\)/);

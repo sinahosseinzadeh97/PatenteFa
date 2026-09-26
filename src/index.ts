@@ -7,8 +7,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { AppEnv, AppVariables } from "./types.js";
-import { verifyInitData, checkAllowList } from "./lib/auth.js";
-import { TRIAL_HOURS, trialMsLeft } from "./lib/trial.js";
+import { verifyInitData, isAccessExpired, isPrimaryAdminUser } from "./lib/auth.js";
 import { upsertUser, setUserApproval } from "./db/queries.js";
 import { webhook } from "./bot/webhook.js";
 import { exam } from "./api/exam.js";
@@ -55,36 +54,41 @@ app.post("/api/request-access", async (c) => {
   const body = (await c.req.json().catch(() => ({}))) as { funAnswer?: string };
   const funAnswer = (body.funAnswer || "").trim() || "آره خیلی زیاد!";
 
-  const allowedParts = (c.env.ALLOWED_TELEGRAM_USER_IDS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const isAdmin = allowedParts.map(Number).includes(user.id);
-
-  const dbUser = await upsertUser(c.env.DB, user.id, user.first_name, user.username, isAdmin);
-
-  // Reset status to 0 (pending) if not admin so a fresh join request notification is always posted
-  if (!isAdmin) {
-    await setUserApproval(c.env.DB, user.id, 0);
-  }
-
-  await notifyAdminNewUserRequest(
-    c.env.TELEGRAM_BOT_TOKEN,
-    c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
-    {
-      telegramUserId: user.id,
-      firstName: user.first_name,
-      username: user.username,
-      funAnswer,
-    }
+  const isAdmin = isPrimaryAdminUser(
+    user.id,
+    c.env.PRIMARY_ADMIN_TELEGRAM_USER_ID,
+    c.env.ALLOWED_TELEGRAM_USER_IDS
   );
 
-  return c.json({ ok: true, isApproved: isAdmin });
+  let dbUser = await upsertUser(c.env.DB, user.id, user.first_name, user.username, isAdmin);
+
+  // A rejected user may submit a fresh request, but this public endpoint must
+  // never downgrade an already-approved account back to pending.
+  if (!isAdmin && dbUser.is_approved !== 1) {
+    dbUser = (await setUserApproval(c.env.DB, user.id, 0)) ?? dbUser;
+  }
+
+  const hasAccess = isAdmin || (dbUser.is_approved === 1 && !isAccessExpired(dbUser.access_expires_at));
+
+  if (!hasAccess) {
+    await notifyAdminNewUserRequest(
+      c.env.TELEGRAM_BOT_TOKEN,
+      c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+      {
+        telegramUserId: user.id,
+        firstName: user.first_name,
+        username: user.username,
+        funAnswer,
+      }
+    );
+  }
+
+  return c.json({ ok: true, isApproved: hasAccess });
 });
 
 // ── Support thread ───────────────────────────────────────────────────────────
 // Mounted before the /api group on purpose: it authenticates with initData but
-// is NOT approval-gated, so a pending, trial-expired or blocked user can still
+// is NOT approval-gated, so a pending or blocked user can still
 // reach the admin. Registered first, so the gate below never runs for it.
 app.route("/api/support", support);
 
@@ -107,68 +111,41 @@ api.use("*", async (c, next) => {
 
   const { user } = payload;
 
-  // Determine if this user is a primary admin (listed in ALLOWED_TELEGRAM_USER_IDS)
-  const allowedParts = (c.env.ALLOWED_TELEGRAM_USER_IDS || "")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
-  const isAdmin = allowedParts.map(Number).includes(user.id);
+  const isAdmin = isPrimaryAdminUser(
+    user.id,
+    c.env.PRIMARY_ADMIN_TELEGRAM_USER_ID,
+    c.env.ALLOWED_TELEGRAM_USER_IDS
+  );
 
   // Upsert user (admins auto-approved, others default to pending 0)
   const dbUser = await upsertUser(c.env.DB, user.id, user.first_name, user.username, isAdmin);
 
-  // If user is not approved yet (is_approved !== 1)
-  if (dbUser.is_approved !== 1) {
-    // Every new account gets a TRIAL_HOURS free trial from registration.
-    // Rejected users (-1) are excluded — a rejection must not be undone by
-    // the clock. The trial window is derived from users.created_at.
-    const msLeft = dbUser.is_approved === 0 ? trialMsLeft(dbUser.created_at) : 0;
-
-    if (msLeft <= 0) {
-      // Notify admin channel if pending approval
-      if (dbUser.is_approved === 0) {
-        c.executionCtx.waitUntil(
-          notifyAdminNewUserRequest(
-            c.env.TELEGRAM_BOT_TOKEN,
-            c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
-            {
-              telegramUserId: user.id,
-              firstName: user.first_name,
-              username: user.username,
-            }
-          )
-        );
-      }
-
-      const trialExpired = dbUser.is_approved === 0 && !!dbUser.created_at;
-      return c.json(
-        {
-          error: trialExpired
-            ? `دوره آزمایشی ${TRIAL_HOURS.toLocaleString("fa-IR")} ساعته شما به پایان رسید. برای ادامه، اشتراک تهیه کنید.`
-            : "درخواست دسترسی شما در انتظار تایید مدیریت است.",
-          isApproved: false,
-          status: dbUser.is_approved === -1 ? "rejected" : "pending",
-          trialExpired,
-        },
-        403
-      );
-    }
-
-    // Inside the trial window — fall through with full access.
-    c.set("trialMsLeft", msLeft);
+  // Approval is the subscription/access gate. Keep it fail-closed: a newly
+  // registered, pending, rejected, or otherwise invalid status must never reach
+  // any protected API route. The support and access-request routes above are
+  // the only intentional exceptions.
+  const accessExpired = !isAdmin && dbUser.is_approved === 1 && isAccessExpired(dbUser.access_expires_at);
+  if (dbUser.is_approved !== 1 || accessExpired) {
+    const rejected = dbUser.is_approved === -1;
+    return c.json(
+      {
+        error: accessExpired
+          ? "زمان دسترسی شما به پایان رسیده است. برای تمدید با پشتیبانی گفتگو کنید."
+          : rejected
+          ? "درخواست دسترسی شما تایید نشده است. برای پیگیری با پشتیبانی گفتگو کنید."
+          : "درخواست دسترسی شما در انتظار تایید مدیریت است.",
+        isApproved: false,
+        status: accessExpired ? "expired" : rejected ? "rejected" : "pending",
+        accessExpiresAt: accessExpired ? dbUser.access_expires_at : undefined,
+      },
+      403
+    );
   }
 
   c.set("userId", dbUser.id);
   c.set("telegramUserId", user.id);
 
   await next();
-
-  // Surface the trial clock to the Mini App on every API response, so the
-  // banner stays accurate without needing a dedicated polling endpoint.
-  const msLeft = c.get("trialMsLeft");
-  if (msLeft !== undefined) {
-    c.header("X-Trial-Ms-Left", String(msLeft));
-  }
 });
 
 import { topics } from "./api/topics.js";

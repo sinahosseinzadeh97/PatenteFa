@@ -37,8 +37,39 @@ App.renderRichText = function(el, text) {
 
   // ── Telegram WebApp init ────────────────────────────────────────────────────
   const tg = window.Telegram?.WebApp;
+
+  function syncTelegramSafeArea(eventData) {
+    if (!tg) return;
+
+    const deviceInset = tg.safeAreaInset || {};
+    const contentInset = tg.contentSafeAreaInset || {};
+    const deviceTop = Number(deviceInset.top) || 0;
+    const contentTop = Number(contentInset.top) || 0;
+    const top = Math.max(deviceTop, contentTop);
+    const isFullscreen = eventData && typeof eventData.isFullscreen === 'boolean'
+      ? eventData.isFullscreen
+      : tg.isFullscreen === true;
+
+    // Some Telegram iOS builds report only the notch/status-bar inset in
+    // fullscreen, leaving Close/Menu on top of the first app row. When the
+    // content inset is not meaningfully larger than the device inset, reserve
+    // one native-control row. Newer clients that report the full content-safe
+    // inset keep this fallback at zero.
+    const controlsTop = isFullscreen && contentTop <= deviceTop + 8 ? 48 : 0;
+
+    document.documentElement.style.setProperty(
+      '--app-sdk-safe-area-inset-top',
+      top + 'px'
+    );
+    document.documentElement.style.setProperty(
+      '--app-sdk-fullscreen-controls-top',
+      controlsTop + 'px'
+    );
+  }
+
   if (tg) {
     tg.ready();
+    syncTelegramSafeArea();
     tg.expand();
     if (typeof tg.requestFullscreen === 'function') {
       try {
@@ -52,6 +83,18 @@ App.renderRichText = function(el, text) {
     }
     tg.setHeaderColor('#14151A');
     tg.setBackgroundColor('#14151A');
+
+    if (typeof tg.onEvent === 'function') {
+      ['safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged', 'fullscreenFailed'].forEach(function(eventName) {
+        try {
+          tg.onEvent(eventName, syncTelegramSafeArea);
+        } catch (e) {}
+      });
+    }
+
+    // Some clients update the inset object immediately after requestFullscreen
+    // without dispatching the event until the following frame.
+    window.requestAnimationFrame(syncTelegramSafeArea);
   }
   const initData = tg?.initData || '';
 
@@ -77,8 +120,6 @@ App.renderRichText = function(el, text) {
       apiError.payload = err;
       throw apiError;
     }
-    // Trial clock rides along on every API response; absent for paid/admin users.
-    App.renderTrialBanner(res.headers.get('X-Trial-Ms-Left'));
     return res.json();
   }
 
@@ -91,6 +132,7 @@ App.renderRichText = function(el, text) {
     questions: [],
     currentIndex: 0,
     answers: {},
+    answerResults: {},
     recordedAnswers: new Set(),
     flags: new Set(),
     startedAt: null,
@@ -126,6 +168,10 @@ App.renderRichText = function(el, text) {
     reelsAnswered: {},
     reelsLiked: new Set(),
     reelTranslationRequests: {},
+    adminMounted: false,
+    adminMountPromise: null,
+    adminDialogTrigger: null,
+    adminThreadTrigger: null,
   };
 
   // ── Screen routing (with slide transition) ───────────────────────────────────
@@ -138,6 +184,14 @@ App.renderRichText = function(el, text) {
     const current = document.querySelector('.screen.active');
     const next = document.getElementById('screen-' + name);
     if (!next) return;
+
+    // Each screen is a new task context. Carrying the previous page's scroll
+    // position made headers and primary actions appear to be missing.
+    if (!current || current !== next) {
+      window.scrollTo(0, 0);
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    }
 
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -192,20 +246,107 @@ App.renderRichText = function(el, text) {
   // ── Client Telemetry & Admin Management ────────────────────────────────────
   App.trackEvent = function(eventType, eventData, durationSeconds) {
     try {
-      api('POST', '/telemetry/event', {
-        eventType: eventType,
-        eventData: eventData,
-        durationSeconds: durationSeconds || 0
+      return fetch('/api/telemetry/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Telegram-InitData': initData },
+        body: JSON.stringify({
+          eventType: eventType,
+          eventData: eventData,
+          durationSeconds: durationSeconds || 0
+        }),
+        keepalive: true
       }).catch(function() {});
-    } catch (e) {}
+    } catch (e) {
+      return Promise.resolve();
+    }
   };
 
-  // Heartbeat active duration tracking every 60 seconds
-  setInterval(function() {
-    if (document.visibilityState === 'visible') {
-      App.trackEvent('heartbeat', { screen: state.currentScreen || 'home' }, 60);
+  // Count foreground, recently-active time in short checkpoints. This captures
+  // partial minutes and excludes a Mini App left open in the background.
+  var activityLastCheckpoint = Date.now();
+  var activityLastInteraction = Date.now();
+  var activityPendingSeconds = 0;
+  var activityIdleAfterMs = 5 * 60 * 1000;
+
+  function markUserActive() {
+    activityLastInteraction = Date.now();
+  }
+
+  function accrueActiveTime(now) {
+    var elapsed = Math.max(0, Math.min(30, (now - activityLastCheckpoint) / 1000));
+    if (document.visibilityState === 'visible' && now - activityLastInteraction <= activityIdleAfterMs) {
+      activityPendingSeconds += elapsed;
     }
-  }, 60000);
+    activityLastCheckpoint = now;
+  }
+
+  function flushActiveTime(reason) {
+    accrueActiveTime(Date.now());
+    var seconds = Math.floor(activityPendingSeconds);
+    if (seconds < 1) return;
+    activityPendingSeconds -= seconds;
+    App.trackEvent('active_time', {
+      screen: state.currentScreen || 'home',
+      reason: reason || 'checkpoint'
+    }, seconds);
+  }
+
+  setInterval(function() {
+    accrueActiveTime(Date.now());
+    if (activityPendingSeconds >= 30) flushActiveTime('checkpoint');
+  }, 15000);
+
+  document.addEventListener('visibilitychange', function() {
+    if (document.visibilityState === 'hidden') {
+      flushActiveTime('hidden');
+    } else {
+      activityLastCheckpoint = Date.now();
+      markUserActive();
+    }
+  });
+  window.addEventListener('pagehide', function() { flushActiveTime('pagehide'); });
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function(eventName) {
+    document.addEventListener(eventName, markUserActive, { passive: true, capture: true });
+  });
+  document.addEventListener('scroll', markUserActive, { passive: true, capture: true });
+
+  function analyticsAction(control) {
+    var inline = control.getAttribute('onclick') || '';
+    var match = inline.match(/App\.([A-Za-z0-9_]+)/);
+    return match ? match[1] : null;
+  }
+
+  function analyticsControl(control, action) {
+    var explicit = control.getAttribute('data-analytics');
+    if (explicit) return explicit.slice(0, 120);
+    if (control.id) return control.id.slice(0, 120);
+    if (action) return action.slice(0, 120);
+    var classNames = Array.prototype.slice.call(control.classList || [], 0, 2).join('.');
+    return (control.tagName.toLowerCase() + (classNames ? '.' + classNames : '')).slice(0, 120);
+  }
+
+  // Semantic click-path analytics: control/action + normalized position. It
+  // intentionally never reads input values, typed text, or learning content.
+  document.addEventListener('click', function(event) {
+    markUserActive();
+    var source = event.target;
+    if (!source || typeof source.closest !== 'function') return;
+    var control = source.closest('button, a, select, summary, [role="button"]');
+    if (!control) return;
+    var action = analyticsAction(control);
+    var width = Math.max(1, window.innerWidth || 1);
+    var height = Math.max(1, window.innerHeight || 1);
+    App.trackEvent('interaction', {
+      screen: state.currentScreen || 'home',
+      control: analyticsControl(control, action),
+      action: action,
+      label: control.getAttribute('aria-label') || undefined,
+      xPct: Math.round((event.clientX / width) * 100),
+      yPct: Math.round((event.clientY / height) * 100),
+      viewportWidth: width,
+      viewportHeight: height
+    });
+  }, true);
 
   state.adminUsers = [];
   state.costBreakdown = [];
@@ -214,6 +355,27 @@ App.renderRichText = function(el, text) {
   state.adminThreadUserId = null;   // open support thread in the admin panel
   state.adminThreadName = '';
   state.supportFrom = null;         // screen to return to from the support thread
+
+  App.openAdminPanel = async function() {
+    try {
+      if (!document.getElementById('screen-admin')) {
+        if (!state.adminMountPromise) {
+          state.adminMountPromise = api('GET', '/admin/shell').then(function(res) {
+            var nav = document.getElementById('bottom-nav');
+            if (!nav || !res.html) throw new Error('Admin shell unavailable');
+            nav.insertAdjacentHTML('beforebegin', res.html);
+            state.adminMounted = true;
+          }).finally(function() {
+            state.adminMountPromise = null;
+          });
+        }
+        await state.adminMountPromise;
+      }
+      App.showScreen('admin');
+    } catch (err) {
+      App.toast('این صفحه فقط برای مدیر اصلی در دسترس است.');
+    }
+  };
 
   // ── §18.3: relative time formatter ──────────────────────────────────────────
   App.relativeTime = function(isoStr) {
@@ -259,14 +421,14 @@ App.renderRichText = function(el, text) {
       totalCost += (r[costKey] || 0);
     });
     var actionLabels = {
-      'translate_question': '🌐 ترجمه سوال',
-      'translate_question_text': '🌐 ترجمه متن سوال',
-      'translate_question_explanation': '💡 توضیح پاسخ',
-      'theory_explain':     '🎓 توضیح تئوری',
-      'grammar_analyze':    '📚 آنالیز گرامر',
-      'grammar_vocab_repair': '📚 تکمیل لغات جاافتاده',
-      'tutor_chat':         '💬 مکالمه مربی',
-      'suggest_vocab':      '📖 پیشنهاد لغت'
+      'translate_question': 'ترجمه سؤال',
+      'translate_question_text': 'ترجمه متن سؤال',
+      'translate_question_explanation': 'توضیح پاسخ',
+      'theory_explain':     'توضیح تئوری',
+      'grammar_analyze':    'تحلیل گرامر',
+      'grammar_vocab_repair': 'تکمیل لغات جاافتاده',
+      'tutor_chat':         'گفتگو با مربی',
+      'suggest_vocab':      'پیشنهاد لغت'
     };
     var html = '';
     breakdown.forEach(function(r) {
@@ -274,7 +436,7 @@ App.renderRichText = function(el, text) {
       var calls  = r[callsKey] || 0;
       var pct    = maxCost  > 0 ? Math.round((cost / maxCost)  * 100) : 0;
       var tPct   = totalCost > 0 ? Math.round((cost / totalCost) * 100) : 0;
-      var label  = actionLabels[r.action] || r.action;
+      var label  = App.escapeHtml(actionLabels[r.action] || r.action);
       html += '<div class="admin-cost-row">' +
         '<div class="admin-cost-row-top">' +
           '<span class="admin-cost-row-label">' + label + '</span>' +
@@ -328,7 +490,8 @@ App.renderRichText = function(el, text) {
       var el = function(id) { return document.getElementById(id); };
       if (el('admin-total-users'))    el('admin-total-users').textContent    = String(overview.totalUsers || 0);
       if (el('admin-active-today'))   el('admin-active-today').textContent   = String(overview.activeTodayUsers || 0);
-      if (el('admin-events-logged'))  el('admin-events-logged').textContent  = (overview.totalEventsLogged || 0) + ' رویداد کل';  // §18.3
+      if (el('admin-active-now'))     el('admin-active-now').textContent     = (overview.activeNowUsers || 0) + ' نفر در ۵ دقیقه اخیر';
+      if (el('admin-events-logged'))  el('admin-events-logged').textContent  = (overview.totalInteractions || 0) + ' کلیک · ' + (overview.totalEventsLogged || 0) + ' رویداد';
       if (el('admin-total-exams'))    el('admin-total-exams').textContent    = String(overview.totalExams || 0);
       if (el('admin-pass-rate'))      el('admin-pass-rate').textContent      = 'قبولی: ' + (overview.overallPassRate !== null ? overview.overallPassRate + '%' : '—');
       if (el('admin-total-mins'))     el('admin-total-mins').textContent     = String(overview.totalActiveMinutes || 0);
@@ -365,7 +528,7 @@ App.renderRichText = function(el, text) {
     if (!box) return;
 
     if (!threads || threads.length === 0) {
-      box.innerHTML = '<div class="admin-loading-note">هنوز پیامی از کاربران دریافت نشده. برای شروع گفتگو، دکمه 💬 روی کارت هر کاربر را بزنید.</div>';
+      box.innerHTML = '<div class="admin-loading-note">هنوز پیامی از کاربران دریافت نشده. برای شروع گفتگو، دکمه «پیام» روی کارت هر کاربر را بزنید.</div>';
       return;
     }
 
@@ -374,7 +537,7 @@ App.renderRichText = function(el, text) {
       var name = App.escapeHtml(t.first_name || 'کاربر');
       var preview = App.escapeHtml(String(t.last_body || '').slice(0, 80));
       var when = App.relativeTime(t.last_at) || '';
-      var arrow = t.last_direction === 'out' ? '↩️' : '📨';
+      var directionLabel = t.last_direction === 'out' ? 'ارسال‌شده' : 'دریافتی';
       // Only the id crosses into the onclick attribute — a name interpolated
       // there would be re-decoded by the HTML parser and could break out of the
       // JS string. The panel takes its title from the API response instead.
@@ -386,7 +549,7 @@ App.renderRichText = function(el, text) {
           '</span>' +
           (t.unread > 0 ? '<span class="admin-support-row-badge">' + t.unread + '</span>' : '<span class="admin-support-row-time">' + App.escapeHtml(when) + '</span>') +
         '</div>' +
-        '<div class="admin-support-row-preview">' + arrow + ' ' + preview + '</div>' +
+        '<div class="admin-support-row-preview"><span class="admin-message-direction">' + directionLabel + '</span> ' + preview + '</div>' +
       '</button>';
     });
     box.innerHTML = html;
@@ -400,14 +563,20 @@ App.renderRichText = function(el, text) {
 
     state.adminThreadUserId = userId;
     state.adminThreadName = 'کاربر';
+    state.adminThreadTrigger = document.activeElement;
     modal.style.display = 'flex';
-    if (title) title.textContent = '💬 گفتگو با کاربر';
+    modal.setAttribute('aria-hidden', 'false');
+    window.requestAnimationFrame(function() {
+      var close = document.getElementById('admin-support-close');
+      if (close) close.focus();
+    });
+    if (title) title.textContent = 'گفتگو با کاربر';
     box.innerHTML = '<div class="support-empty">در حال بارگذاری…</div>';
 
     try {
       var data = await api('GET', '/admin/support/' + userId);
       state.adminThreadName = (data.user && data.user.firstName) || 'کاربر';
-      if (title) title.textContent = '💬 گفتگو با ' + state.adminThreadName;
+      if (title) title.textContent = 'گفتگو با ' + state.adminThreadName;
       App.renderSupportThread(box, data.messages || [], 'admin', state.adminThreadName);
     } catch (err) {
       box.innerHTML = '<div class="support-empty">دریافت گفتگو ناموفق بود.</div>';
@@ -416,8 +585,15 @@ App.renderRichText = function(el, text) {
 
   App.closeAdminThread = function() {
     var modal = document.getElementById('admin-support-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    }
     state.adminThreadUserId = null;
+    if (state.adminThreadTrigger && typeof state.adminThreadTrigger.focus === 'function') {
+      state.adminThreadTrigger.focus();
+    }
+    state.adminThreadTrigger = null;
     App.loadAdminData(); // refresh unread counts after reading a thread
   };
 
@@ -429,14 +605,14 @@ App.renderRichText = function(el, text) {
     var text = input ? input.value.trim() : '';
     if (!text || !state.adminThreadUserId) return;
 
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    if (btn) { btn.disabled = true; btn.textContent = 'در حال ارسال…'; }
     try {
       var res = await api('POST', '/admin/support/' + state.adminThreadUserId + '/reply', { text: text });
       if (input) input.value = '';
       var data = await api('GET', '/admin/support/' + state.adminThreadUserId);
       App.renderSupportThread(box, data.messages || [], 'admin', state.adminThreadName);
       App.toast(res.delivered
-        ? 'پیام در مینی‌اپ ثبت و در تلگرام ارسال شد ✅'
+        ? 'پیام در مینی‌اپ ثبت و در تلگرام ارسال شد.'
         : 'پیام در مینی‌اپ ثبت شد، اما ارسال تلگرام ناموفق بود؛ کاربر همچنان آن را داخل برنامه می‌بیند.');
     } catch (err) {
       App.toast(err.message || 'ارسال پاسخ ناموفق بود');
@@ -446,6 +622,26 @@ App.renderRichText = function(el, text) {
   };
 
   // ── §18.7: per-user card renderer ────────────────────────────────────────────
+  App.adminAccessStatus = function(user) {
+    if (user.is_approved === -1) return { className: 'blocked', label: 'مسدود', detail: 'دسترسی لغو شده' };
+    if (user.is_approved !== 1) return { className: 'pending', label: 'در انتظار', detail: 'هنوز فعال نشده' };
+    if (!user.access_expires_at) return { className: 'approved', label: 'فعال · نامحدود', detail: 'بدون تاریخ پایان' };
+
+    var raw = String(user.access_expires_at).replace(' ', 'T');
+    if (!/Z$|[+-]\d{2}:\d{2}$/.test(raw)) raw += 'Z';
+    var expiry = new Date(raw);
+    var remainingMs = expiry.getTime() - Date.now();
+    if (!Number.isFinite(expiry.getTime()) || remainingMs <= 0) {
+      return { className: 'expired', label: 'منقضی شده', detail: 'نیاز به تمدید' };
+    }
+    var days = Math.max(1, Math.ceil(remainingMs / 86400000));
+    return {
+      className: 'approved',
+      label: 'فعال · ' + days.toLocaleString('fa-IR') + ' روز',
+      detail: 'تا ' + expiry.toLocaleDateString('fa-IR')
+    };
+  };
+
   App.renderAdminUsers = function(users) {
     var container = document.getElementById('admin-users-table');
     var countEl   = document.getElementById('admin-user-count');
@@ -459,16 +655,13 @@ App.renderRichText = function(el, text) {
 
     var html = '';
     users.forEach(function(u) {
-      var statusBadge = u.is_approved === 1
-        ? '<span class="admin-status-badge approved">✅ تایید</span>'
-        : u.is_approved === -1
-        ? '<span class="admin-status-badge blocked">🔴 مسدود</span>'
-        : '<span class="admin-status-badge pending">⏳ انتظار</span>';
+      var access = App.adminAccessStatus(u);
+      var statusBadge = '<span class="admin-status-badge ' + access.className + '">' + access.label + '</span>';
 
       // §18.3: last_active_at relative time
       var relTime = u.last_active_at ? App.relativeTime(u.last_active_at) : null;
       var lastSeenHtml = relTime
-        ? ' <span style="font-size:0.68rem; color:var(--ink-muted);">🕐 ' + relTime + '</span>'
+        ? ' <span class="admin-last-seen">' + relTime + '</span>'
         : '';
 
       // §18.4: api-per-exam waste signal
@@ -476,7 +669,7 @@ App.renderRichText = function(el, text) {
       if (u.total_exams > 0) {
         var ratio = u.api_per_exam;
         var wasteClass = ratio > 5 ? 'high' : ratio > 2 ? 'medium' : 'low';
-        wasteHtml = '<span class="admin-waste-badge ' + wasteClass + '">⚡ ' + ratio + ' API/آزمون</span>';
+        wasteHtml = '<span class="admin-waste-badge ' + wasteClass + '">' + ratio + ' API/آزمون</span>';
       }
 
       html += '<div class="admin-user-card">' +
@@ -487,7 +680,8 @@ App.renderRichText = function(el, text) {
               App.escapeHtml(u.first_name || 'کاربر') +
               (u.username ? ' <span class="admin-user-username">@' + App.escapeHtml(u.username) + '</span>' : '') +
             '</div>' +
-            '<div class="admin-user-meta">🆔 ' + u.telegram_user_id + lastSeenHtml + '</div>' +
+            '<div class="admin-user-meta">ID ' + u.telegram_user_id + lastSeenHtml + '</div>' +
+            '<div class="admin-access-detail">' + access.detail + '</div>' +
           '</div>' +
           '<div class="admin-user-badges">' + wasteHtml + statusBadge + '</div>' +
         '</div>' +
@@ -497,17 +691,27 @@ App.renderRichText = function(el, text) {
           '<div><div class="stat-label">حضور</div><b>' + u.total_active_minutes + '</b> د</div>' +
           '<div><div class="stat-label">هزینه</div><b class="stat-value stop">$' + (u.total_api_cost_usd || 0).toFixed(4) + '</b></div>' +
           '<div><div class="stat-label">لغات</div><b>' + (u.vocab_count || 0) + '</b></div>' +
-          '<div><div class="stat-label">مرور امروز</div><b>' + (u.vocab_due || 0) + '</b></div>' +
-          '<div><div class="stat-label">API calls</div><b>' + u.total_api_calls + '</b></div>' +
+          '<div><div class="stat-label">مرور سؤال</div><b>' + (u.review_due || 0) + '</b></div>' +
+          '<div><div class="stat-label">API</div><b>' + u.total_api_calls + '</b> <span class="stat-value">· ' + Number(u.total_api_tokens || 0).toLocaleString('fa-IR') + ' توکن</span></div>' +
+        '</div>' +
+        '<div class="admin-access-control">' +
+          '<label for="admin-access-' + u.id + '">تمدید دسترسی</label>' +
+          '<select id="admin-access-' + u.id + '" class="admin-access-select">' +
+            '<option value="7">۷ روز</option>' +
+            '<option value="30" selected>۳۰ روز</option>' +
+            '<option value="90">۹۰ روز</option>' +
+            '<option value="365">یک سال</option>' +
+            '<option value="unlimited">نامحدود</option>' +
+          '</select>' +
+          '<button type="button" class="btn btn-primary btn-sm" onclick="App.setAdminUserAccess(' + u.id + ')">اعمال دسترسی</button>' +
         '</div>' +
         // Actions
         '<div class="admin-user-actions-row">' +
-          '<button type="button" class="btn btn-ghost btn-sm" onclick="App.viewAdminUserTimeline(' + u.id + ')">📊 لاگ</button>' +
-          '<button type="button" class="btn btn-ghost btn-sm" onclick="App.openAdminThread(' + u.id + ')">💬 پیام</button>' +
-          (u.is_approved === 1
-            ? '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)">🚫 لغو</button>'
-            : '<button type="button" class="btn btn-vero btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', 1)">✅ تایید</button>'
-          ) +
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="App.viewAdminUserTimeline(' + u.id + ')">لاگ</button>' +
+          '<button type="button" class="btn btn-ghost btn-sm" onclick="App.openAdminThread(' + u.id + ')">پیام</button>' +
+          (u.is_approved === -1
+            ? ''
+            : '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)">مسدودکردن</button>') +
         '</div>' +
       '</div>';
     });
@@ -515,6 +719,32 @@ App.renderRichText = function(el, text) {
     container.innerHTML = html;
   };
 
+
+  App.adminEventDescription = function(ev) {
+    var data = {};
+    try { data = ev.event_data ? JSON.parse(ev.event_data) : {}; } catch (e) {}
+    var screenLabels = {
+      home: 'خانه', topics: 'فصل‌ها', exam: 'آزمون', results: 'نتیجه',
+      tutor: 'مربی', vocab: 'واژگان', signs: 'تابلوها', stats: 'آمار',
+      profile: 'پروفایل', support: 'پشتیبانی', reels: 'مرور سریع', admin: 'مدیریت'
+    };
+    var screen = screenLabels[data.screen] || data.screen || 'نامشخص';
+
+    if (ev.event_type === 'interaction') {
+      var control = data.action || data.control || 'کنترل نامشخص';
+      var position = Number.isFinite(data.xPct) && Number.isFinite(data.yPct)
+        ? 'موقعیت ' + data.xPct + '٪ افقی · ' + data.yPct + '٪ عمودی'
+        : '';
+      return { title: 'کلیک در «' + screen + '» → ' + control, meta: position };
+    }
+    if (ev.event_type === 'screen_view') {
+      return { title: 'ورود به صفحه «' + screen + '»', meta: '' };
+    }
+    if (ev.event_type === 'active_time' || ev.event_type === 'heartbeat') {
+      return { title: 'حضور فعال در «' + screen + '»', meta: (ev.duration_seconds || 0) + ' ثانیه' };
+    }
+    return { title: ev.event_type || 'رویداد', meta: '' };
+  };
 
   App.renderAdminEvents = function(events) {
     var streamEl = document.getElementById('admin-events-stream');
@@ -526,11 +756,12 @@ App.renderRichText = function(el, text) {
     var html = '<div style="display:flex; flex-direction:column; gap:5px;">';
     events.forEach(function(ev) {
       var name    = ev.first_name ? App.escapeHtml(ev.first_name) : 'کاربر';
-      var details = ev.event_data ? ' <span class="admin-event-meta">('+App.escapeHtml(String(ev.event_data).slice(0,60))+')</span>' : '';
-      var dur     = (ev.duration_seconds > 0) ? ' <span class="admin-event-duration">+' + ev.duration_seconds + 's</span>' : ''; // §18.3
+      var desc = App.adminEventDescription(ev);
+      var relative = App.relativeTime(ev.created_at) || String(ev.created_at).slice(11, 16);
       html += '<div class="admin-event-row">' +
-        '<div><b>' + name + '</b>: <span class="admin-event-type">' + ev.event_type + '</span>' + details + dur + '</div>' +
-        '<div class="admin-event-time">' + String(ev.created_at).slice(11,16) + '</div>' +
+        '<div class="admin-event-copy"><b>' + name + '</b><span class="admin-event-type">' + App.escapeHtml(desc.title) + '</span>' +
+          (desc.meta ? '<span class="admin-event-meta">' + App.escapeHtml(desc.meta) + '</span>' : '') + '</div>' +
+        '<time class="admin-event-time" datetime="' + App.escapeHtml(ev.created_at) + '" title="' + App.escapeHtml(ev.created_at) + '">' + App.escapeHtml(relative) + '</time>' +
       '</div>';
     });
     html += '</div>';
@@ -539,12 +770,27 @@ App.renderRichText = function(el, text) {
 
 
   App.setAdminUserStatus = async function(userId, status) {
+    if (status === -1 && !window.confirm('دسترسی این کاربر مسدود شود؟')) return;
     try {
       await api('POST', '/admin/users/' + userId + '/status', { isApproved: status });
-      App.toast(status === 1 ? 'کاربر تایید شد ✅' : 'دسترسی کاربر لغو شد 🚫');
+      App.toast(status === 1 ? 'کاربر تأیید شد.' : 'دسترسی کاربر لغو شد.');
       App.loadAdminData();
     } catch (err) {
       App.toast('خطا در تغییر وضعیت کاربر');
+    }
+  };
+
+  App.setAdminUserAccess = async function(userId) {
+    var select = document.getElementById('admin-access-' + userId);
+    if (!select) return;
+    var raw = select.value;
+    var durationDays = raw === 'unlimited' ? null : Number(raw);
+    try {
+      await api('POST', '/admin/users/' + userId + '/access', { durationDays: durationDays });
+      App.toast(durationDays === null ? 'دسترسی نامحدود فعال شد.' : 'دسترسی کاربر تمدید شد.');
+      App.loadAdminData();
+    } catch (err) {
+      App.toast('خطا در اعمال مدت دسترسی');
     }
   };
 
@@ -554,32 +800,60 @@ App.renderRichText = function(el, text) {
     const title = document.getElementById('admin-user-modal-title');
     if (!modal || !content) return;
 
+    state.adminDialogTrigger = document.activeElement;
     modal.style.display = 'flex';
+    modal.setAttribute('aria-hidden', 'false');
+    window.requestAnimationFrame(function() {
+      var close = document.getElementById('admin-user-close');
+      if (close) close.focus();
+    });
     content.innerHTML = '<div class="admin-modal-loading"><div class="spinner" style="margin:0 auto;"></div><div class="admin-modal-loading-note">در حال دریافت لاگ کامل کاربر…</div></div>';
 
     try {
       const data = await api('GET', '/admin/users/' + userId + '/activity');
       if (title && data.user) {
-        title.textContent = '📊 لاگ فعالیت: ' + App.escapeHtml(data.user.first_name || 'کاربر') + ' (' + data.user.telegram_user_id + ')';
+        title.textContent = 'لاگ فعالیت: ' + (data.user.first_name || 'کاربر') + ' (' + data.user.telegram_user_id + ')';
       }
 
       let html = '<div style="display:flex; flex-direction:column; gap:16px;">';
 
       // User summary info
+      var access = App.adminAccessStatus(data.user || {});
+      var summary = data.summary || {};
       html += '<div class="admin-modal-summary-box">' +
-        '<div>📅 عضویت: ' + (data.user ? data.user.created_at : '—') + '</div>' +
-        '<div>🎯 تاریخ هدف آزمون: ' + (data.user && data.user.target_exam_date ? data.user.target_exam_date : 'تعیین نشده') + '</div>' +
+        '<div><span>وضعیت دسترسی</span><b>' + App.escapeHtml(access.label) + '</b><small>' + App.escapeHtml(access.detail) + '</small></div>' +
+        '<div><span>حضور کل</span><b>' + (summary.totalActiveMinutes || 0) + ' دقیقه</b><small>تله‌متری: ' + (summary.trackedActiveMinutes || 0) + ' · آزمون: ' + (summary.examActiveMinutes || 0) + '</small></div>' +
+        '<div><span>مصرف API</span><b>' + (summary.totalApiCalls || 0) + ' فراخوانی</b><small>' + Number(summary.totalApiTokens || 0).toLocaleString('fa-IR') + ' توکن · $' + Number(summary.totalApiCostUsd || 0).toFixed(4) + '</small></div>' +
+        '<div><span>کلیک ثبت‌شده</span><b>' + (summary.totalInteractions || 0) + '</b><small>بدون ذخیره متن ورودی</small></div>' +
       '</div>';
 
+      // Most-used click paths
+      html += '<div><h4 class="admin-modal-section-heading amber">مسیرهای پرتکرار کلیک</h4>';
+      if (data.interactionSummary && data.interactionSummary.length > 0) {
+        html += '<div class="admin-click-summary">';
+        data.interactionSummary.forEach(function(item) {
+          var action = item.action || item.control || 'کنترل نامشخص';
+          html += '<div class="admin-click-summary-row">' +
+            '<div><b>' + App.escapeHtml(item.screen || 'unknown') + ' → ' + App.escapeHtml(action) + '</b><small>آخرین: ' + App.escapeHtml(App.relativeTime(item.last_clicked_at) || item.last_clicked_at) + '</small></div>' +
+            '<span>' + Number(item.clicks || 0).toLocaleString('fa-IR') + ' کلیک</span>' +
+          '</div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<div class="admin-modal-empty-note">هنوز مسیر کلیکی برای این کاربر ثبت نشده است.</div>';
+      }
+      html += '</div>';
+
       // Events timeline
-      html += '<div><h4 class="admin-modal-section-heading amber">📜 کلیک‌ها و فعالیت‌های اخیر</h4>';
+      html += '<div><h4 class="admin-modal-section-heading amber">کلیک‌ها و فعالیت‌های اخیر</h4>';
       if (data.events && data.events.length > 0) {
         html += '<div style="display:flex; flex-direction:column; gap:6px;">';
         data.events.forEach(function(ev) {
-          const details = ev.event_data ? ' <span style="color:var(--ink-muted); font-size:0.75rem;">(' + App.escapeHtml(ev.event_data) + ')</span>' : '';
+          var desc = App.adminEventDescription(ev);
           html += '<div class="admin-modal-row">' +
-            '<div><b style="color:var(--amber);">' + ev.event_type + '</b>' + details + '</div>' +
-            '<div style="font-size:0.7rem; color:var(--ink-muted);">' + ev.created_at + '</div>' +
+            '<div><b class="admin-event-type">' + App.escapeHtml(desc.title) + '</b>' +
+              (desc.meta ? '<small class="admin-event-meta">' + App.escapeHtml(desc.meta) + '</small>' : '') + '</div>' +
+            '<time class="admin-event-time" datetime="' + App.escapeHtml(ev.created_at) + '">' + App.escapeHtml(App.relativeTime(ev.created_at) || ev.created_at) + '</time>' +
           '</div>';
         });
         html += '</div>';
@@ -589,14 +863,19 @@ App.renderRichText = function(el, text) {
       html += '</div>';
 
       // Exam sessions history
-      html += '<div><h4 class="admin-modal-section-heading ink">📝 آزمون‌های برگزارشده</h4>';
+      html += '<div><h4 class="admin-modal-section-heading ink">آزمون‌های برگزارشده</h4>';
       if (data.sessions && data.sessions.length > 0) {
         html += '<div style="display:flex; flex-direction:column; gap:6px;">';
         data.sessions.forEach(function(s) {
-          const statusStr = s.passed === 1 ? '<span style="color:var(--go-light);">✅ قبول</span>' : '<span style="color:var(--stop-light);">❌ مردود</span>';
+          var statusStr = s.finished_at
+            ? (s.passed === 1 ? '<span class="stat-value go">قبول</span>' : '<span class="stat-value stop">مردود</span>')
+            : '<span class="stat-value">نیمه‌کاره</span>';
+          var score = s.score === null ? '—' : s.score;
+          var duration = Math.round(Number(s.duration_seconds || 0) / 60);
+          var finished = s.finished_at || s.abandoned_at || s.started_at;
           html += '<div class="admin-modal-row">' +
-            '<div> حالت <b>' + s.mode + '</b> | نمره: <b>' + (s.score || 0) + '</b> | ' + statusStr + '</div>' +
-            '<div style="font-size:0.7rem; color:var(--ink-muted);">' + s.started_at + '</div>' +
+            '<div>حالت <b>' + App.escapeHtml(s.mode) + '</b> · نمره <b>' + score + '</b> · اشتباه <b>' + (s.wrong_count ?? '—') + '</b> · ' + duration + ' دقیقه · ' + statusStr + '</div>' +
+            '<time class="admin-event-time" datetime="' + App.escapeHtml(finished) + '">' + App.escapeHtml(App.relativeTime(finished) || finished) + '</time>' +
           '</div>';
         });
         html += '</div>';
@@ -606,13 +885,14 @@ App.renderRichText = function(el, text) {
       html += '</div>';
 
       // OpenAI API logs
-      html += '<div><h4 class="admin-modal-section-heading stop">💰 فراخوانی‌های API هوش مصنوعی</h4>';
+      html += '<div><h4 class="admin-modal-section-heading stop">فراخوانی‌های API هوش مصنوعی</h4>';
       if (data.apiLogs && data.apiLogs.length > 0) {
         html += '<div style="display:flex; flex-direction:column; gap:6px;">';
         data.apiLogs.forEach(function(apiLog) {
+          var totalTokens = Number(apiLog.prompt_tokens || 0) + Number(apiLog.completion_tokens || 0);
           html += '<div class="admin-modal-row">' +
-            '<div><b>' + apiLog.action + '</b> <span style="font-size:0.72rem; color:var(--ink-muted);">(' + apiLog.prompt_tokens + ' p / ' + apiLog.completion_tokens + ' c)</span></div>' +
-            '<div style="color:var(--stop-light); font-weight:700;">$' + apiLog.estimated_cost_usd.toFixed(4) + '</div>' +
+            '<div><b>' + App.escapeHtml(apiLog.action) + '</b><small class="admin-event-meta">' + App.escapeHtml(apiLog.model || 'مدل نامشخص') + ' · ' + totalTokens.toLocaleString('fa-IR') + ' توکن · ' + App.escapeHtml(App.relativeTime(apiLog.created_at) || apiLog.created_at) + '</small></div>' +
+            '<div class="stat-value stop">$' + Number(apiLog.estimated_cost_usd || 0).toFixed(4) + '</div>' +
           '</div>';
         });
         html += '</div>';
@@ -630,42 +910,49 @@ App.renderRichText = function(el, text) {
 
   App.closeAdminUserModal = function() {
     const modal = document.getElementById('admin-user-modal');
-    if (modal) modal.style.display = 'none';
+    if (modal) {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    }
+    if (state.adminDialogTrigger && typeof state.adminDialogTrigger.focus === 'function') {
+      state.adminDialogTrigger.focus();
+    }
+    state.adminDialogTrigger = null;
   };
 
-  /**
-   * Free-trial countdown. Driven by the X-Trial-Ms-Left response header, which
-   * the API sets only while a trial is running — approved/paid users get no
-   * header and therefore no banner. Passing null removes it.
-   */
-  App.renderTrialBanner = function(msLeftRaw) {
-    var el = document.getElementById('trial-banner');
-    var ms = msLeftRaw === null || msLeftRaw === undefined ? NaN : Number(msLeftRaw);
+  document.addEventListener('keydown', function(event) {
+    var supportModal = document.getElementById('admin-support-modal');
+    var userModal = document.getElementById('admin-user-modal');
+    var activeModal = supportModal && supportModal.style.display === 'flex'
+      ? supportModal
+      : (userModal && userModal.style.display === 'flex' ? userModal : null);
 
-    if (!isFinite(ms) || ms <= 0) {
-      if (el) el.remove();
+    if (event.key === 'Tab' && activeModal) {
+      var focusable = Array.prototype.filter.call(
+        activeModal.querySelectorAll('button:not([disabled]), a[href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'),
+        function(element) { return element.offsetParent !== null; }
+      );
+      if (focusable.length > 0) {
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first.focus();
+        }
+      }
       return;
     }
 
-    if (!el) {
-      var root = document.getElementById('app-root');
-      if (!root) return;
-      el = document.createElement('div');
-      el.id = 'trial-banner';
-      el.className = 'trial-banner';
-      root.insertBefore(el, root.firstChild);
+    if (event.key !== 'Escape') return;
+    if (activeModal === supportModal) {
+      App.closeAdminThread();
+    } else if (activeModal === userModal) {
+      App.closeAdminUserModal();
     }
-
-    // Under an hour, minutes are the honest unit — "۱ ساعت" for 3 minutes left
-    // reads as more runway than the user actually has.
-    var hours = Math.ceil(ms / 3600000);
-    var label = hours > 1
-      ? hours.toLocaleString('fa-IR') + ' ساعت'
-      : Math.max(1, Math.ceil(ms / 60000)).toLocaleString('fa-IR') + ' دقیقه';
-
-    el.innerHTML = '<span aria-hidden="true">🎁</span> دوره آزمایشی رایگان — <b>' +
-      label + '</b> باقی مانده';
-  };
+  });
 
   App.showPendingScreen = function(msg) {
     document.querySelectorAll('.screen').forEach(function(s) {
@@ -692,9 +979,9 @@ App.renderRichText = function(el, text) {
       const nav = document.getElementById('bottom-nav');
       if (nav) nav.style.display = 'flex';
       App.showScreen('home');
-      App.toast('دسترسی شما با موفقیت تایید شد! 🎉');
+      App.toast('دسترسی شما با موفقیت تأیید شد.');
     } catch(e) {
-      App.toast('هنوز در انتظار تایید مدیریت است ⏳');
+      App.toast('هنوز در انتظار تأیید مدیریت است.');
     }
   };
 
@@ -705,7 +992,7 @@ App.renderRichText = function(el, text) {
 
     if (btn) {
       btn.disabled = true;
-      btn.textContent = '⏳ در حال ارسال…';
+      btn.textContent = 'در حال ارسال…';
     }
 
     try {
@@ -717,7 +1004,7 @@ App.renderRichText = function(el, text) {
       const rewardBox = document.getElementById('fun-reward-box');
       if (rewardBox) rewardBox.style.display = 'block';
       if (btn) btn.textContent = 'پاسخ ارسال شد ✓';
-      App.toast('درخواست شما برای پشتیبانی ارسال شد! 💌');
+      App.toast('درخواست شما برای پشتیبانی ارسال شد.');
     } catch (e) {
       App.toast('پاسخ شما ثبت گردید ✓');
     }
@@ -725,7 +1012,7 @@ App.renderRichText = function(el, text) {
 
   // ── Support thread (user side) ──────────────────────────────────────────────
   // Uses its own fetch rather than api(): /api/support sits outside the approval
-  // gate on purpose, so a pending, trial-expired or blocked user can still reach
+  // gate on purpose, so a pending or blocked user can still reach
   // the admin.
   async function supportApi(method, body, path) {
     const opts = {
@@ -805,19 +1092,22 @@ App.renderRichText = function(el, text) {
     if (e && e.preventDefault) e.preventDefault();
     var input = document.getElementById('support-input');
     var btn = document.getElementById('support-send-btn');
+    var label = document.getElementById('support-send-label');
     var text = input ? input.value.trim() : '';
     if (!text) return;
 
-    if (btn) { btn.disabled = true; btn.textContent = '⏳'; }
+    if (btn) btn.disabled = true;
+    if (label) label.textContent = 'در حال ارسال';
     try {
       await supportApi('POST', { text: text });
       if (input) input.value = '';
       await App.loadSupport();
-      App.toast('پیام شما برای پشتیبانی ارسال شد 🙏');
+      App.toast('پیام شما برای پشتیبانی ارسال شد.');
     } catch (err) {
       App.toast(err.message || 'ارسال پیام ناموفق بود');
     } finally {
-      if (btn) { btn.disabled = false; btn.textContent = 'ارسال'; }
+      if (btn) btn.disabled = false;
+      if (label) label.textContent = 'ارسال';
     }
   };
 
@@ -943,18 +1233,18 @@ App.renderRichText = function(el, text) {
       html += '      <div class="topic-name-it">' + App.escapeHtml(t.name_it) + '</div>';
       html += '      <div class="topic-name-fa">' + App.escapeHtml(t.name_fa || '') + '</div>';
       html += '      <div class="topic-progress">';
-      html += '        <span class="topic-progress-done">✅ ' + answered + ' پاسخ‌داده</span>';
-      html += '        <span class="topic-progress-left"> • ⏳ ' + remaining + ' باقی‌مانده</span>';
+      html += '        <span class="topic-progress-done">' + answered + ' دیده‌شده</span>';
+      html += '        <span class="topic-progress-left">' + remaining + ' باقی‌مانده</span>';
       html += '      </div>';
       html += '    </div>';
       html += '    <div class="topic-acc-block">';
       html += '      <div class="topic-acc-value ' + accClass + '">' + accStr + '</div>';
-      html += '      <div class="topic-qcount">🌐 ' + qCount + ' سوال</div>';
+      html += '      <div class="topic-qcount">' + qCount + ' سؤال</div>';
       html += '    </div>';
       html += '  </div>';
 
       html += '  <div class="topic-card-actions">';
-      html += '    <button type="button" class="btn btn-primary btn-sm btn-full" onclick="App.startTopicExam(' + t.id + ')">✍️ شروع آزمون این فصل (۱۵ سوال)</button>';
+      html += '    <button type="button" class="btn btn-secondary btn-full" onclick="App.startTopicExam(' + t.id + ')">شروع تمرین ۱۵ سؤالی</button>';
       html += '  </div>';
       html += '</div>';
     });
@@ -983,7 +1273,7 @@ App.renderRichText = function(el, text) {
     state.examStartPending = true;
     const returnScreen = state.currentScreen || 'topics';
     try {
-      App.toast('در حال لود آزمون فصل… ⏳');
+      App.toast('در حال آماده‌سازی تمرین فصل…');
       const data = await api('POST', '/topics/' + topicId + '/exam');
       App.initializeExamState(data, {
         secondsLeft: 600,
@@ -1023,7 +1313,7 @@ App.renderRichText = function(el, text) {
     const firstName = tgUser?.first_name || 'کاربر پاتنته';
     const lastName = tgUser?.last_name || '';
     const fullName = (firstName + ' ' + lastName).trim();
-    const username = tgUser?.username ? '@' + tgUser.username : (tgUser?.id ? '🆔 ' + tgUser.id : '');
+    const username = tgUser?.username ? '@' + tgUser.username : (tgUser?.id ? String(tgUser.id) : '');
     const photoUrl = tgUser?.photo_url || '';
 
     const nameEl = document.getElementById('user-full-name');
@@ -1041,7 +1331,7 @@ App.renderRichText = function(el, text) {
     } else if (initialsEl) {
       if (photoEl) photoEl.style.display = 'none';
       initialsEl.style.display = 'flex';
-      const initials = (firstName.charAt(0) + (lastName ? lastName.charAt(0) : '')).toUpperCase() || '👤';
+      const initials = (firstName.charAt(0) + (lastName ? lastName.charAt(0) : '')).toUpperCase() || 'پ';
       initialsEl.textContent = initials;
     }
 
@@ -1089,8 +1379,8 @@ App.renderRichText = function(el, text) {
           data.recentSessions.slice(0, 3).forEach(function(s) {
             const isPass = s.passed;
             const badgeClass = isPass ? 'pass' : 'fail';
-            const badgeText = isPass ? 'قبول 🟢' : 'مردود 🔴';
-            const modeText = s.mode === 'exam' ? '🚗 شبیه‌ساز ۳۰ سوالی' : '🎯 تمرین موضوعی';
+            const badgeText = isPass ? 'قبول' : 'نیاز به تلاش بیشتر';
+            const modeText = s.mode === 'exam' ? 'شبیه‌ساز ۳۰ سؤالی' : 'تمرین موضوعی';
             const scoreText = (s.score !== null ? s.score : (30 - (s.wrongCount || 0))) + ' / ۳۰';
             html += '<div class="home-recent-row">' +
               '<div><div class="home-recent-mode">' + modeText + '</div><div class="home-recent-score">امتیاز: ' + scoreText + '</div></div>' +
@@ -1106,9 +1396,7 @@ App.renderRichText = function(el, text) {
 
       // Admin check — enable admin features if user is admin
       api('GET', '/admin/overview').then(function() {
-        const adminNav = document.getElementById('nav-admin');
         const adminBtn = document.getElementById('btn-admin-panel');
-        if (adminNav) adminNav.style.display = 'flex';
         if (adminBtn) adminBtn.style.display = 'flex';
       }).catch(function() {});
     } catch (e) {
@@ -1135,7 +1423,7 @@ App.renderRichText = function(el, text) {
     }
     try {
       await api('POST', '/stats/target-date', { targetExamDate: val });
-      App.toast('تاریخ آزمون ذخیره شد! 📅');
+      App.toast('تاریخ آزمون ذخیره شد.');
       App.closeExamDateModal();
       App.loadHome();
     } catch(e) {
@@ -1165,14 +1453,13 @@ App.renderRichText = function(el, text) {
       list.innerHTML = '';
 
       if (state.vocabItems.length === 0) {
-        list.innerHTML = '<div class="vocab-empty-note">هنوز لغتی ذخیره نکردی — از یه سؤال شروع کن</div>';
+        list.innerHTML = '<div class="empty-state"><svg class="ui-icon"><use href="#i-book"/></svg><strong>هنوز واژه‌ای ذخیره نکردی</strong><span>از یک سؤال شروع کن یا واژه‌ای را بالای همین صفحه اضافه کن.</span></div>';
         return;
       }
 
       state.vocabItems.forEach(function(item) {
         const el = document.createElement('div');
-        el.className = 'card-sm';
-        el.style.marginBottom = '8px';
+        el.className = 'vocab-item-row';
         el.innerHTML =
           '<div class="ltr vocab-item-it">' + App.escapeHtml(item.term_it) + '</div>' +
           '<div class="fa-text vocab-item-fa">' + App.escapeHtml(item.term_fa) + '</div>';
@@ -1210,7 +1497,7 @@ App.renderRichText = function(el, text) {
       App.showDueVocab();
     } else {
       document.getElementById('vocab-due-section').style.display = 'none';
-      App.toast('مرور تموم شد! 🎉');
+      App.toast('مرور امروز کامل شد.');
     }
   };
 
@@ -1448,7 +1735,8 @@ App.renderRichText = function(el, text) {
     var guideEl = document.getElementById('signs-guide-details');
     if (guideEl) {
       var guideClosed = localStorage.getItem('patentefa_signs_guide_closed');
-      if (guideClosed === '1') guideEl.removeAttribute('open');
+      if (guideClosed === '0') guideEl.setAttribute('open', '');
+      else guideEl.removeAttribute('open');
       guideEl.ontoggle = function() {
         localStorage.setItem('patentefa_signs_guide_closed', guideEl.open ? '0' : '1');
       };
@@ -1463,9 +1751,9 @@ App.renderRichText = function(el, text) {
         // Fallback: show a helpful message
         document.getElementById('signs-empty').style.display = '';
         document.getElementById('signs-flip-card').style.display = 'none';
-        document.querySelector('#screen-signs > div > div:last-of-type[style*="gap"]') &&
-          (document.querySelector('#screen-signs .btn-signs-known').closest('div').style.display = 'none');
-        App.toast('برای استفاده از تابلوها ابتدا یک آزمون بده');
+        var answerRow = document.querySelector('#screen-signs .signs-answer-row');
+        if (answerRow) answerRow.style.display = 'none';
+        App.toast('هنوز تابلویی برای مرور آماده نیست. ابتدا یک آزمون بده.');
         return;
       }
     }
@@ -1484,6 +1772,8 @@ App.renderRichText = function(el, text) {
       document.getElementById('signs-empty').style.display = '';
       document.getElementById('signs-flip-card').style.display = 'none';
       document.getElementById('signs-counter').textContent = '';
+      var emptyAnswerRow = document.querySelector('#screen-signs .signs-answer-row');
+      if (emptyAnswerRow) emptyAnswerRow.style.display = 'none';
       return;
     }
 
@@ -1499,6 +1789,8 @@ App.renderRichText = function(el, text) {
 
     document.getElementById('signs-empty').style.display = 'none';
     document.getElementById('signs-flip-card').style.display = '';
+    var answerRow = document.querySelector('#screen-signs .signs-answer-row');
+    if (answerRow) answerRow.style.display = 'flex';
     App.showCurrentSign();
   };
 
@@ -1587,7 +1879,7 @@ App.renderRichText = function(el, text) {
       document.getElementById('signs-empty').style.display = '';
       document.getElementById('signs-flip-card').style.display = 'none';
       document.getElementById('signs-counter').textContent = '';
-      App.toast('همه تابلوهای امروز رو مرور کردی! ✅');
+      App.toast('همه تابلوهای امروز را مرور کردی.');
     }
   };
 
@@ -1649,7 +1941,7 @@ App.renderRichText = function(el, text) {
     document.getElementById('vocab-sheet-word-display').textContent = word;
     const faInput = document.getElementById('vocab-sheet-fa');
     faInput.value = '';
-    faInput.placeholder = '⏳ در حال پیشنهاد…';
+    faInput.placeholder = 'در حال آماده‌سازی پیشنهاد…';
 
     const sheet = document.getElementById('vocab-sheet');
     sheet.classList.add('open');
@@ -1693,7 +1985,7 @@ App.renderRichText = function(el, text) {
     }
 
     const saveBtn = document.getElementById('vocab-sheet-save-btn');
-    saveBtn.textContent = '⏳';
+    saveBtn.textContent = 'در حال ذخیره…';
     saveBtn.disabled = true;
 
     try {
@@ -1725,7 +2017,7 @@ App.renderRichText = function(el, text) {
 
     const viewport = document.getElementById('reels-viewport');
     if (viewport) {
-      viewport.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100dvh;color:var(--ink-muted);font-weight:600;direction:rtl;">در حال بارگذاری ریلزهای آموزشی… ⚡</div>';
+      viewport.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100dvh;color:var(--ink-muted);font-weight:600;direction:rtl;">در حال بارگذاری محتوای آموزشی…</div>';
     }
 
     try {
@@ -1734,7 +2026,7 @@ App.renderRichText = function(el, text) {
       App.renderReelCards(state.reelsFeed, true);
     } catch (e) {
       if (viewport) {
-        viewport.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100dvh;color:var(--danger);gap:12px;direction:rtl;"><div style="font-size:2rem;">⚠️</div><div>خطا در دریافت ریلزها</div><button class="btn btn-sm btn-ghost" onclick="App.loadReels()">تلاش مجدد</button></div>';
+        viewport.innerHTML = '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100dvh;color:var(--stop-light);gap:12px;direction:rtl;"><div>دریافت محتوای آموزشی ناموفق بود.</div><button class="btn btn-sm btn-ghost" onclick="App.loadReels()">تلاش مجدد</button></div>';
       }
     } finally {
       state.reelsLoading = false;
@@ -1756,13 +2048,13 @@ App.renderRichText = function(el, text) {
 
       const isSign = item.type === 'sign';
       const isTip = item.type === 'tip';
-      const badgeText = isSign ? '🚦 تابلو راهنمایی' : isTip ? '💡 نکته طلایی امتحانی' : '❓ تست سریع';
+      const badgeText = isSign ? 'تابلوی راهنمایی' : isTip ? 'نکته امتحانی' : 'تست سریع';
       const initialLikes = Math.floor(120 + (item.question_id * 17) % 850);
       const safeTopicName = App.escapeHtml(item.topic_name_fa || 'سوال آزمون');
       const safeImageUrl = App.escapeHtml(item.image_url || '');
       const safeQuestionText = App.escapeHtml(item.text_it || '');
       const safeTranslation = App.escapeHtml(
-        item.translated_text || 'در حال دریافت ترجمه فارسی… ⏳'
+        item.translated_text || 'در حال دریافت ترجمه فارسی…'
       );
 
       cardEl.innerHTML =
@@ -1790,7 +2082,7 @@ App.renderRichText = function(el, text) {
           (!isTip ?
             '<div class="reel-divider-rule">' +
               '<div class="reel-divider-line"></div>' +
-              '<div class="reel-divider-text">⚡ پاسخ درست یا نادرست؟</div>' +
+              '<div class="reel-divider-text">پاسخ درست یا نادرست؟</div>' +
               '<div class="reel-divider-line"></div>' +
             '</div>' +
             '<div class="reel-quiz-grid" id="reel-quiz-row-' + item.question_id + '">' +
@@ -1922,7 +2214,7 @@ App.renderRichText = function(el, text) {
 
     if (isCorrect) {
       feedbackEl.className = 'reel-feedback-banner correct';
-      feedbackEl.textContent = '🎉 آفرین! پاسخ صحیح است (' + correctLabel + ')';
+      feedbackEl.textContent = 'درست انتخاب کردی — پاسخ صحیح: ' + correctLabel;
     } else {
       feedbackEl.className = 'reel-feedback-banner incorrect';
       feedbackEl.textContent = '❌ اشتباه بود! پاسخ صحیح: ' + correctLabel;
@@ -2010,7 +2302,7 @@ App.renderRichText = function(el, text) {
     if (!isLiked) {
       btn.classList.add('liked');
       if (countEl) countEl.textContent = String(count + 1);
-      App.toast('به لایک‌های شما اضافه شد ❤️');
+      App.toast('به موارد پسندیده‌شده اضافه شد.');
     } else {
       btn.classList.remove('liked');
       if (countEl) countEl.textContent = String(Math.max(0, count - 1));
@@ -2044,7 +2336,7 @@ App.renderRichText = function(el, text) {
     try {
       const data = await api('POST', '/tutor/explain-wrong', { sessionId: sid });
       if (data.wrongCount === 0 || !data.questions || data.questions.length === 0) {
-        App.toast('شما هیچ سوال اشتباهی در این آزمون نداشتید! 🎉');
+        App.toast('در این آزمون هیچ پاسخ اشتباهی نداشتی.');
         App.showScreen('results');
         return;
       }
@@ -2097,7 +2389,7 @@ App.renderRichText = function(el, text) {
     if (qCmp) {
       const correctText = q.correctAnswer === 1 ? 'VERO' : 'FALSO';
       const userText = q.userAnswer === 1 ? 'VERO' : (q.userAnswer === 0 ? 'FALSO' : 'Saltato');
-      qCmp.textContent = 'Correct: ' + correctText + ' · Tu: ' + userText;
+      qCmp.innerHTML = 'پاسخ درست: <b dir="ltr">' + correctText + '</b> · پاسخ تو: <b dir="ltr">' + userText + '</b>';
     }
 
     // Image
@@ -2145,13 +2437,12 @@ App.renderRichText = function(el, text) {
     // Prev / Next button states
     const prevBtn = document.getElementById('tutor-prev-btn');
     const nextBtn = document.getElementById('tutor-next-btn');
+    const nextLabel = document.getElementById('tutor-next-label');
     if (prevBtn) prevBtn.disabled = state.tutorCurrentIndex === 0;
     if (nextBtn) {
-      if (state.tutorCurrentIndex === total - 1) {
-        nextBtn.textContent = 'پایان رفع اشکال 🎉';
-      } else {
-        nextBtn.textContent = 'سوال بعدی →';
-      }
+      if (nextLabel) nextLabel.textContent = state.tutorCurrentIndex === total - 1
+        ? 'پایان رفع اشکال'
+        : 'سؤال بعدی';
     }
 
     // Render chat history for current question
@@ -2222,7 +2513,7 @@ App.renderRichText = function(el, text) {
 
     if (sendBtn) {
       sendBtn.disabled = true;
-      sendBtn.textContent = '…';
+      sendBtn.classList.add('is-loading');
     }
 
     try {
@@ -2245,7 +2536,7 @@ App.renderRichText = function(el, text) {
     } finally {
       if (sendBtn) {
         sendBtn.disabled = false;
-        sendBtn.textContent = 'ارسال';
+        sendBtn.classList.remove('is-loading');
       }
     }
   };
@@ -2284,7 +2575,10 @@ App.renderRichText = function(el, text) {
     const params = new URLSearchParams(window.location.search);
     const screen = params.get('screen') || 'home';
 
-    if (screen === 'exam') {
+    if (screen === 'admin') {
+      App.showScreen('home');
+      App.openAdminPanel();
+    } else if (screen === 'exam') {
       App.showScreen('home');
       App.startExam('exam');
     } else if (screen === 'review') {
