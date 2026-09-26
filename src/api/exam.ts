@@ -23,6 +23,7 @@ import {
   drawQuestionsFromTopics,
 } from "../db/queries.js";
 import { nextMorningISO } from "../lib/srs.js";
+import { lessonLinkForSourceId } from "../content/lessons.js";
 import { sendMessage, buildMiniAppButton } from "../lib/telegram.js";
 
 const exam = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
@@ -182,6 +183,8 @@ exam.post("/:sessionId/answer", async (c) => {
     duplicate: recordResult === "duplicate",
     isCorrect: isCorrect === 1,
     correctAnswer: question.correct_answer,
+    // Explicit, curated question → lesson-section mapping (never a topic guess).
+    lessonLink: lessonLinkForSourceId(question.source_id),
   });
 });
 
@@ -262,7 +265,10 @@ exam.post("/:sessionId/finish", async (c) => {
 
   // Build results payload with correct answers revealed
   const questionIds = answers.map((a) => a.question_id);
-  const questionsData: Record<number, { text_it: string; correct_answer: number; image_url: string | null }> = {};
+  const questionsData: Record<
+    number,
+    { text_it: string; correct_answer: number; image_url: string | null; source_id: string | null }
+  > = {};
   for (const qId of questionIds) {
     const q = await getQuestionById(c.env.DB, qId);
     if (q) {
@@ -270,6 +276,7 @@ exam.post("/:sessionId/finish", async (c) => {
         text_it: q.text_it,
         correct_answer: q.correct_answer,
         image_url: q.image_url,
+        source_id: q.source_id,
       };
     }
   }
@@ -289,6 +296,7 @@ exam.post("/:sessionId/finish", async (c) => {
       userAnswer: a.user_answer,
       isCorrect: a.is_correct === 1,
       flagged: a.flagged === 1,
+      lessonLink: lessonLinkForSourceId(questionsData[a.question_id]?.source_id),
     })),
   });
 });

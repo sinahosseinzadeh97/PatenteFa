@@ -288,3 +288,26 @@ User feedback: the translate panel should clearly show VERO/FALSO before the exp
 
 ### 19.3 Grammar tab: show infinitive alongside conjugated verbs
 User feedback: when the grammar tab (analyzeGrammar()) lists a verb form from the sentence, it should also show the verb's infinitive (مصدر) next to it. Show the current analyzeGrammar() system prompt verbatim first, then add an explicit instruction: for every verb listed in vocab_suggestions or referenced in grammar_analysis, include its infinitive form alongside the conjugated form found in the sentence — e.g. "avviene (مصدر: avvenire)".
+
+## 21. Round 11 — structured learning path (pilot chapter: Segnali di precedenza)
+
+### 21.1 What exists
+A guided loop — Learn → Practise → Understand mistakes → Review later → See progress — built on the existing features, not beside them:
+- **Lessons** live under the existing فصل‌ها (topics) screen, in a «یادگیری گام‌به‌گام» section above topic practice; home shows a «مسیر امروز» card. No new bottom-nav tab.
+- **Pilot chapter** (3 lessons, 4–5 min each): (1) DARE PRECEDENZA vs STOP + preavvisi, signs 40–43; (2) DIRITTO DI PRECEDENZA, its end, and junction warnings, signs 52/46/47/44; (3) SENSO UNICO ALTERNATO, signs 45/53. Organised around DPR 495/1992 art. 105 (signs where *you* give way vs signs where *others* give way to you).
+- Each lesson: objective → instructional visual (side-by-side comparison, warning-sign road strip, or top-down SVG diagram) → Italian terms (TTS + existing vocab saver) → a wording trap built from two real bank statements (one VERO, one FALSO, same tempting word) → 4 real bank questions with curated feedback → completion.
+
+### 21.2 Rules future changes must keep
+- **Content is curated code** in `src/content/lessons.ts`; it is never regenerated per visit. AI (existing cached theory endpoint) is an optional extra inside feedback, labelled as AI-written.
+- **Questions are referenced by `source_id` with a text + answer snapshot.** The API drops any practice question whose live row drifted (and logs it). Never edit a snapshot to match a changed bank row without re-verifying against the law. Run `npm run verify:lessons` (and `-- --remote` before deploy).
+- **Faithful translation ≠ verdict.** `translation` keeps the claim's polarity even when false; correctness lives in `why`. No keyword-guessing rules: every trap step pairs a true and a false statement that share the word.
+- **Question → lesson routing is explicit** (`related` lists, hand-pruned, one lesson per question). No topic-level fallback. Taxonomy ("è un segnale di …"), traffic-light and motorway-placement questions are deliberately unmapped.
+- **Completion ≠ mastery.** Checkpoints show not started / in progress / completed / due for review; completed is neutral ink, never green. Practice score is shown separately as "first-attempt" results.
+- **Persistence:** `lesson_progress` (furthest step, monotonic; `completed_at` written once) and `lesson_answers` (first answer wins; a wrong answer is queued in `review_queue` exactly once, in one D1 batch). The client never shows a save the server did not confirm.
+- Related practice (10 real questions, due review first) runs in the normal exam runner as `topic_practice`. Home pass rate now counts `mode = 'exam'` sessions only.
+
+### 21.3 AI help during unanswered exam questions
+The §19.2 user override stands: an uncommitted change (2026-08-31/09-01) had re-added a verdict/theory gate; it was removed again in this round. Tutor chat remains post-answer.
+
+### 21.4 Sources (reviewed 2026-09-26)
+Codice della Strada artt. 140, 145; DPR 495/1992 artt. 81 c.7, 105–114 (Normattiva). Recorded in `PILOT_CHAPTER.sources` and shown to learners on each completion screen, with the 2023-bank caveat.

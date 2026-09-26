@@ -147,3 +147,26 @@ CREATE TABLE IF NOT EXISTS support_messages (
 
 CREATE INDEX IF NOT EXISTS idx_support_user ON support_messages(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_support_unread ON support_messages(direction, read_at);
+
+-- Learning path — per-user lesson state. Content lives in src/content/lessons.ts.
+-- See migrations/0015_learning_progress.sql for the idempotency rules.
+CREATE TABLE IF NOT EXISTS lesson_progress (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  lesson_id TEXT NOT NULL,
+  step INTEGER NOT NULL DEFAULT 0,     -- furthest step reached (resume point)
+  started_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at TEXT,                   -- written once, never cleared
+  PRIMARY KEY (user_id, lesson_id)
+);
+
+CREATE TABLE IF NOT EXISTS lesson_answers (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  lesson_id TEXT NOT NULL,
+  question_id INTEGER NOT NULL REFERENCES questions(id),
+  user_answer INTEGER NOT NULL,        -- first answer only
+  is_correct INTEGER NOT NULL,
+  review_queued INTEGER NOT NULL DEFAULT 0,
+  answered_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, lesson_id, question_id)
+);

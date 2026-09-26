@@ -49,6 +49,7 @@ export function renderExamScreen(): string {
       </label>
     </div>
     <p id="ai-toggle-sub" class="ai-toggle-sub">ترجمه، تئوری و گرامر — همین حالا قابل استفاده است</p>
+    <p id="exam-lesson-hint" class="exam-lesson-hint" role="note" hidden></p>
 
     <section id="translate-panel" class="translate-panel" aria-label="کمک آموزشی سؤال">
       <div class="ai-tabs-bar" role="tablist" aria-label="نوع توضیح">

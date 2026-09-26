@@ -23,6 +23,7 @@ import { renderStatsScreen } from "./screens/stats.js";
 import { renderProfileScreen } from "./screens/profile.js";
 import { renderSignsScreen } from "./screens/signs.js";
 import { renderSupportScreen } from "./screens/support.js";
+import { renderLessonScreen } from "./screens/lesson.js";
 import {
   renderIconSprite,
   renderLoading,
@@ -54,6 +55,7 @@ function buildScreens(): string {
     renderProfileScreen(),
     renderSignsScreen(),
     renderSupportScreen(),
+    renderLessonScreen(),
   ].join("\n");
 }
 
@@ -120,6 +122,7 @@ window.onerror = function(msg, url, line, col, err) {
 <script src="/js/navigation.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/exam.js"></script>
+<script src="/js/learn.js"></script>
 </body>
 </html>`;
 }

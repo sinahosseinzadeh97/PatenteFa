@@ -229,8 +229,13 @@ App.renderRichText = function(el, text) {
     state.prevScreen = state.currentScreen;
     state.currentScreen = name;
 
+    // The lesson and exam runners carry their own bottom dock.
+    const bottomNav = document.getElementById('bottom-nav');
+    if (bottomNav) bottomNav.style.display = (name === 'exam' || name === 'lesson') ? 'none' : '';
+
     if (name === 'home')    App.loadHome();
     if (name === 'topics')  App.loadTopics();
+    if ((name === 'home' || name === 'topics') && typeof App.loadLearn === 'function') App.loadLearn();
     if (name === 'vocab')   App.loadVocab();
     if (name === 'stats')   App.loadStats();
     if (name === 'signs')   App.loadSigns();
@@ -1130,6 +1135,7 @@ App.renderRichText = function(el, text) {
     return App.resolveBackNavigation(state.currentScreen, {
       supportFrom: state.supportFrom,
       examReturnScreen: state.examReturnScreen,
+      lessonReturnScreen: state.lessonReturnScreen,
     });
   };
 
@@ -1243,7 +1249,15 @@ App.renderRichText = function(el, text) {
       html += '    </div>';
       html += '  </div>';
 
-      html += '  <div class="topic-card-actions">';
+      // Learning (lessons) and practice (bank questions) stay two separate,
+      // clearly labelled actions — only chapters with curated lessons get the first.
+      const lessonCount = state.learn && state.learn.chapter && state.learn.chapter.topicId === t.id
+        ? state.learn.chapter.lessons.length
+        : 0;
+      html += '  <div class="topic-card-actions' + (lessonCount ? ' has-lessons' : '') + '">';
+      if (lessonCount) {
+        html += '    <button type="button" class="btn btn-quiet btn-full" onclick="App.focusLearnSection()"><svg class="ui-icon"><use href="#i-route"/></svg>' + lessonCount.toLocaleString('fa-IR') + ' درس برای این فصل</button>';
+      }
       html += '    <button type="button" class="btn btn-secondary btn-full" onclick="App.startTopicExam(' + t.id + ')">شروع تمرین ۱۵ سؤالی</button>';
       html += '  </div>';
       html += '</div>';
@@ -1358,7 +1372,7 @@ App.renderRichText = function(el, text) {
       }
 
       // Weak-topic focus card
-      if (data.weakestTopic && data.totalSessions > 0) {
+      if (data.weakestTopic && data.weakestTopic.total >= 10) {
         const card = document.getElementById('home-focus-card');
         card.style.display = '';
         const pct = Math.round(data.weakestTopic.accuracy * 100);
@@ -1380,8 +1394,9 @@ App.renderRichText = function(el, text) {
             const isPass = s.passed;
             const badgeClass = isPass ? 'pass' : 'fail';
             const badgeText = isPass ? 'قبول' : 'نیاز به تلاش بیشتر';
-            const modeText = s.mode === 'exam' ? 'شبیه‌ساز ۳۰ سؤالی' : 'تمرین موضوعی';
-            const scoreText = (s.score !== null ? s.score : (30 - (s.wrongCount || 0))) + ' / ۳۰';
+            const modeText = s.mode === 'exam' ? 'شبیه‌ساز ۳۰ سؤالی' : s.mode === 'review' ? 'مرور اشتباهات' : 'تمرین موضوعی';
+            const total = (s.score || 0) + (s.wrongCount || 0);
+            const scoreText = (s.score || 0).toLocaleString('fa-IR') + ' از ' + total.toLocaleString('fa-IR');
             html += '<div class="home-recent-row">' +
               '<div><div class="home-recent-mode">' + modeText + '</div><div class="home-recent-score">امتیاز: ' + scoreText + '</div></div>' +
               '<span class="home-recent-badge ' + badgeClass + '">' + badgeText + '</span>' +

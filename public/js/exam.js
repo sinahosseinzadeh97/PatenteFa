@@ -234,13 +234,18 @@
         : 'none';
     }
 
-    if (!answered || !result) return;
+    if (!answered || !result) {
+      App.renderExamLessonHint(null);
+      return;
+    }
 
     const selectedBtn = state.answers[q.questionId] === 1 ? veroBtn : falsoBtn;
     const correctBtn = result.correctAnswer === 1 ? veroBtn : falsoBtn;
     if (selectedBtn) selectedBtn.classList.add('answer-selected');
     if (correctBtn) correctBtn.classList.add('answer-correct-choice');
     if (!result.isCorrect && selectedBtn) selectedBtn.classList.add('answer-wrong-choice');
+
+    App.renderExamLessonHint(result);
 
     if (feedback) {
       const correctLabel = result.correctAnswer === 1 ? 'VERO' : 'FALSO';
@@ -249,6 +254,19 @@
         : 'انتخابت نادرست بود — پاسخ صحیح: ' + correctLabel;
       feedback.classList.add(result.isCorrect ? 'correct' : 'wrong', 'is-visible');
     }
+  };
+
+  // After a wrong answer, point to the lesson section that teaches this exact
+  // question (explicit mapping from the server). Text only: leaving mid-session
+  // would abandon it, so the button to open the lesson lives on the results screen.
+  App.renderExamLessonHint = function(result) {
+    const hint = document.getElementById('exam-lesson-hint');
+    if (!hint) return;
+    const link = result && !result.isCorrect ? result.lessonLink : null;
+    hint.hidden = !link;
+    hint.textContent = link
+      ? 'این سؤال در درس «' + link.titleFa + '» توضیح داده شده است. بعد از پایان جلسه می‌توانی از صفحه‌ی نتیجه بازش کنی.'
+      : '';
   };
 
   App.nextQuestion = function() {
@@ -300,6 +318,7 @@
         correctAnswer: result.correctAnswer === 1 ? 1 : 0,
       };
       state.recordedAnswers.add(q.questionId);
+      state.answerResults[q.questionId].lessonLink = result.lessonLink || null;
       App.renderExamTabs();
       App.updateFinishAvailability();
       const currentQuestion = state.questions[state.currentIndex];
@@ -337,7 +356,11 @@
 
   // ── TTS ─────────────────────────────────────────────────────────────────────
   App.speakQuestion = function() {
-    const text = document.getElementById('exam-question-text').textContent;
+    App.speakItalian(document.getElementById('exam-question-text').textContent);
+  };
+
+  // Shared by the exam runner and lessons (Web Speech it-IT voice, §10).
+  App.speakItalian = function(text) {
     if (!text) return;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -345,7 +368,7 @@
       utt.lang = 'it-IT'; utt.rate = 0.9;
       window.speechSynthesis.speak(utt);
     } else {
-      App.toast('TTS در این مرورگر پشتیبانی نمی‌شود');
+      App.toast('پخش صدا روی این دستگاه پشتیبانی نمی‌شود');
     }
   };
 
@@ -702,13 +725,18 @@
     badge.className = 'result-badge ' + (data.passed ? 'pass' : 'fail');
     badge.textContent = data.passed ? 'قبول شدی' : 'نیاز به مرور';
 
-    // New copy voice from design.md
+    // New copy voice from design.md. Practice sessions are shorter than 30 and
+    // finishExamSession allows 1 mistake up to 10 questions, 3 above that.
+    const totalQuestions = Array.isArray(data.answers) && data.answers.length ? data.answers.length : 30;
+    const allowedWrong = totalQuestions <= 10 ? 1 : 3;
     document.getElementById('results-score').textContent =
-      data.score + ' از ۳۰';
+      data.score.toLocaleString('fa-IR') + ' از ' + totalQuestions.toLocaleString('fa-IR');
     document.getElementById('results-detail').textContent =
       data.passed
-        ? data.wrongCount + ' اشتباه؛ حد قبولی را رد نکردی.'
-        : data.wrongCount + ' اشتباه؛ برای قبولی حداکثر ۳ اشتباه مجاز است.';
+        ? data.wrongCount.toLocaleString('fa-IR') + ' اشتباه؛ حد قبولی را رد نکردی.'
+        : data.wrongCount.toLocaleString('fa-IR') + ' اشتباه؛ برای قبولی حداکثر ' + allowedWrong.toLocaleString('fa-IR') + ' اشتباه مجاز است.';
+    const listHeading = document.getElementById('results-list-heading');
+    if (listHeading) listHeading.textContent = 'جزئیات ' + totalQuestions.toLocaleString('fa-IR') + ' سؤال';
 
     const correctCount = Array.isArray(data.answers)
       ? data.answers.filter(function(answer) { return Boolean(answer.isCorrect); }).length
@@ -782,6 +810,17 @@
       back.appendChild(questionLine);
       back.appendChild(answerLine);
       back.appendChild(translateBtn);
+      // Route a mistake back to the exact lesson section that teaches it —
+      // only when the curated mapping exists. The copy stays neutral: we do
+      // not know why the answer was wrong.
+      if (!a.isCorrect && a.lessonLink) {
+        const lessonBtn = document.createElement('button');
+        lessonBtn.type = 'button';
+        lessonBtn.className = 'result-lesson-btn';
+        lessonBtn.textContent = 'مرور همین مبحث در درس «' + a.lessonLink.titleFa + '»';
+        lessonBtn.onclick = function() { App.openLesson(a.lessonLink.lessonId, a.lessonLink.step, 'results'); };
+        back.appendChild(lessonBtn);
+      }
       inner.appendChild(back);
       signCard.appendChild(inner);
       row.appendChild(icon);

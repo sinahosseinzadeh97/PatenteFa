@@ -154,6 +154,7 @@ import { telemetry } from "./api/telemetry.js";
 import { admin } from "./api/admin.js";
 import { profile } from "./api/profile.js";
 import { tutor } from "./api/tutor.js";
+import { learn } from "./api/learn.js";
 
 api.route("/exam", exam);
 api.route("/translate", translate);
@@ -166,6 +167,7 @@ api.route("/telemetry", telemetry);
 api.route("/admin", admin);
 api.route("/profile", profile);
 api.route("/tutor", tutor);
+api.route("/learn", learn);
 
 app.route("/api", api);
 

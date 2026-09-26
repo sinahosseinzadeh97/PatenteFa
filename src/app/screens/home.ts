@@ -21,13 +21,23 @@ export function renderHomeScreen(): string {
       </button>
     </header>
 
+    <section id="home-today" class="today-card" aria-labelledby="home-today-title" aria-busy="true">
+      <div class="today-head">
+        <span class="eyebrow"><svg class="ui-icon"><use href="#i-route"/></svg> مسیر امروز</span>
+        <span id="home-today-minutes" class="today-minutes"></span>
+      </div>
+      <h2 id="home-today-title" class="today-title">در حال آماده‌سازی مسیر امروز…</h2>
+      <ol id="home-today-list" class="today-list"></ol>
+      <div id="home-today-actions" class="today-actions"></div>
+    </section>
+
     <section class="home-primary" aria-labelledby="home-primary-title">
       <div class="home-primary-copy">
         <span class="eyebrow"><svg class="ui-icon"><use href="#i-exam"/></svg> شبیه‌ساز آزمون اصلی</span>
         <h2 id="home-primary-title">آماده‌ای یک آزمون کامل بدهی؟</h2>
         <p>۳۰ سؤال رسمی، ۲۰ دقیقه، با همان حد مجاز ۳ اشتباه.</p>
       </div>
-      <button class="btn btn-primary btn-full home-start-btn" id="btn-start-exam" onclick="App.startExam()">
+      <button class="btn btn-secondary btn-full home-start-btn" id="btn-start-exam" onclick="App.startExam()">
         شروع آزمون جامع
         <svg class="ui-icon"><use href="#i-chevron-left"/></svg>
       </button>
@@ -61,7 +71,7 @@ export function renderHomeScreen(): string {
       <div class="section-heading-row"><div><span class="section-kicker">مسیرهای کوتاه‌تر</span><h2 id="home-tools-heading">انتخاب نوع مطالعه</h2></div></div>
       <div class="home-tool-grid">
         <button type="button" class="home-tool" onclick="App.showScreen('topics')">
-          <svg class="ui-icon"><use href="#i-book"/></svg><span><strong>فصل‌ها</strong><small>تمرین موضوعی</small></span><svg class="ui-icon home-tool-arrow"><use href="#i-chevron-left"/></svg>
+          <svg class="ui-icon"><use href="#i-book"/></svg><span><strong>فصل‌ها</strong><small>درس‌ها و تمرین موضوعی</small></span><svg class="ui-icon home-tool-arrow"><use href="#i-chevron-left"/></svg>
         </button>
         <button type="button" class="home-tool" onclick="App.showScreen('signs')">
           <svg class="ui-icon"><use href="#i-sign"/></svg><span><strong>تابلوها</strong><small>فلش‌کارت تصویری</small></span><svg class="ui-icon home-tool-arrow"><use href="#i-chevron-left"/></svg>

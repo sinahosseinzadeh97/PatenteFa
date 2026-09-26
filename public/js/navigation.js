@@ -29,6 +29,9 @@ window.App = window.App || {};
     if (currentScreen === 'support') {
       return { kind: 'close-support', target: state.supportFrom || 'home' };
     }
+    if (currentScreen === 'lesson') {
+      return { kind: 'screen', target: state.lessonReturnScreen || 'topics' };
+    }
     if (currentScreen === 'tutor') {
       return { kind: 'screen', target: 'results' };
     }
