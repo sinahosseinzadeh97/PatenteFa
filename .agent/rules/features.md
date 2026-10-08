@@ -311,3 +311,20 @@ The §19.2 user override stands: an uncommitted change (2026-08-31/09-01) had re
 
 ### 21.4 Sources (reviewed 2026-09-26)
 Codice della Strada artt. 140, 145; DPR 495/1992 artt. 81 c.7, 105–114 (Normattiva). Recorded in `PILOT_CHAPTER.sources` and shown to learners on each completion screen, with the 2023-bank caveat.
+
+## 22. Round 12 — chapter 2: Precedenza negli incroci (right of way at intersections)
+
+### 22.1 What exists
+- Chapter `precedenza-incroci` in `src/content/lessons-incroci.ts`, registered after the pilot in `CHAPTERS` (`src/content/lessons.ts`). Four lessons, 4–5 min each: (1) reading a figure — letters, arrows, "your right", signs (figs 640, 633); (2) no signs: give way to the right, vehicles on rails, no privilege for bus/filobus/eccezionale (figs 614, 613); (3) turning and moving together (figs 643, 637); (4) DARE PRECEDENZA / STOP at a junction (figs 633, 655). The proposed order was changed: turning comes before signs because every sign figure in the bank also needs the left-turn rule.
+- "Who goes first?" (`order` step) and guided reading (`scenario` step) render **original SVG redrawings** of bank figures (`src/content/crossings.ts`, `public/js/crossing.js`), labelled as educational exercises. Tap-to-order with undo/reset; the verdict comes from `POST /api/learn/lessons/:id/order` (pure `checkPassageOrder`, stateless, not stored); then a step-by-step explanation with highlighted vehicles/signs, playback, replay and manual stepping. Reduced motion: no animation or autoplay, static steps, full text list.
+- Mistakes route back to the right lesson section through explicit `related` lists (202 questions), as in the pilot. No migration: progress is keyed by lesson id.
+
+### 22.2 Rules future changes must keep
+- **The order is the bank's, proven in tests.** Each scenario's `phases` must follow from its VERO `evidence` statements alone, and contradict every FALSO one (`tests/crossings.test.ts`). `move` must match the arm angles. Evidence snapshots are checked by `npm run verify:lessons`.
+- **Never annotate or animate the bank's raster figures.** They carry a third-party mark (patentati.it) and their licence is not established by the dataset's MIT notice. Show them only as the app already does (question image, "compare with the original"); redraw anything we highlight or move.
+- **Only verified figures.** Circular "everyone has someone on the right" figures (617, 638, 642), complex five-arm figures (634, 651, 652, 654, 657–668) and roundabouts are deliberately unmapped and unused.
+- **No client copy of the order rule.** `public/js/crossing.js` renders the server verdict; it only uses `phases` to animate the explanation.
+- Left turns are drawn passing with the junction centre on the driver's right (art. 154 c.3 lett. b).
+
+### 22.3 Sources (reviewed 2026-10-08)
+Codice della Strada (testo vigente, agg. 24/04/2026) artt. 145 c.1–4, 154 c.1 lett. a and c.3 lett. a–b, 177 c.3; DPR 495/1992 artt. 106–107. Bank statements cited by id in the content (practice, traps, scenario evidence). No conflict found between these articles and the 2023 bank answers for the figures used; the 2023-bank caveat still applies.

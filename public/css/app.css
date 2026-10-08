@@ -2301,3 +2301,90 @@ button.home-metric:hover { border-color: var(--amber); background: var(--amber-d
   .lesson-body { padding-top: 26px; }
   .chapter-actions { grid-template-columns: 1fr 1fr; }
 }
+
+/* ── "Who goes first?" — junction scenarios (public/js/crossing.js) ───────── */
+.xing-figure { margin: 4px 0 10px; scroll-margin-top: 100px; }
+.xing-svg { display: block; width: 100%; max-width: 420px; height: auto; margin-inline: auto; border-radius: var(--radius-lg); }
+.xg-ground { fill: #1a1c22; stroke: var(--border-subtle); }
+.xg-road { fill: #2f323c; }
+.xg-centre { stroke: rgba(242, 240, 235, .5); stroke-width: 1.5; stroke-dasharray: 8 7; }
+.xg-lane { stroke: rgba(242, 240, 235, .3); stroke-width: 1; stroke-dasharray: 5 6; }
+.xg-rail { stroke: #9aa0af; stroke-width: 1.4; }
+.xg-teeth { fill: #f2f0eb; }
+.xg-stopline { stroke: #f2f0eb; stroke-width: 3; }
+.xg-arm-hi { fill: transparent; }
+.xg-arm-hi.is-on { fill: rgba(232, 163, 61, .16); stroke: var(--amber); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.xg-sign polygon { fill: #fff; stroke: #c1272d; stroke-width: 3; stroke-linejoin: round; }
+.xg-sign text { fill: #c1272d; font: 800 5.5px 'Public Sans', sans-serif; }
+.xg-sign-ring { fill: none; stroke: transparent; stroke-width: 2.5; }
+.xg-sign.is-on .xg-sign-ring { stroke: var(--amber); }
+.xg-path { fill: none; stroke: rgba(242, 240, 235, .42); stroke-width: 1.8; stroke-dasharray: 4 4; }
+.xg-path.is-active { stroke: var(--amber); stroke-width: 2.6; stroke-dasharray: none; }
+#xg-arrow path { fill: rgba(242, 240, 235, .7); }
+.xg-vehicle { transition: opacity .2s ease; }
+.xg-vehicle.is-dim { opacity: .38; }
+.xg-vehicle.is-done { opacity: .5; }
+.xg-front { fill: rgba(20, 21, 26, .55); }
+.xg-ring { fill: none; stroke: transparent; stroke-width: 2.5; }
+.xg-vehicle.is-active .xg-ring { stroke: #f2f0eb; }
+.xg-badge circle { fill: #f2f0eb; stroke: #14151a; stroke-width: 1.5; }
+.xg-badge text { fill: #14151a; font: 800 12px 'Barlow Condensed', 'Public Sans', sans-serif; }
+.xg-vehicle.is-active .xg-badge circle { fill: var(--amber); }
+@media (prefers-reduced-motion: reduce) { .xg-vehicle { transition: none; } }
+
+.xing-caption { margin-top: 8px; display: flex; align-items: flex-start; gap: 7px; color: var(--ink-muted); font-size: .72rem; line-height: 1.8; }
+.xing-caption .ui-icon { flex: 0 0 auto; width: 15px; height: 15px; margin-top: 3px; color: var(--amber); }
+.xing-legend { list-style: none; margin: 0 0 14px; padding: 10px 12px; display: grid; gap: 6px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface); font-size: .82rem; line-height: 1.8; }
+.xing-legend li { display: flex; align-items: flex-start; gap: 9px; }
+.xing-letter { flex: 0 0 auto; min-width: 28px; height: 28px; padding: 0 6px; display: inline-grid; place-items: center; border-radius: 50%; background: var(--ink); color: #14151a; font: 800 .95rem 'Barlow Condensed', 'Public Sans', sans-serif; }
+.xing-letter.is-sign { background: transparent; color: var(--amber); border: 1.5px solid var(--amber); font-size: .8rem; }
+
+.xing-panel { margin-top: 4px; }
+.xing-instruction { margin: 0 0 10px; display: flex; align-items: flex-start; gap: 8px; font-size: .88rem; line-height: 1.9; }
+.xing-instruction .ui-icon { flex: 0 0 auto; margin-top: 5px; color: var(--amber); }
+.xing-slots { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.xing-slot { min-width: 64px; min-height: 44px; padding: 6px 10px; display: flex; align-items: center; justify-content: center; gap: 7px; border: 1.5px dashed var(--border); border-radius: var(--radius-md); color: var(--ink-muted); font-size: .8rem; }
+.xing-slot.is-filled { border-style: solid; border-color: var(--amber); background: var(--amber-dim); color: var(--ink); }
+.xing-slot-num { font-weight: 700; }
+.xing-picks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.xing-pick { min-height: 56px; padding: 8px 10px; display: flex; align-items: center; gap: 9px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); color: var(--ink); font: inherit; text-align: right; cursor: pointer; }
+.xing-pick:hover:not(:disabled) { border-color: var(--amber); }
+.xing-pick:disabled { opacity: .45; cursor: default; }
+.xing-pick[aria-pressed="true"] { opacity: .35; }
+.xing-pick-copy { min-width: 0; display: flex; flex-direction: column; font-size: .8rem; line-height: 1.5; }
+.xing-pick-copy small { color: var(--ink-muted); font-size: .7rem; }
+.xing-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.xing-actions .xing-submit { margin-inline-start: auto; }
+.xing-actions .btn:disabled { opacity: .4; box-shadow: none; }
+
+.xing-verdict { margin: 0 0 10px; padding: 11px 12px; display: flex; align-items: flex-start; gap: 8px; border-radius: var(--radius-md); font-size: .92rem; line-height: 1.8; outline: none; }
+.xing-verdict .ui-icon { flex: 0 0 auto; margin-top: 4px; }
+.xing-verdict.is-valid { border: 1px solid rgba(74, 222, 128, .45); background: var(--go-dim); }
+.xing-verdict.is-valid .ui-icon { color: var(--go-light); }
+.xing-verdict.is-invalid { border: 1px solid rgba(248, 113, 113, .45); background: var(--stop-dim); }
+.xing-verdict.is-invalid .ui-icon { color: var(--stop-light); }
+.xing-mistake, .xing-note, .xing-answer { margin: 0 0 8px; font-size: .86rem; line-height: 1.95; }
+.xing-note { color: #f0c47f; }
+.xing-answer { color: var(--ink-muted); }
+.xing-answer b, .xing-verdict b, .xing-mistake b { color: var(--ink); font-family: 'Public Sans', sans-serif; }
+
+.xing-stepper { margin: 0 0 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); overflow: hidden; }
+.xing-stepper-bar { padding: 6px 8px; display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border-subtle); }
+.xing-stepper-count { min-width: 80px; text-align: center; font-size: .8rem; font-weight: 700; }
+.xing-stepper-bar .btn { margin-inline-start: auto; }
+.xing-current { margin: 0; padding: 12px 14px; min-height: 84px; font-size: .9rem; line-height: 2; }
+.xing-all { border-top: 1px solid var(--border-subtle); }
+.xing-all summary { min-height: 44px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; color: var(--ink-muted); font-size: .8rem; cursor: pointer; }
+.xing-steps { list-style: none; margin: 0; padding: 0 6px 6px; display: grid; gap: 4px; }
+.xing-step-btn { width: 100%; min-height: 48px; padding: 9px 10px; display: flex; align-items: flex-start; gap: 9px; border: 1px solid transparent; border-radius: var(--radius-md); background: transparent; color: var(--ink-muted); font: inherit; font-size: .84rem; line-height: 1.9; text-align: right; cursor: pointer; }
+.xing-steps li.is-current .xing-step-btn { border-color: rgba(232, 163, 61, .5); background: var(--amber-dim); color: var(--ink); }
+.xing-step-num { flex: 0 0 auto; width: 24px; height: 24px; margin-top: 3px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid var(--border); font-size: .72rem; font-weight: 800; }
+.xing-steps li.is-current .xing-step-num { border-color: var(--amber); background: var(--amber); color: #17181c; }
+.xing-retry { margin-top: 10px; }
+
+.xing-original { margin-top: 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface); }
+.xing-original summary { min-height: 44px; padding: 10px 12px; display: flex; align-items: center; gap: 8px; color: var(--ink-muted); font-size: .8rem; cursor: pointer; }
+.xing-original img { display: block; width: min(320px, calc(100% - 24px)); height: auto; margin: 0 auto 12px; border-radius: var(--radius-sm); background: #f7f7f4; }
+
+/* Bank intersection figures are whole diagrams: show them large, not as a sign tile. */
+.practice-sign.is-figure img { width: min(340px, 100%); max-width: 100%; max-height: none; padding: 0; }

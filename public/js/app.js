@@ -1251,8 +1251,8 @@ App.renderRichText = function(el, text) {
 
       // Learning (lessons) and practice (bank questions) stay two separate,
       // clearly labelled actions — only chapters with curated lessons get the first.
-      const lessonCount = state.learn && state.learn.chapter && state.learn.chapter.topicId === t.id
-        ? state.learn.chapter.lessons.length
+      const lessonCount = state.learn && state.learn.chapters
+        ? state.learn.chapters.filter(function(c) { return c.topicId === t.id; }).reduce(function(n, c) { return n + c.lessons.length; }, 0)
         : 0;
       html += '  <div class="topic-card-actions' + (lessonCount ? ' has-lessons' : '') + '">';
       if (lessonCount) {

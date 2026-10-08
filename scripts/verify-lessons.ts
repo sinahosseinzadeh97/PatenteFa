@@ -2,20 +2,20 @@
 /**
  * scripts/verify-lessons.ts
  *
- * Read-only check that the curated pilot lessons (src/content/lessons.ts)
- * still agree with the question bank in D1. Run after editing lesson content
+ * Read-only check that every curated lesson chapter (src/content/lessons.ts,
+ * lessons-incroci.ts, crossings.ts) still agrees with the question bank in D1. Run after editing lesson content
  * and before deploying:
  *
  *   npm run verify:lessons            # local D1
  *   npm run verify:lessons -- --remote  # production D1 (SELECT only)
  *
- * Fails when a practice/trap question's text or answer key no longer matches
- * its reviewed snapshot, or when a mapped question is missing or shows a sign
- * outside this chapter. The API already drops drifted practice questions at
+ * Fails when a practice/trap question or a "Who goes first?" evidence statement
+ * no longer matches its reviewed snapshot (text, answer key, image), or when a
+ * mapped question is missing or shows an image outside its chapter. The API already drops drifted practice questions at
  * runtime; this script is how a human finds out.
  */
 import { execFileSync } from "node:child_process";
-import { PILOT_CHAPTER, relatedSourceIds, type Statement } from "../src/content/lessons.js";
+import { CHAPTERS, relatedSourceIds, type Chapter, type Statement } from "../src/content/lessons.js";
 
 interface Row {
   source_id: string;
@@ -43,35 +43,59 @@ function query(sourceIds: string[]): Row[] {
   return rows;
 }
 
-const chapterSigns = new Set(PILOT_CHAPTER.lessons.flatMap((lesson) => lesson.signs));
 const signNumber = (url: string | null) => (url ? Number(url.match(/(\d+)\.png$/)?.[1]) : null);
 
-const snapshots: Statement[] = PILOT_CHAPTER.lessons.flatMap((lesson) => [
-  ...lesson.practice,
-  ...lesson.steps.flatMap((step) => (step.kind === "trap" ? step.examples : [])),
-]);
-const ids = [...new Set([...snapshots.map((s) => s.sourceId), ...PILOT_CHAPTER.lessons.flatMap(relatedSourceIds)])];
+interface Snapshot {
+  sourceId: string;
+  textIt: string;
+  answer: number;
+  image: number | null;
+}
+
+function snapshots(chapter: Chapter): Snapshot[] {
+  const statements: Statement[] = chapter.lessons.flatMap((lesson) => [
+    ...lesson.practice,
+    ...lesson.steps.flatMap((step) => (step.kind === "trap" ? step.examples : [])),
+  ]);
+  const evidence = chapter.lessons.flatMap((lesson) =>
+    lesson.steps.flatMap((step) =>
+      step.kind === "order" || step.kind === "scenario"
+        ? step.crossing.evidence.map((e) => ({ ...e, image: step.crossing.figure }))
+        : []
+    )
+  );
+  return [
+    ...statements.map((s) => ({ sourceId: s.sourceId, textIt: s.textIt, answer: s.answer, image: s.sign ?? s.figure ?? null })),
+    ...evidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image })),
+  ];
+}
+
+const allSnapshots = CHAPTERS.flatMap(snapshots);
+const ids = [...new Set([...allSnapshots.map((s) => s.sourceId), ...CHAPTERS.flatMap((c) => c.lessons.flatMap(relatedSourceIds))])];
 const rows = new Map(query(ids).map((row) => [row.source_id, row]));
 const problems: string[] = [];
 
-for (const statement of snapshots) {
-  const row = rows.get(statement.sourceId);
-  if (!row) problems.push(`${statement.sourceId}: missing from the bank`);
-  else if (row.text_it.trim() !== statement.textIt.trim()) problems.push(`${statement.sourceId}: text changed`);
-  else if (row.correct_answer !== statement.answer) problems.push(`${statement.sourceId}: answer key changed`);
-  else if ((statement.sign ?? null) !== signNumber(row.image_url)) problems.push(`${statement.sourceId}: image changed`);
+for (const snapshot of allSnapshots) {
+  const row = rows.get(snapshot.sourceId);
+  if (!row) problems.push(`${snapshot.sourceId}: missing from the bank`);
+  else if (row.text_it.trim() !== snapshot.textIt.trim()) problems.push(`${snapshot.sourceId}: text changed`);
+  else if (row.correct_answer !== snapshot.answer) problems.push(`${snapshot.sourceId}: answer key changed`);
+  else if (snapshot.image !== signNumber(row.image_url)) problems.push(`${snapshot.sourceId}: image changed`);
 }
-for (const id of ids) {
-  const row = rows.get(id);
-  if (!row) problems.push(`${id}: mapped but missing from the bank`);
-  else if (row.image_url && !chapterSigns.has(signNumber(row.image_url) ?? -1)) {
-    problems.push(`${id}: shows sign ${signNumber(row.image_url)}, outside this chapter`);
+for (const chapter of CHAPTERS) {
+  const images = new Set(chapter.lessons.flatMap((lesson) => [...lesson.signs, ...(lesson.figures ?? [])]));
+  for (const id of chapter.lessons.flatMap(relatedSourceIds)) {
+    const row = rows.get(id);
+    if (!row) problems.push(`${id}: mapped but missing from the bank`);
+    else if (row.image_url && !images.has(signNumber(row.image_url) ?? -1)) {
+      problems.push(`${id}: shows image ${signNumber(row.image_url)}, outside chapter ${chapter.id}`);
+    }
   }
 }
 
-console.log(`Checked ${snapshots.length} reviewed statements and ${ids.length} mapped questions (${target}).`);
+console.log(`Checked ${allSnapshots.length} reviewed statements and ${ids.length} mapped questions (${target}).`);
 if (problems.length > 0) {
   console.error(problems.map((p) => `  ✗ ${p}`).join("\n"));
   process.exit(1);
 }
-console.log("All pilot lesson mappings match the bank.");
+console.log("All lesson mappings match the bank.");

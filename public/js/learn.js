@@ -91,6 +91,10 @@
     }
   };
 
+  function allLessons() {
+    return (state.learn.chapters || []).reduce(function(list, chapter) { return list.concat(chapter.lessons); }, []);
+  }
+
   // ── Today's path (home) ─────────────────────────────────────────────────────
   function todayCopy(item) {
     if (item.kind === 'lesson') {
@@ -101,7 +105,7 @@
         title: item.titleFa,
         detail: resume
           ? 'از قدم ' + fa(Math.min(item.step + 1, item.stepCount)) + ' از ' + fa(item.stepCount) + ' ادامه بده'
-          : 'درس کوتاه با توضیح، مقایسه‌ی تابلوها و چند سؤال واقعی',
+          : 'درس کوتاه با توضیح، تصویر و چند سؤال واقعی',
         action: resume ? 'ادامه‌ی درس' : 'شروع درس',
       };
     }
@@ -118,7 +122,7 @@
       icon: 'i-target',
       tag: 'تمرین',
       title: fa(item.count) + ' سؤال واقعی مرتبط با درس‌هایت',
-      detail: 'از بانک سؤال، درباره‌ی تابلوهایی که خواندی',
+      detail: 'از بانک سؤال، درباره‌ی درس‌هایی که خواندی',
       action: 'شروع تمرین',
     };
   }
@@ -128,7 +132,7 @@
     if (!card || !state.learn) return;
     var today = state.learn.today || { items: [], minutes: 0 };
     var items = today.items || [];
-    var lessons = state.learn.chapter.lessons || [];
+    var lessons = allLessons();
     var isNewLearner = lessons.every(function(l) { return l.state === 'not_started'; }) && !state.learn.reviewDue;
 
     document.getElementById('home-today-title').textContent = items.length === 0
@@ -181,14 +185,24 @@
   App.renderChapterRoute = function() {
     var box = document.getElementById('learn-chapter');
     if (!box || !state.learn) return;
-    var chapter = state.learn.chapter;
+    var chapters = state.learn.chapters || [];
+    // One recommended stop across all chapters: the lesson today's path starts with.
+    var first = (state.learn.today && state.learn.today.items || []).find(function(i) { return i.kind === 'lesson'; });
+    box.innerHTML = chapters.map(function(chapter, ci) {
+      return chapterCardHtml(chapter, ci, first ? first.lessonId : null);
+    }).join('') +
+      '<p class="chapter-note">«خوانده شد» یعنی درس را تا آخر رفته‌ای، نه اینکه به آن مسلطی. تسلط را مرورها و تمرین‌های بعدی نشان می‌دهند.</p>';
+  };
+
+  function chapterCardHtml(chapter, ci, recommendedId) {
     var lessons = chapter.lessons;
     var current = lessons.find(function(l) { return l.state === 'in_progress'; }) ||
+      lessons.find(function(l) { return l.id === recommendedId; }) ||
       lessons.find(function(l) { return l.state === 'not_started'; });
     var doneCount = lessons.filter(function(l) { return l.state === 'completed'; }).length;
 
     var stops = lessons.map(function(lesson, i) {
-      var st = stopState(lesson, current && current.id);
+      var st = stopState(lesson, recommendedId);
       var marker = lesson.state === 'completed' ? icon('i-check') : fa(i + 1);
       var meta = [st.label, fa(lesson.minutes) + ' دقیقه'];
       if (lesson.practice.answered > 0) {
@@ -211,30 +225,29 @@
     }).join('');
 
     var primary = current
-      ? '<button type="button" class="btn btn-primary btn-full" onclick="App.openLesson(\'' + esc(current.id) + '\', undefined, \'topics\')">' +
+      ? '<button type="button" class="btn ' + (current.id === recommendedId || current.state === 'in_progress' ? 'btn-primary' : 'btn-secondary') +
+          ' btn-full" onclick="App.openLesson(\'' + esc(current.id) + '\', undefined, \'topics\')">' +
           '<span>' + (current.state === 'in_progress' ? 'ادامه‌ی درس ' : 'شروع درس ') + fa(lessons.indexOf(current) + 1) + '</span>' + icon('i-chevron-left') + '</button>'
       : '';
     var practice = doneCount > 0
-      ? '<button type="button" class="btn ' + (current ? 'btn-secondary' : 'btn-primary') + ' btn-full" onclick="App.startLessonPractice(null)">' +
+      ? '<button type="button" class="btn btn-secondary btn-full" onclick="App.startLessonPractice(null)">' +
           icon('i-target') + '<span>تمرین ۱۰ سؤال واقعی از درس‌های خوانده‌شده</span></button>'
       : '';
 
-    box.innerHTML =
-      '<article class="chapter-card">' +
+    return '<article class="chapter-card">' +
         '<header class="chapter-head">' +
           '<div class="chapter-head-copy">' +
-            '<span class="chapter-kicker">فصل ' + fa(chapter.topicId) + '، ' + fa(lessons.length) + ' درس کوتاه</span>' +
+            '<span class="chapter-kicker">فصل ' + fa(ci + 1) + ' از ' + fa(state.learn.chapters.length) + '، ' + fa(lessons.length) + ' درس کوتاه</span>' +
             '<h3 class="chapter-title">' + esc(chapter.titleFa) + '</h3>' +
             itSpan(chapter.nameIt, 'chapter-it') +
             '<p class="chapter-summary">' + esc(chapter.summaryFa) + '</p>' +
           '</div>' +
           '<div class="chapter-count"><strong>' + fa(doneCount) + ' از ' + fa(lessons.length) + '</strong><small>خوانده شده</small></div>' +
         '</header>' +
-        '<ol class="route" aria-label="مسیر درس‌های این فصل">' + stops + '</ol>' +
+        '<ol class="route" aria-label="مسیر درس‌های ' + esc(chapter.titleFa) + '">' + stops + '</ol>' +
         '<div class="chapter-actions">' + primary + practice + '</div>' +
-        '<p class="chapter-note">«خوانده شد» یعنی درس را تا آخر رفته‌ای، نه اینکه به آن مسلطی. تسلط را مرورها و تمرین‌های بعدی نشان می‌دهند.</p>' +
       '</article>';
-  };
+  }
 
   App.focusLearnSection = function() {
     var section = document.getElementById('learn-section');
@@ -369,6 +382,7 @@
     var steps = lessonSteps();
     var step = steps[state.lessonStep];
     if (step.type === 'practice' && !state.lesson.answers[step.question.questionId]) return;
+    if (orderPending(step)) return;
     if (steps[state.lessonStep + 1] && steps[state.lessonStep + 1].type === 'done') {
       App.finishLesson();
       return;
@@ -418,6 +432,8 @@
           '<span>بازگشت به سؤال تمرین</span></button>'
       : '';
     body.innerHTML = '<div class="lesson-step' + (options.direction === 'back' ? ' enter-back' : ' enter-forward') + '">' + banner + html + '</div>';
+    if (step.type === 'content' && (step.content.kind === 'scenario' || step.content.kind === 'order')) App.mountCrossing(step.content, step.index);
+    else App.leaveCrossing();
 
     if (step.type === 'practice') {
       var statement = document.getElementById('lesson-statement');
@@ -445,11 +461,27 @@
     if (step.type === 'practice' && !state.lesson.answers[step.question.questionId]) {
       next.disabled = true;
       label.textContent = 'اول جواب بده';
+    } else if (orderPending(step)) {
+      next.disabled = true;
+      label.textContent = 'اول ترتیب را بررسی کن';
     } else {
       next.disabled = state.lessonFinishPending;
       label.textContent = state.lessonFinishPending ? 'در حال ثبت…' : nextIsDone ? 'پایان درس' : 'بعدی';
     }
   }
+
+  /** A "Who goes first?" step blocks Next only the first time through. */
+  function orderPending(step) {
+    return step.type === 'content' && step.content.kind === 'order' &&
+      state.lessonStep >= state.lessonMaxStep && state.lesson.progress.state !== 'completed' &&
+      !App.crossingDone(step.index);
+  }
+
+  App.refreshLessonDock = function() {
+    if (!state.lesson) return;
+    var steps = lessonSteps();
+    updateLessonDock(steps[state.lessonStep], steps);
+  };
 
   function stepHeading(title) {
     return '<h2 class="lesson-step-title" tabindex="-1" data-step-heading>' + esc(title) + '</h2>';
@@ -473,6 +505,7 @@
     if (content.kind === 'diagram') return diagramHtml(content);
     if (content.kind === 'terms') return termsHtml(content, index);
     if (content.kind === 'trap') return trapHtml(content, index);
+    if (content.kind === 'scenario' || content.kind === 'order') return App.crossingStepHtml(content, index);
     return '';
   }
 
@@ -484,7 +517,7 @@
     return '<p class="lesson-meta">' + minutesLabel(lesson.minutes) + '، ' + fa(lesson.stepCount) + ' قدم کوتاه</p>' +
       '<h2 class="lesson-step-title lesson-hero-title" tabindex="-1" data-step-heading>' + esc(lesson.titleFa) + '</h2>' +
       itSpan(lesson.titleIt, 'lesson-hero-it') +
-      '<div class="lesson-sign-strip" aria-hidden="true">' + signs + '</div>' +
+      (signs ? '<div class="lesson-sign-strip" aria-hidden="true">' + signs + '</div>' : '') +
       '<section class="lesson-block"><h3>' + icon('i-target') + 'هدف این درس</h3><p>' + esc(content.objective) + '</p></section>' +
       '<section class="lesson-block"><h3>' + icon('i-help') + 'چرا مهم است</h3><p>' + esc(content.why) + '</p></section>' +
       ruleLine(content.rule);
@@ -632,6 +665,7 @@
           (example.sign ? '<span class="sign-tile sign-tile-sm"><img src="' + signUrl(example.sign) + '" alt="تصویر تابلوی همین سؤال" loading="lazy" /></span>' : '') +
           '<p class="statement-it" dir="ltr" lang="it">' + esc(example.textIt) + '</p>' +
         '</div>' +
+        (example.figure ? '<figure class="practice-sign is-figure"><img src="' + signUrl(example.figure) + '" alt="شکل ' + esc(fa(example.figure)) + ' از بانک سؤال" loading="lazy" /></figure>' : '') +
         chunksHtml(example.chunks) +
         '<p class="faithful"><span class="faithful-label">ترجمه‌ی وفادار</span>' + esc(example.translation) + '</p>' +
         '<button type="button" class="btn btn-secondary btn-sm" aria-expanded="false" aria-controls="' + id + '" onclick="App.revealTrap(\'' + id + '\', this)">درست است یا غلط؟ ببین</button>' +
@@ -661,7 +695,8 @@
     var head = '<p class="lesson-meta">تمرین ' + fa(step.number) + ' از ' + fa(step.total) + '، سؤال واقعی بانک</p>' +
       '<h2 class="visually-hidden" tabindex="-1" data-step-heading>تمرین ' + fa(step.number) + '</h2>';
     var sign = q.imageUrl
-      ? '<figure class="practice-sign"><img src="' + esc(q.imageUrl) + '" alt="تصویر تابلوی مربوط به این سؤال" /></figure>'
+      ? '<figure class="practice-sign' + (q.isFigure ? ' is-figure' : '') + '"><img src="' + esc(q.imageUrl) + '" alt="' +
+          (q.isFigure ? 'شکلِ تقاطعِ مربوط به این سؤال' : 'تصویر تابلوی مربوط به این سؤال') + '" /></figure>'
       : '';
     var statement = '<p id="lesson-statement" class="statement-it practice-statement" dir="ltr" lang="it">' + esc(q.textIt) + '</p>';
     var tools = '<div class="practice-tools">' +
@@ -859,7 +894,7 @@
     var reviewed = new Date(data.chapter.reviewedOn + 'T12:00:00Z').toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
     var primary = c.next
       ? '<button type="button" class="btn btn-primary btn-full" onclick="App.openLesson(\'' + esc(c.next.lessonId) + '\', undefined, \'' + esc(state.lessonReturnScreen) + '\')">' +
-          '<span>درس بعدی: ' + esc(c.next.titleFa) + '</span>' + icon('i-chevron-left') + '</button>'
+          '<span>' + (c.next.chapterTitleFa ? 'فصل بعد، «' + esc(c.next.chapterTitleFa) + '»: ' : 'درس بعدی: ') + esc(c.next.titleFa) + '</span>' + icon('i-chevron-left') + '</button>'
       : '<button type="button" class="btn btn-primary btn-full" onclick="App.startLessonPractice(null)">' + icon('i-target') +
           '<span>تمرین ۱۰ سؤال واقعی از همه‌ی درس‌ها</span></button>';
 

@@ -122,6 +122,7 @@ window.onerror = function(msg, url, line, col, err) {
 <script src="/js/navigation.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/exam.js"></script>
+<script src="/js/crossing.js"></script>
 <script src="/js/learn.js"></script>
 </body>
 </html>`;

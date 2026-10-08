@@ -4,10 +4,11 @@
  * initData + approval middleware in src/index.ts. Every handler reads the
  * learner from c.get("userId"); nothing here accepts a user id from the client.
  *
- *   GET  /api/learn                          chapter route + today's path
+ *   GET  /api/learn                          every chapter's route + today's path
  *   GET  /api/learn/lessons/:lessonId        lesson content + this user's progress
  *   POST /api/learn/lessons/:lessonId/progress   { step }            (monotonic)
  *   POST /api/learn/lessons/:lessonId/answer     { questionId, answer } (first answer wins)
+ *   POST /api/learn/lessons/:lessonId/order      { step, sequence }  ("Who goes first?", stateless)
  *   POST /api/learn/lessons/:lessonId/complete                         (idempotent)
  *   POST /api/learn/practice                 { lessonId? } → practice session
  */
@@ -15,9 +16,11 @@
 import { Hono } from "hono";
 import type { AppEnv, AppVariables } from "../types.js";
 import {
-  PILOT_CHAPTER,
+  CHAPTERS,
+  chapterOfLesson,
   findLesson,
   lessonStepCount,
+  type Chapter,
   type Lesson,
 } from "../content/lessons.js";
 import {
@@ -35,6 +38,7 @@ import { getQuestionById, replaceActiveExamSession } from "../db/queries.js";
 import {
   PRACTICE_SET_SIZE,
   buildTodayPath,
+  checkPassageOrder,
   orderPracticeCandidates,
   practiceSourceIds,
   resolvePracticeQuestions,
@@ -44,10 +48,27 @@ import { nextMorningISO } from "../lib/srs.js";
 
 const learn = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
-function nextLessonAfter(lesson: Lesson): { lessonId: string; titleFa: string } | null {
-  const index = PILOT_CHAPTER.lessons.findIndex((l) => l.id === lesson.id);
-  const next = PILOT_CHAPTER.lessons[index + 1];
-  return next ? { lessonId: next.id, titleFa: next.titleFa } : null;
+/** The next lesson in this chapter, or the first lesson of the next chapter. */
+function nextLessonAfter(
+  lesson: Lesson
+): { lessonId: string; titleFa: string; chapterTitleFa: string | null } | null {
+  const lessons = CHAPTERS.flatMap((chapter) => chapter.lessons.map((l) => ({ chapter, lesson: l })));
+  const index = lessons.findIndex((entry) => entry.lesson.id === lesson.id);
+  const next = lessons[index + 1];
+  if (!next) return null;
+  const sameChapter = next.chapter.lessons.some((l) => l.id === lesson.id);
+  return {
+    lessonId: next.lesson.id,
+    titleFa: next.lesson.titleFa,
+    chapterTitleFa: sameChapter ? null : next.chapter.titleFa,
+  };
+}
+
+/** Both the lesson and its chapter; every lesson id belongs to exactly one chapter. */
+function lessonFromParam(lessonId: string): { lesson: Lesson; chapter: Chapter } | null {
+  const lesson = findLesson(lessonId);
+  const chapter = lesson && chapterOfLesson(lesson.id);
+  return lesson && chapter ? { lesson, chapter } : null;
 }
 
 async function resolvedPractice(db: D1Database, lesson: Lesson) {
@@ -71,18 +92,18 @@ learn.get("/", async (c) => {
   ]);
   // Every bank question carries a source_id, so this is the full due count.
   const reviewDue = dueSourceIds.length;
-  const lessons = summarizeLessons(PILOT_CHAPTER, progress, answers, dueSourceIds);
+  const chapters = CHAPTERS.map((chapter) => ({
+    id: chapter.id,
+    topicId: chapter.topicId,
+    nameIt: chapter.nameIt,
+    titleFa: chapter.titleFa,
+    summaryFa: chapter.summaryFa,
+    lessons: summarizeLessons(chapter, progress, answers, dueSourceIds),
+  }));
 
   return c.json({
-    chapter: {
-      id: PILOT_CHAPTER.id,
-      topicId: PILOT_CHAPTER.topicId,
-      nameIt: PILOT_CHAPTER.nameIt,
-      titleFa: PILOT_CHAPTER.titleFa,
-      summaryFa: PILOT_CHAPTER.summaryFa,
-      lessons,
-    },
-    today: buildTodayPath(lessons, reviewDue),
+    chapters,
+    today: buildTodayPath(chapters.flatMap((chapter) => chapter.lessons), reviewDue),
     reviewDue,
   });
 });
@@ -90,8 +111,9 @@ learn.get("/", async (c) => {
 // ── GET /api/learn/lessons/:lessonId ──────────────────────────────────────────
 learn.get("/lessons/:lessonId", async (c) => {
   const userId = c.get("userId");
-  const lesson = findLesson(c.req.param("lessonId"));
-  if (!lesson) return c.json({ error: "درس پیدا نشد." }, 404);
+  const found = lessonFromParam(c.req.param("lessonId"));
+  if (!found) return c.json({ error: "درس پیدا نشد." }, 404);
+  const { lesson, chapter } = found;
 
   const termList = lesson.steps.flatMap((step) => (step.kind === "terms" ? step.terms.map((t) => t.it) : []));
   const [practice, progressRows, answerRows, savedTerms] = await Promise.all([
@@ -104,15 +126,15 @@ learn.get("/lessons/:lessonId", async (c) => {
 
   return c.json({
     chapter: {
-      id: PILOT_CHAPTER.id,
-      titleFa: PILOT_CHAPTER.titleFa,
-      nameIt: PILOT_CHAPTER.nameIt,
-      reviewedOn: PILOT_CHAPTER.reviewedOn,
-      sources: PILOT_CHAPTER.sources,
+      id: chapter.id,
+      titleFa: chapter.titleFa,
+      nameIt: chapter.nameIt,
+      reviewedOn: chapter.reviewedOn,
+      sources: chapter.sources,
     },
     position: {
-      index: PILOT_CHAPTER.lessons.findIndex((l) => l.id === lesson.id) + 1,
-      total: PILOT_CHAPTER.lessons.length,
+      index: chapter.lessons.findIndex((l) => l.id === lesson.id) + 1,
+      total: chapter.lessons.length,
     },
     lesson: {
       id: lesson.id,
@@ -127,6 +149,7 @@ learn.get("/lessons/:lessonId", async (c) => {
         sourceId: content.sourceId,
         textIt: row.text_it,
         imageUrl: row.image_url,
+        isFigure: content.figure !== undefined,
         correctAnswer: row.correct_answer,
         chunks: content.chunks,
         translation: content.translation,
@@ -203,6 +226,29 @@ learn.post("/lessons/:lessonId/answer", async (c) => {
   });
 });
 
+// ── POST /api/learn/lessons/:lessonId/order ──────────────────────────────────
+// "Who goes first?" — the verdict is computed here, from the verified phases in
+// src/content/crossings.ts, so the decision is deterministic and tested. It is
+// a self-check, not a graded answer, so nothing is stored.
+// ponytail: attempts are not persisted; add a table if first-try stats are wanted.
+learn.post("/lessons/:lessonId/order", async (c) => {
+  const lesson = findLesson(c.req.param("lessonId"));
+  if (!lesson) return c.json({ error: "درس پیدا نشد." }, 404);
+
+  const body = (await c.req.json().catch(() => null)) as { step?: unknown; sequence?: unknown } | null;
+  const step = typeof body?.step === "number" && Number.isInteger(body.step) ? lesson.steps[body.step] : undefined;
+  if (!step || step.kind !== "order") return c.json({ error: "Invalid step" }, 400);
+
+  const sequence = body?.sequence;
+  const result =
+    Array.isArray(sequence) && sequence.length <= 10 && sequence.every((id) => typeof id === "string")
+      ? checkPassageOrder(step.crossing.phases, sequence as string[])
+      : null;
+  if (!result) return c.json({ error: "sequence must list every vehicle exactly once" }, 400);
+
+  return c.json({ ...result, phases: step.crossing.phases });
+});
+
 // ── POST /api/learn/lessons/:lessonId/complete ───────────────────────────────
 learn.post("/lessons/:lessonId/complete", async (c) => {
   const userId = c.get("userId");
@@ -255,7 +301,7 @@ learn.post("/practice", async (c) => {
     }
   }
 
-  const candidates = await getPracticeCandidates(c.env.DB, userId, practiceSourceIds(PILOT_CHAPTER, lessonIds));
+  const candidates = await getPracticeCandidates(c.env.DB, userId, practiceSourceIds(CHAPTERS, lessonIds));
   const questions = orderPracticeCandidates(candidates, PRACTICE_SET_SIZE);
   if (questions.length === 0) return c.json({ error: "سؤالی برای تمرین پیدا نشد." }, 404);
 

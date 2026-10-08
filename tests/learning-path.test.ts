@@ -4,6 +4,7 @@ import test from "node:test";
 
 import worker from "../src/index.js";
 import {
+  CHAPTERS,
   PILOT_CHAPTER,
   lessonLinkForSourceId,
   lessonStepCount,
@@ -24,13 +25,15 @@ import type { AppEnv } from "../src/types.js";
 import { createSqliteD1, signedInitData } from "./helpers/sqlite-d1.js";
 
 const [L1, L2, L3] = PILOT_CHAPTER.lessons;
-const TEACHING_KINDS = new Set(["compare", "sequence", "diagram"]);
+const TEACHING_KINDS = new Set(["compare", "sequence", "diagram", "scenario", "order"]);
+const ALL_LESSONS = CHAPTERS.flatMap((chapter) => chapter.lessons);
 
 // ── Curated content ──────────────────────────────────────────────────────────
 
-test("every pilot lesson has the full teaching structure and 3–5 real practice questions", () => {
+test("every lesson has the full teaching structure and 3–5 real practice questions", () => {
   assert.equal(PILOT_CHAPTER.lessons.length, 3);
-  for (const lesson of PILOT_CHAPTER.lessons) {
+  assert.equal(new Set(ALL_LESSONS.map((lesson) => lesson.id)).size, ALL_LESSONS.length, "lesson ids are unique across chapters");
+  for (const lesson of ALL_LESSONS) {
     const kinds = lesson.steps.map((step) => step.kind);
     assert.equal(kinds[0], "intro", `${lesson.id} starts with its objective`);
     assert.ok(kinds.some((kind) => TEACHING_KINDS.has(kind)), `${lesson.id} has an instructional visual`);
@@ -57,7 +60,7 @@ test("every pilot lesson has the full teaching structure and 3–5 real practice
 });
 
 test("chunked Italian reproduces the exact bank statement, so highlights never paraphrase it", () => {
-  const statements: Statement[] = PILOT_CHAPTER.lessons.flatMap((lesson) => [
+  const statements: Statement[] = ALL_LESSONS.flatMap((lesson) => [
     ...lesson.practice,
     ...lesson.steps.flatMap((step) => (step.kind === "trap" ? step.examples : [])),
   ]);
@@ -72,7 +75,7 @@ test("chunked Italian reproduces the exact bank statement, so highlights never p
 });
 
 test("trap steps pair a true and a false statement that share the tempting word", () => {
-  for (const lesson of PILOT_CHAPTER.lessons) {
+  for (const lesson of ALL_LESSONS) {
     const trap = lesson.steps.find((step) => step.kind === "trap");
     assert.ok(trap && trap.kind === "trap");
     const answers = new Set(trap.examples.map((example) => example.answer));
@@ -82,7 +85,7 @@ test("trap steps pair a true and a false statement that share the tempting word"
 
 test("question → lesson mappings are explicit, unambiguous, and cover every practice question", () => {
   const seen = new Map<string, string>();
-  for (const lesson of PILOT_CHAPTER.lessons) {
+  for (const lesson of ALL_LESSONS) {
     for (const group of lesson.related) {
       const step = lesson.steps[group.step];
       assert.ok(step && TEACHING_KINDS.has(step.kind), `${lesson.id} related group points at a teaching step`);
@@ -100,16 +103,25 @@ test("question → lesson mappings are explicit, unambiguous, and cover every pr
 });
 
 test("sources and the review date are recorded with the content", () => {
-  assert.match(PILOT_CHAPTER.reviewedOn, /^\d{4}-\d{2}-\d{2}$/);
-  assert.ok(PILOT_CHAPTER.sources.length >= 2);
-  for (const source of PILOT_CHAPTER.sources) assert.match(source.url, /^https:\/\//);
+  for (const chapter of CHAPTERS) {
+    assert.match(chapter.reviewedOn, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(chapter.sources.length >= 2);
+    for (const source of chapter.sources) assert.match(source.url, /^https:\/\//);
+  }
 });
 
 // ── Pure rules ──────────────────────────────────────────────────────────────
 
-function summary(lesson: Lesson, state: LessonSummary["state"], step = 0): LessonSummary {
+function summary(
+  lesson: Lesson,
+  state: LessonSummary["state"],
+  step = 0,
+  chapterId = PILOT_CHAPTER.id,
+  updatedAt: string | null = state === "not_started" ? null : "2026-10-01 10:00:00"
+): LessonSummary {
   return {
     id: lesson.id,
+    chapterId,
     titleFa: lesson.titleFa,
     titleIt: lesson.titleIt,
     minutes: lesson.minutes,
@@ -119,6 +131,7 @@ function summary(lesson: Lesson, state: LessonSummary["state"], step = 0): Lesso
     stepCount: lessonStepCount(lesson),
     practice: { answered: 0, correct: 0, total: lesson.practice.length },
     dueReview: 0,
+    updatedAt,
   };
 }
 
@@ -211,12 +224,10 @@ function setup() {
   const insert = raw.prepare(
     `INSERT INTO questions (id, source_id, topic_id, text_it, correct_answer, image_url) VALUES (?, ?, 4, ?, ?, NULL)`
   );
-  const practice = new Map(PILOT_CHAPTER.lessons.flatMap((lesson) => lesson.practice.map((q) => [q.sourceId, q] as const)));
-  for (const lesson of PILOT_CHAPTER.lessons) {
-    for (const sourceId of relatedSourceIds(lesson)) {
-      const q = practice.get(sourceId);
-      insert.run(Number(sourceId), sourceId, q ? q.textIt : `Bank statement ${sourceId}`, q ? q.answer : 1);
-    }
+  const practice = new Map(ALL_LESSONS.flatMap((lesson) => lesson.practice.map((q) => [q.sourceId, q] as const)));
+  for (const sourceId of new Set(ALL_LESSONS.flatMap(relatedSourceIds))) {
+    const q = practice.get(sourceId);
+    insert.run(Number(sourceId), sourceId, q ? q.textIt : `Bank statement ${sourceId}`, q ? q.answer : 1);
   }
   const user = raw.prepare(`INSERT INTO users (id, telegram_user_id, first_name, is_approved) VALUES (?, ?, ?, 1)`);
   user.run(1, USER_A, "A");
@@ -256,7 +267,8 @@ test("a new learner starts lesson 1, resume is monotonic, and bad input is rejec
   const { call } = setup();
   const home = await call(USER_A, "GET", "/learn");
   assert.equal(home.status, 200);
-  assert.deepEqual(home.body.chapter.lessons.map((l: LessonSummary) => l.state), ["not_started", "not_started", "not_started"]);
+  assert.deepEqual(home.body.chapters.map((c: { id: string }) => c.id), CHAPTERS.map((c) => c.id));
+  assert.deepEqual(home.body.chapters[0].lessons.map((l: LessonSummary) => l.state), ["not_started", "not_started", "not_started"]);
   assert.equal(home.body.today.items[0].lessonId, L1.id);
 
   const lesson = await call(USER_A, "GET", `/learn/lessons/${L1.id}`);
@@ -335,7 +347,7 @@ test("completion requires every practice answer, is idempotent, and updates toda
   assert.equal(again.body.completedAt, done.body.completedAt, "repeat taps keep the first completion time");
 
   const home = await call(USER_A, "GET", "/learn");
-  assert.equal(home.body.chapter.lessons[0].state, "completed");
+  assert.equal(home.body.chapters[0].lessons[0].state, "completed");
   // Mistakes are due tomorrow, so today's path moves on to lesson 2 + related practice.
   assert.deepEqual(home.body.today.items.map((i: { kind: string }) => i.kind), ["lesson", "practice"]);
   assert.equal(home.body.today.items[0].lessonId, L2.id);
@@ -351,7 +363,7 @@ test("one learner's progress, answers, and practice are invisible to another lea
   assert.deepEqual(other.body.progress, { state: "not_started", step: 0, completedAt: null });
   assert.deepEqual(other.body.answers, {});
   const otherHome = await call(USER_B, "GET", "/learn");
-  assert.equal(otherHome.body.chapter.lessons[0].state, "not_started");
+  assert.equal(otherHome.body.chapters[0].lessons[0].state, "not_started");
   assert.equal(otherHome.body.reviewDue, 0);
 
   // B answering the same question creates B's own row and leaves A's untouched.

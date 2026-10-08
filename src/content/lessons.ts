@@ -1,6 +1,8 @@
 /**
  * src/content/lessons.ts
- * Curated lesson content for the pilot learning chapter (Segnali di precedenza).
+ * Lesson content model, the pilot chapter (Segnali di precedenza), and the
+ * chapter registry. Later chapters live in their own files
+ * (src/content/lessons-incroci.ts) and are registered in CHAPTERS below.
  *
  * This file is the single source of truth for lesson text. It is written and
  * reviewed by hand, versioned with the code that renders it, and never
@@ -21,6 +23,10 @@
  *    about sign taxonomy, traffic lights, or motorway placement are excluded.
  *  - Re-run `npm run verify:lessons` after editing anything below.
  */
+
+// lessons-incroci.ts only imports *types* from this file (erased at build),
+// so this is not a runtime import cycle.
+import { INCROCI_CHAPTER } from "./lessons-incroci.js";
 
 export type BankAnswer = 0 | 1;
 
@@ -44,6 +50,8 @@ export interface Statement {
   answer: BankAnswer;
   /** Sign image number from the bank (img_sign/N.png), when the question has one. */
   sign?: number;
+  /** Bank intersection figure (img_sign/N.png) — a whole diagram, shown large. */
+  figure?: number;
   chunks: ItalianChunk[];
   /** Faithful Persian translation of the claim — never corrected to match the answer. */
   translation: string;
@@ -70,6 +78,67 @@ export interface Term {
   /** Infinitive, when `it` contains a conjugated or reflexive verb. */
   base?: string;
   note?: string;
+}
+
+/** A junction arm: compass direction from the centre (0 = east / right of the
+ *  figure, 90 = north / top), copied from the bank figure's layout. */
+export interface CrossingArm {
+  id: string;
+  angle: number;
+  /** Lanes per direction (default 1). */
+  lanes?: number;
+  sign?: "dare" | "stop";
+  /** Tram tracks run along this arm (lane 0 in both directions). */
+  tram?: boolean;
+}
+
+export type VehicleKind = "car" | "truck" | "bus" | "tram" | "filobus" | "eccezionale";
+export type Movement = "straight" | "left" | "right";
+
+export interface CrossingVehicle {
+  /** The letter printed on the bank figure. */
+  id: string;
+  kind: VehicleKind;
+  from: string;
+  to: string;
+  move: Movement;
+  /** 0 = lane next to the centre line (default), 1 = the next lane out. */
+  lane?: number;
+  /** Already leaving the junction in the figure: drawn, but not part of the order. */
+  leaving?: boolean;
+}
+
+/**
+ * A real bank statement about this figure's order, as constraints:
+ * `before` [a, b] = a passes strictly before b; `together` [a, b] = same moment.
+ * A VERO statement must satisfy every constraint, a FALSO one must break one.
+ */
+export interface OrderEvidence {
+  sourceId: string;
+  textIt: string;
+  answer: BankAnswer;
+  before?: [string, string][];
+  together?: [string, string][];
+}
+
+/**
+ * An original redrawing of one bank intersection figure, used as an
+ * educational exercise (never presented as a bank question). The order in
+ * `phases` is the bank's, cross-checked against `evidence` in tests.
+ */
+export interface Crossing {
+  id: string;
+  /** Bank figure this redraws (img_sign/N.png). */
+  figure: number;
+  arms: CrossingArm[];
+  vehicles: CrossingVehicle[];
+  /** Verified passage order; vehicles in one group move at the same time. */
+  phases: string[][];
+  /** One Persian explanation per phase: who moves now and why. */
+  explain: { text: string; signs?: string[] }[];
+  /** Per vehicle: why it cannot go earlier (shown when picked too early). */
+  waits: Record<string, string>;
+  evidence: OrderEvidence[];
 }
 
 interface StepBase {
@@ -100,6 +169,15 @@ export type LessonStep =
       callouts: string[];
       takeaway: string;
     })
+  | (StepBase & {
+      kind: "scenario";
+      body: string;
+      crossing: Crossing;
+      /** Guided reading: each step highlights vehicles and arms. */
+      guide: { text: string; focus: string[]; arms?: string[] }[];
+      takeaway: string;
+    })
+  | (StepBase & { kind: "order"; body: string; crossing: Crossing; takeaway: string })
   | (StepBase & { kind: "terms"; terms: Term[] })
   | (StepBase & { kind: "trap"; body: string; examples: Statement[]; takeaway: string });
 
@@ -109,6 +187,8 @@ export interface Lesson {
   titleIt: string;
   minutes: number;
   signs: number[];
+  /** Bank intersection figures this lesson's questions may show. */
+  figures?: number[];
   steps: LessonStep[];
   practice: PracticeQuestion[];
   /** Explicit question → section mapping used to route mistakes back here. */
@@ -833,8 +913,19 @@ export function lessonStepCount(lesson: Lesson): number {
   return lesson.steps.length + lesson.practice.length + 1;
 }
 
+/** Every chapter, in the order learners are guided through them. */
+export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER];
+
 export function findLesson(lessonId: string): Lesson | null {
-  return PILOT_CHAPTER.lessons.find((lesson) => lesson.id === lessonId) ?? null;
+  for (const chapter of CHAPTERS) {
+    const lesson = chapter.lessons.find((l) => l.id === lessonId);
+    if (lesson) return lesson;
+  }
+  return null;
+}
+
+export function chapterOfLesson(lessonId: string): Chapter | null {
+  return CHAPTERS.find((chapter) => chapter.lessons.some((l) => l.id === lessonId)) ?? null;
 }
 
 export interface LessonLink {
@@ -844,10 +935,12 @@ export interface LessonLink {
 }
 
 const LESSON_BY_SOURCE_ID = new Map<string, LessonLink>();
-for (const lesson of PILOT_CHAPTER.lessons) {
-  for (const group of lesson.related) {
-    for (const sourceId of group.sourceIds) {
-      LESSON_BY_SOURCE_ID.set(sourceId, { lessonId: lesson.id, titleFa: lesson.titleFa, step: group.step });
+for (const chapter of CHAPTERS) {
+  for (const lesson of chapter.lessons) {
+    for (const group of lesson.related) {
+      for (const sourceId of group.sourceIds) {
+        LESSON_BY_SOURCE_ID.set(sourceId, { lessonId: lesson.id, titleFa: lesson.titleFa, step: group.step });
+      }
     }
   }
 }

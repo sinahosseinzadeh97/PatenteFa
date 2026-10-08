@@ -1,7 +1,7 @@
 /**
  * src/lib/learning.ts
  * Pure rules for the learning path: lesson state, snapshot integrity,
- * practice ordering, and "today's path". No I/O — src/api/learn.ts feeds it
+ * practice ordering, "today's path", and the "Who goes first?" order check. No I/O — src/api/learn.ts feeds it
  * rows from D1, and tests/learning-path.test.ts exercises it directly.
  */
 
@@ -23,6 +23,7 @@ export type LessonState = "not_started" | "in_progress" | "completed";
 
 export interface LessonSummary {
   id: string;
+  chapterId: string;
   titleFa: string;
   titleIt: string;
   minutes: number;
@@ -33,6 +34,8 @@ export interface LessonSummary {
   practice: { answered: number; correct: number; total: number };
   /** Review items due today whose question this lesson teaches. */
   dueReview: number;
+  /** Last time this learner's progress here changed (null = never opened). */
+  updatedAt: string | null;
 }
 
 export function summarizeLessons(
@@ -52,6 +55,7 @@ export function summarizeLessons(
         : "not_started";
     return {
       id: lesson.id,
+      chapterId: chapter.id,
       titleFa: lesson.titleFa,
       titleIt: lesson.titleIt,
       minutes: lesson.minutes,
@@ -65,6 +69,7 @@ export function summarizeLessons(
         total: lesson.practice.length,
       },
       dueReview: relatedSourceIds(lesson).filter((id) => due.has(id)).length,
+      updatedAt: row?.updated_at ?? null,
     };
   });
 }
@@ -144,19 +149,26 @@ function remainingMinutes(lesson: LessonSummary): number {
 
 /**
  * Today's path, from real progress only — no AI call, no guessed weakness.
- *   1. unfinished lesson (resume where they left off)
+ *   1. unfinished lesson (the most recently touched one)
  *   2. review items due today (the existing review queue)
- *   3. the next lesson in order, if none is in progress
+ *   3. the next lesson, if none is in progress: continue the chapter the
+ *      learner worked in last, otherwise follow chapter order
  *   4. related practice for lessons already completed
- * Capped at three items so the day stays manageable.
+ * Capped at three items so the day stays manageable. `lessons` is every
+ * chapter's summaries, in chapter order.
  */
 export function buildTodayPath(
   lessons: LessonSummary[],
   reviewDue: number
 ): { items: TodayItem[]; minutes: number } {
   const items: TodayItem[] = [];
-  const inProgress = lessons.find((l) => l.state === "in_progress");
-  const nextLesson = lessons.find((l) => l.state === "not_started");
+  const mostRecentFirst = (a: LessonSummary, b: LessonSummary) =>
+    (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "");
+  const inProgress = lessons.filter((l) => l.state === "in_progress").sort(mostRecentFirst)[0];
+  const lastChapter = lessons.filter((l) => l.updatedAt).sort(mostRecentFirst)[0]?.chapterId;
+  const nextLesson =
+    lessons.find((l) => l.state === "not_started" && l.chapterId === lastChapter) ??
+    lessons.find((l) => l.state === "not_started");
   const completed = lessons.filter((l) => l.state === "completed");
 
   const lessonItem = (lesson: LessonSummary, mode: "start" | "continue"): TodayItem => ({
@@ -189,10 +201,40 @@ export function buildTodayPath(
 }
 
 /** Practice set sources for the given completed lessons (or one lesson). */
-export function practiceSourceIds(chapter: Chapter, lessonIds: string[]): string[] {
+export function practiceSourceIds(chapters: Chapter[], lessonIds: string[]): string[] {
   const ids = new Set<string>();
-  for (const lesson of chapter.lessons) {
-    if (lessonIds.includes(lesson.id)) relatedSourceIds(lesson).forEach((id) => ids.add(id));
+  for (const chapter of chapters) {
+    for (const lesson of chapter.lessons) {
+      if (lessonIds.includes(lesson.id)) relatedSourceIds(lesson).forEach((id) => ids.add(id));
+    }
   }
   return [...ids];
+}
+
+export interface OrderCheck {
+  valid: boolean;
+  /** The first vehicle picked before its turn, and the ones it had to wait for. */
+  mistake: { vehicle: string; waitsFor: string[] } | null;
+}
+
+/**
+ * "Who goes first?": is the learner's sequence a valid passage order?
+ * Vehicles in one phase move together, so any order among them is accepted.
+ * Returns null when `sequence` is not exactly one pick per vehicle.
+ */
+export function checkPassageOrder(phases: string[][], sequence: string[]): OrderCheck | null {
+  const phaseOf = new Map(phases.flatMap((group, index) => group.map((id) => [id, index] as const)));
+  if (
+    sequence.length !== phaseOf.size ||
+    new Set(sequence).size !== sequence.length ||
+    sequence.some((id) => !phaseOf.has(id))
+  ) {
+    return null;
+  }
+  for (const [index, vehicle] of sequence.entries()) {
+    const phase = phaseOf.get(vehicle) ?? 0;
+    const waitsFor = sequence.slice(index + 1).filter((id) => (phaseOf.get(id) ?? 0) < phase);
+    if (waitsFor.length > 0) return { valid: false, mistake: { vehicle, waitsFor } };
+  }
+  return { valid: true, mistake: null };
 }
