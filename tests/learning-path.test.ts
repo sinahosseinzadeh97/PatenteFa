@@ -25,7 +25,7 @@ import type { AppEnv } from "../src/types.js";
 import { createSqliteD1, signedInitData } from "./helpers/sqlite-d1.js";
 
 const [L1, L2, L3] = PILOT_CHAPTER.lessons;
-const VISUAL_KINDS = new Set(["compare", "sequence", "diagram", "scenario", "order", "stopping"]);
+const VISUAL_KINDS = new Set(["compare", "sequence", "diagram", "scenario", "order", "stopping", "markings", "assess", "manoeuvre"]);
 /** Steps a mistake can be routed back to: every visual, plus the VERO/FALSO factor lists. */
 const TEACHING_KINDS = new Set([...VISUAL_KINDS, "factors"]);
 const ALL_LESSONS = CHAPTERS.flatMap((chapter) => chapter.lessons);

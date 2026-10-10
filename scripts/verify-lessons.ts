@@ -3,14 +3,15 @@
  * scripts/verify-lessons.ts
  *
  * Read-only check that every curated lesson chapter (src/content/lessons.ts,
- * lessons-incroci.ts, crossings.ts, lessons-velocita.ts) still agrees with the
+ * lessons-incroci.ts, crossings.ts, lessons-velocita.ts, lessons-sorpasso.ts,
+ * overtaking.ts) still agrees with the
  * question bank in D1. Run after editing lesson content and before deploying:
  *
  *   npm run verify:lessons            # local D1
  *   npm run verify:lessons -- --remote  # production D1 (SELECT only)
  *
  * Fails when a practice/trap question, a "Who goes first?" evidence statement or
- * a factor's evidence no longer matches its reviewed snapshot (text, answer key, image), or when a
+ * a factor's, scene rule's or centre line's evidence no longer matches its reviewed snapshot (text, answer key, image), or when a
  * mapped question is missing or shows an image outside its chapter. The API already drops drifted practice questions at
  * runtime; this script is how a human finds out.
  */
@@ -67,10 +68,21 @@ function snapshots(chapter: Chapter): Snapshot[] {
   const factors = chapter.lessons.flatMap((lesson) =>
     lesson.steps.flatMap((step) => (step.kind === "factors" ? step.columns.flatMap((column) => column.items) : []))
   );
+  // Overtaking chapter: the bank statements behind each scene rule and each centre line.
+  const ruleEvidence = chapter.lessons.flatMap((lesson) =>
+    lesson.steps.flatMap((step) =>
+      step.kind === "assess"
+        ? step.scenes.flatMap((scene) => [...scene.facts, ...scene.compare.facts]).flatMap((rule) => rule.evidence)
+        : step.kind === "markings"
+          ? step.lines.flatMap((line) => line.evidence)
+          : []
+    )
+  );
   return [
     ...statements.map((s) => ({ sourceId: s.sourceId, textIt: s.textIt, answer: s.answer, image: s.sign ?? s.figure ?? null })),
     ...evidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image })),
     ...factors.map((f) => ({ sourceId: f.sourceId, textIt: f.textIt, answer: f.answer, image: null })),
+    ...ruleEvidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image ?? null })),
   ];
 }
 

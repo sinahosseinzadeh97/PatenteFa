@@ -9,6 +9,7 @@
  *   POST /api/learn/lessons/:lessonId/progress   { step }            (monotonic)
  *   POST /api/learn/lessons/:lessonId/answer     { questionId, answer } (first answer wins)
  *   POST /api/learn/lessons/:lessonId/order      { step, sequence }  ("Who goes first?", stateless)
+ *   POST /api/learn/lessons/:lessonId/assess     { step, scene, variant, legal, safety } ("Assess the situation", stateless)
  *   POST /api/learn/lessons/:lessonId/complete                         (idempotent)
  *   POST /api/learn/practice                 { lessonId? } → practice session
  */
@@ -21,7 +22,9 @@ import {
   findLesson,
   lessonStepCount,
   type Chapter,
+  type LegalVerdict,
   type Lesson,
+  type SafetyVerdict,
 } from "../content/lessons.js";
 import {
   completeLesson,
@@ -37,6 +40,7 @@ import {
 import { getQuestionById, replaceActiveExamSession } from "../db/queries.js";
 import {
   PRACTICE_SET_SIZE,
+  assessAnswer,
   buildTodayPath,
   checkPassageOrder,
   orderPracticeCandidates,
@@ -265,6 +269,31 @@ learn.post("/lessons/:lessonId/order", async (c) => {
   if (!result) return c.json({ error: "sequence must list every vehicle exactly once" }, 400);
 
   return c.json({ ...result, phases: step.crossing.phases });
+});
+
+// ── POST /api/learn/lessons/:lessonId/assess ─────────────────────────────────
+// "Assess the situation" — both verdicts are derived here from the scene's
+// facts (judgeScene in src/lib/learning.ts), never by the client or an AI
+// model. A self-check like /order, so nothing is stored.
+const LEGAL_ANSWERS = new Set<string>(["forbidden", "not_forbidden"]);
+const SAFETY_ANSWERS = new Set<string>(["fails", "unknown", "clear"]);
+
+learn.post("/lessons/:lessonId/assess", async (c) => {
+  const lesson = findLesson(c.req.param("lessonId"));
+  if (!lesson) return c.json({ error: "درس پیدا نشد." }, 404);
+
+  const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+  const step = typeof body?.step === "number" && Number.isInteger(body.step) ? lesson.steps[body.step] : undefined;
+  const scene =
+    step?.kind === "assess" && typeof body?.scene === "number" && Number.isInteger(body.scene) ? step.scenes[body.scene] : undefined;
+  const variant = body?.variant === "compare" ? scene?.compare : body?.variant === "base" ? scene : undefined;
+  const legal = body?.legal;
+  const safety = body?.safety;
+  if (!variant || typeof legal !== "string" || !LEGAL_ANSWERS.has(legal) || typeof safety !== "string" || !SAFETY_ANSWERS.has(safety)) {
+    return c.json({ error: "step, scene, variant (base|compare), legal and safety are required" }, 400);
+  }
+
+  return c.json(assessAnswer(variant.facts, { legal: legal as LegalVerdict, safety: safety as SafetyVerdict }));
 });
 
 // ── POST /api/learn/lessons/:lessonId/complete ───────────────────────────────
