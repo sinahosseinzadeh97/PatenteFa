@@ -45,16 +45,32 @@ import {
   summarizeLessons,
 } from "../lib/learning.js";
 import { nextMorningISO } from "../lib/srs.js";
+import { DRY_FRICTION, GRAVITY, REACTION_TIMES_S, SPEEDS_KMH, stoppingTable } from "../lib/stopping.js";
 
 const learn = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
-/** The next lesson in this chapter, or the first lesson of the next chapter. */
+/** The explorer's numbers, computed once per isolate from the tested model. */
+const STOPPING_MODEL = {
+  friction: DRY_FRICTION,
+  gravity: GRAVITY,
+  speeds: SPEEDS_KMH,
+  reactions: REACTION_TIMES_S,
+  table: stoppingTable(),
+};
+
+/**
+ * The next lesson in course order that this learner has not completed yet,
+ * looking past the current one first, so a lesson opened directly earlier is
+ * never offered again as "next".
+ */
 function nextLessonAfter(
-  lesson: Lesson
+  lesson: Lesson,
+  completed: Set<string>
 ): { lessonId: string; titleFa: string; chapterTitleFa: string | null } | null {
   const lessons = CHAPTERS.flatMap((chapter) => chapter.lessons.map((l) => ({ chapter, lesson: l })));
   const index = lessons.findIndex((entry) => entry.lesson.id === lesson.id);
-  const next = lessons[index + 1];
+  const open = (entry: (typeof lessons)[number]) => entry.lesson.id !== lesson.id && !completed.has(entry.lesson.id);
+  const next = lessons.slice(index + 1).find(open) ?? lessons.slice(0, index).find(open);
   if (!next) return null;
   const sameChapter = next.chapter.lessons.some((l) => l.id === lesson.id);
   return {
@@ -94,7 +110,7 @@ learn.get("/", async (c) => {
   const reviewDue = dueSourceIds.length;
   const chapters = CHAPTERS.map((chapter) => ({
     id: chapter.id,
-    topicId: chapter.topicId,
+    topicIds: chapter.topicIds,
     nameIt: chapter.nameIt,
     titleFa: chapter.titleFa,
     summaryFa: chapter.summaryFa,
@@ -123,6 +139,7 @@ learn.get("/lessons/:lessonId", async (c) => {
     getSavedTerms(c.env.DB, userId, termList),
   ]);
   const progress = progressRows.find((row) => row.lesson_id === lesson.id);
+  const completed = new Set(progressRows.filter((row) => row.completed_at).map((row) => row.lesson_id));
 
   return c.json({
     chapter: {
@@ -167,7 +184,8 @@ learn.get("/lessons/:lessonId", async (c) => {
       answerRows.map((row) => [row.question_id, { userAnswer: row.user_answer, isCorrect: row.is_correct === 1 }])
     ),
     savedTerms,
-    next: nextLessonAfter(lesson),
+    next: nextLessonAfter(lesson, completed),
+    stopping: lesson.steps.some((step) => step.kind === "stopping") ? STOPPING_MODEL : null,
   });
 });
 
@@ -255,9 +273,10 @@ learn.post("/lessons/:lessonId/complete", async (c) => {
   const lesson = findLesson(c.req.param("lessonId"));
   if (!lesson) return c.json({ error: "درس پیدا نشد." }, 404);
 
-  const [practice, answers] = await Promise.all([
+  const [practice, answers, progressRows] = await Promise.all([
     resolvedPractice(c.env.DB, lesson),
     getLessonAnswerRows(c.env.DB, userId, lesson.id),
+    getLessonProgressRows(c.env.DB, userId),
   ]);
   const answered = new Set(answers.map((a) => a.question_id));
   const missing = practice.questions.filter(({ row }) => !answered.has(row.id)).map(({ row }) => row.id);
@@ -277,7 +296,7 @@ learn.post("/lessons/:lessonId/complete", async (c) => {
       correct: practiceAnswers.filter((a) => a.is_correct === 1).length,
       queuedForReview: practiceAnswers.filter((a) => a.is_correct !== 1).length,
     },
-    next: nextLessonAfter(lesson),
+    next: nextLessonAfter(lesson, new Set([...progressRows.filter((r) => r.completed_at).map((r) => r.lesson_id), lesson.id])),
   });
 });
 

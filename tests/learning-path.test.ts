@@ -25,7 +25,9 @@ import type { AppEnv } from "../src/types.js";
 import { createSqliteD1, signedInitData } from "./helpers/sqlite-d1.js";
 
 const [L1, L2, L3] = PILOT_CHAPTER.lessons;
-const TEACHING_KINDS = new Set(["compare", "sequence", "diagram", "scenario", "order"]);
+const VISUAL_KINDS = new Set(["compare", "sequence", "diagram", "scenario", "order", "stopping"]);
+/** Steps a mistake can be routed back to: every visual, plus the VERO/FALSO factor lists. */
+const TEACHING_KINDS = new Set([...VISUAL_KINDS, "factors"]);
 const ALL_LESSONS = CHAPTERS.flatMap((chapter) => chapter.lessons);
 
 // ── Curated content ──────────────────────────────────────────────────────────
@@ -36,7 +38,7 @@ test("every lesson has the full teaching structure and 3–5 real practice quest
   for (const lesson of ALL_LESSONS) {
     const kinds = lesson.steps.map((step) => step.kind);
     assert.equal(kinds[0], "intro", `${lesson.id} starts with its objective`);
-    assert.ok(kinds.some((kind) => TEACHING_KINDS.has(kind)), `${lesson.id} has an instructional visual`);
+    assert.ok(kinds.some((kind) => VISUAL_KINDS.has(kind)), `${lesson.id} has an instructional visual`);
     assert.ok(kinds.includes("terms"), `${lesson.id} teaches Italian terms`);
     assert.ok(kinds.includes("trap"), `${lesson.id} covers a wording trap`);
     assert.ok(lesson.minutes >= 3 && lesson.minutes <= 5, `${lesson.id} is a 3–5 minute lesson`);

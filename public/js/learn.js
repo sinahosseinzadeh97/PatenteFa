@@ -434,6 +434,8 @@
     body.innerHTML = '<div class="lesson-step' + (options.direction === 'back' ? ' enter-back' : ' enter-forward') + '">' + banner + html + '</div>';
     if (step.type === 'content' && (step.content.kind === 'scenario' || step.content.kind === 'order')) App.mountCrossing(step.content, step.index);
     else App.leaveCrossing();
+    if (step.type === 'content' && step.content.kind === 'stopping') App.mountStopping(step.content, step.index);
+    else App.leaveStopping();
 
     if (step.type === 'practice') {
       var statement = document.getElementById('lesson-statement');
@@ -463,18 +465,19 @@
       label.textContent = 'اول جواب بده';
     } else if (orderPending(step)) {
       next.disabled = true;
-      label.textContent = 'اول ترتیب را بررسی کن';
+      label.textContent = step.content.kind === 'stopping' ? 'اول پیش‌بینی کن' : 'اول ترتیب را بررسی کن';
     } else {
       next.disabled = state.lessonFinishPending;
       label.textContent = state.lessonFinishPending ? 'در حال ثبت…' : nextIsDone ? 'پایان درس' : 'بعدی';
     }
   }
 
-  /** A "Who goes first?" step blocks Next only the first time through. */
+  /** "Who goes first?" and the stopping explorer block Next only the first time through. */
   function orderPending(step) {
-    return step.type === 'content' && step.content.kind === 'order' &&
-      state.lessonStep >= state.lessonMaxStep && state.lesson.progress.state !== 'completed' &&
-      !App.crossingDone(step.index);
+    if (step.type !== 'content' || state.lessonStep < state.lessonMaxStep || state.lesson.progress.state === 'completed') return false;
+    if (step.content.kind === 'order') return !App.crossingDone(step.index);
+    if (step.content.kind === 'stopping') return !App.stoppingDone(step.index);
+    return false;
   }
 
   App.refreshLessonDock = function() {
@@ -506,7 +509,26 @@
     if (content.kind === 'terms') return termsHtml(content, index);
     if (content.kind === 'trap') return trapHtml(content, index);
     if (content.kind === 'scenario' || content.kind === 'order') return App.crossingStepHtml(content, index);
+    if (content.kind === 'stopping') return App.stoppingStepHtml(content, index);
+    if (content.kind === 'factors') return factorsHtml(content);
     return '';
+  }
+
+  /** What the bank says matters (VERO) next to what it says does not (FALSO); labelled, never colour alone. */
+  function factorsHtml(content) {
+    var columns = content.columns.map(function(column, i) {
+      var items = column.items.map(function(item) {
+        return '<li class="factor-item"><span class="factor-fa">' + esc(item.fa) + '</span>' + itSpan(item.it, 'factor-it') + '</li>';
+      }).join('');
+      return '<section class="factor-col ' + (i === 0 ? 'is-yes' : 'is-no') + '">' +
+        '<h3 class="factor-title">' + icon(i === 0 ? 'i-check' : 'i-x') + '<span>' + esc(column.title) + '</span></h3>' +
+        '<ul class="factor-list">' + items + '</ul></section>';
+    }).join('');
+    return stepHeading(content.title) +
+      '<p class="lesson-text">' + esc(content.body) + '</p>' +
+      '<div class="factors">' + columns + '</div>' +
+      '<p class="lesson-takeaway">' + icon('i-sparkles') + '<span>' + esc(content.takeaway) + '</span></p>' +
+      ruleLine(content.rule);
   }
 
   function introHtml(content) {
