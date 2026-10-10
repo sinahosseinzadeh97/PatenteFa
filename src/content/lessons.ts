@@ -24,9 +24,11 @@
  *  - Re-run `npm run verify:lessons` after editing anything below.
  */
 
-// lessons-incroci.ts only imports *types* from this file (erased at build),
-// so this is not a runtime import cycle.
+// lessons-incroci.ts and lessons-velocita.ts only import *types* from this file
+// (erased at build), so this is not a runtime import cycle.
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
+import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
+import type { StoppingSetting } from "../lib/stopping.js";
 
 export type BankAnswer = 0 | 1;
 
@@ -141,6 +143,38 @@ export interface Crossing {
   evidence: OrderEvidence[];
 }
 
+/** A distance a prediction option makes a claim about. "gap" is the shortest
+ *  following distance when both cars brake alike (src/lib/stopping.ts). */
+export type DistancePart = "reaction" | "braking" | "total" | "gap";
+
+/** What one prediction option says; tests/stopping.test.ts checks it against the model. */
+export type PredictionClaim =
+  /** rows[1] ÷ rows[0] for this distance (1 = unchanged). */
+  | { part: DistancePart; factor: number }
+  /** rows[1] is longer by an amount the model does not state (wet, snow). */
+  | { part: DistancePart; longer: true }
+  /** rows[row] does or does not stop within the step's `sight`. */
+  | { row: number; fits: boolean };
+
+/** Predict first, then see the settings compared on one scale. */
+export interface Prediction {
+  question: string;
+  rows: StoppingSetting[];
+  options: { text: string; claims: PredictionClaim[] }[];
+  answer: number;
+  explain: string;
+}
+
+/** One factor, backed by a real bank statement whose answer matches its column. */
+export interface FactorItem {
+  fa: string;
+  /** Exact words from `textIt`, shown as the Italian key phrase. */
+  it: string;
+  sourceId: string;
+  textIt: string;
+  answer: BankAnswer;
+}
+
 interface StepBase {
   title: string;
   /** Legal basis for the facts in this step. */
@@ -178,6 +212,27 @@ export type LessonStep =
       takeaway: string;
     })
   | (StepBase & { kind: "order"; body: string; crossing: Crossing; takeaway: string })
+  | (StepBase & {
+      /** The stopping-distance explorer (public/js/stopping.js), drawn from the model's table. */
+      kind: "stopping";
+      /** hazard: you approach a hazard · following: you behind a braking car · sight: stop within what you can see */
+      scene: "hazard" | "following" | "sight";
+      body: string;
+      start: StoppingSetting;
+      /** Clear road visible ahead, in metres (scene "sight"). */
+      sight?: number;
+      /** Unlocked once the predictions are done; the rest stay as in `start`. */
+      controls: ("speed" | "reaction" | "surface")[];
+      predictions: Prediction[];
+      takeaway: string;
+    })
+  | (StepBase & {
+      /** Two columns: what the bank says matters (VERO), and what it says does not (FALSO). */
+      kind: "factors";
+      body: string;
+      columns: [{ title: string; items: FactorItem[] }, { title: string; items: FactorItem[] }];
+      takeaway: string;
+    })
   | (StepBase & { kind: "terms"; terms: Term[] })
   | (StepBase & { kind: "trap"; body: string; examples: Statement[]; takeaway: string });
 
@@ -202,8 +257,8 @@ export interface Source {
 
 export interface Chapter {
   id: string;
-  /** topics.id of the matching bank chapter (broad practice lives there). */
-  topicId: number;
+  /** topics.id of the matching bank chapters (broad practice lives there). */
+  topicIds: number[];
   nameIt: string;
   titleFa: string;
   summaryFa: string;
@@ -886,7 +941,7 @@ const lessonSensiUnici: Lesson = {
 
 export const PILOT_CHAPTER: Chapter = {
   id: "segnali-precedenza",
-  topicId: 4,
+  topicIds: [4],
   nameIt: "Segnali di precedenza",
   titleFa: "تابلوهای حق تقدم",
   summaryFa: "چه کسی اول رد می‌شود؟ سه درس کوتاه درباره‌ی تابلوهایی که این را تعیین می‌کنند.",
@@ -914,7 +969,7 @@ export function lessonStepCount(lesson: Lesson): number {
 }
 
 /** Every chapter, in the order learners are guided through them. */
-export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER];
+export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER, VELOCITA_CHAPTER];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {

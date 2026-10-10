@@ -276,7 +276,7 @@ test("progress in the new chapter is per learner and survives reopening", async 
 test("the crossing client is loaded, works without animation, and never decides the order itself", () => {
   const shell = readFileSync("src/app/shell.tsx", "utf8");
   const client = readFileSync("public/js/crossing.js", "utf8");
-  assert.match(shell, /<script src="\/js\/crossing\.js"><\/script>\s*<script src="\/js\/learn\.js"><\/script>/);
+  assert.match(shell, /<script src="\/js\/crossing\.js"><\/script>[\s\S]*<script src="\/js\/learn\.js"><\/script>/, "crossing.js loads before learn.js");
   assert.match(client, /prefers-reduced-motion: reduce/);
   assert.match(client, /\/order', \{ step: /, "the verdict comes from the server");
   // The verdict shown is the server's response; the client never computes one.

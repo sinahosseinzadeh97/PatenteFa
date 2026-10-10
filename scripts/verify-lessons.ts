@@ -3,14 +3,14 @@
  * scripts/verify-lessons.ts
  *
  * Read-only check that every curated lesson chapter (src/content/lessons.ts,
- * lessons-incroci.ts, crossings.ts) still agrees with the question bank in D1. Run after editing lesson content
- * and before deploying:
+ * lessons-incroci.ts, crossings.ts, lessons-velocita.ts) still agrees with the
+ * question bank in D1. Run after editing lesson content and before deploying:
  *
  *   npm run verify:lessons            # local D1
  *   npm run verify:lessons -- --remote  # production D1 (SELECT only)
  *
- * Fails when a practice/trap question or a "Who goes first?" evidence statement
- * no longer matches its reviewed snapshot (text, answer key, image), or when a
+ * Fails when a practice/trap question, a "Who goes first?" evidence statement or
+ * a factor's evidence no longer matches its reviewed snapshot (text, answer key, image), or when a
  * mapped question is missing or shows an image outside its chapter. The API already drops drifted practice questions at
  * runtime; this script is how a human finds out.
  */
@@ -64,9 +64,13 @@ function snapshots(chapter: Chapter): Snapshot[] {
         : []
     )
   );
+  const factors = chapter.lessons.flatMap((lesson) =>
+    lesson.steps.flatMap((step) => (step.kind === "factors" ? step.columns.flatMap((column) => column.items) : []))
+  );
   return [
     ...statements.map((s) => ({ sourceId: s.sourceId, textIt: s.textIt, answer: s.answer, image: s.sign ?? s.figure ?? null })),
     ...evidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image })),
+    ...factors.map((f) => ({ sourceId: f.sourceId, textIt: f.textIt, answer: f.answer, image: null })),
   ];
 }
 

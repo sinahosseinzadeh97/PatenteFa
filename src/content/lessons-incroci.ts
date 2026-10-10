@@ -831,7 +831,7 @@ const lessonSegnali: Lesson = {
 
 export const INCROCI_CHAPTER: Chapter = {
   id: "precedenza-incroci",
-  topicId: 4,
+  topicIds: [4],
   nameIt: "Precedenza negli incroci",
   titleFa: "حق تقدم و تقاطع‌ها",
   summaryFa: "چه کسی اول از تقاطع رد می‌شود؟ چهار درس کوتاه: خواندنِ شکل، قاعده‌ی راست، پیچیدن، و اثرِ تابلوها.",

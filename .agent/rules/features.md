@@ -328,3 +328,22 @@ Codice della Strada artt. 140, 145; DPR 495/1992 artt. 81 c.7, 105–114 (Normat
 
 ### 22.3 Sources (reviewed 2026-10-08)
 Codice della Strada (testo vigente, agg. 24/04/2026) artt. 145 c.1–4, 154 c.1 lett. a and c.3 lett. a–b, 177 c.3; DPR 495/1992 artt. 106–107. Bank statements cited by id in the content (practice, traps, scenario evidence). No conflict found between these articles and the 2023 bank answers for the figures used; the 2023-bank caveat still applies.
+
+## 23. Round 13 — chapter 3: Velocità, distanza di sicurezza e arresto (speed, safety distance, stopping)
+
+### 23.1 What exists
+- Chapter `velocita-distanza-arresto` in `src/content/lessons-velocita.ts`, third in `CHAPTERS`; `topicIds: [10, 11]` (Velocità, Distanza di sicurezza) so both topic cards offer its lessons. Four lessons: (1) choosing an adequate speed (art. 141), (2) reaction distance, (3) braking and total stopping distance, (4) following distance (art. 149).
+- Two new step kinds. **`stopping`**, the stopping-distance explorer (`public/js/stopping.js`), has three scenes: `sight` (a blind bend, 40 m visible), `hazard` (reaction / braking / total) and `following` (two cars braking alike). Predict first, then a comparison on one scale with a short explanation; speed, reaction time and surface unlock after the predictions. It offers reset, real-time replay and four manual steps; with reduced motion there is no playback and the same states are shown statically. Controls are buttons and native radios (tap and keyboard). **`factors`**: what the bank says matters (VERO) beside what it says does not (FALSO), each item backed by one bank statement.
+- `Chapter.topicId` became `topicIds`. "Next lesson" (`nextLessonAfter` in `src/api/learn.ts`) now skips lessons the learner already completed, so a lesson opened directly is never offered again.
+
+### 23.2 Rules future changes must keep
+- **One model, tested, server-side.** `src/lib/stopping.ts` is the only place distances are computed: v = km/h ÷ 3.6; reaction = v·t; braking = v²/(2·μ·g) with μ = 0.7 on dry asphalt. The API ships `stoppingTable()` with explorer lessons; the client looks values up and never recomputes (test: no 3.6 / 9.81 / 0.7 in `stopping.js`).
+- **No invented coefficients.** Wet and snow/ice return `brakingM: null`: braking is only "longer than dry" (the bank's claim), drawn as a dotted "؟" zone with "بیش از …" and no playback. Add a number only with a source that settles it.
+- **Every prediction is checked against the model.** Option `claims` (factor, longer, fits) must make exactly one option true, and it must be `answer` (`tests/stopping.test.ts`). Explanations stay qualitative except the bank's own numbers (14 m at 50 km/h, 28 m at 100 km/h).
+- **Drawn to scale, verified.** Every bar's width is metres × one px/m per drawing; the vm test checks all 132 settings and every comparison. The car and sign icons are symbols, not to scale (stated on screen).
+- **Following ≠ stopping.** The minimum gap is the reaction distance when both cars brake alike (bank 4258–4262, 4335); if the car ahead stops abruptly you need your whole stopping distance; the law gives no number except 100 m (some vehicle categories, art. 149 c.2) and 20 m (snowplows, c.3). The following scene has no surface control: in the equal-braking model grip cancels out, which would wrongly suggest rain does not matter.
+- **Estimates, not law.** Every view says "تخمین"; nothing is shown as a legal distance, an exact prediction or a safety guarantee.
+- Scope left out on purpose (unmapped): numeric speed limits (art. 142), level crossings, servo brakes on descents, liability after crashes.
+
+### 23.3 Sources (reviewed 2026-10-10)
+Codice della Strada artt. 141, 149 (Normattiva, agg. 24/04/2026; ACI pages updated 09/10/2026); Polizia di Stato, «Comportamenti da tenere quando si guida» (reaction time, safety distance); Comune di Genova, «Determinazione dello spazio di arresto» (1 s reaction, adherence 0.65–0.72); Comune di Firenze 2023 infographic from WHO 2008 (2.5 s, 90th-percentile driver); WHO/OECD 2006 stopping distances (27/36/58 m at 50/60/80 km/h, matched within 1 m); circolare MIT 6935/2017 (exam topics: reaction times, safety distance, braking, road holding). Bank statements cited by id in the content; the 2023-bank caveat still applies.
