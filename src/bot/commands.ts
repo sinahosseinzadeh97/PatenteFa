@@ -24,7 +24,7 @@ import {
   getUserByTelegramId,
   insertSupportMessage,
 } from "../db/queries.js";
-import { checkAllowList } from "../lib/auth.js";
+import { isAccessExpired, isPrimaryAdminUser } from "../lib/auth.js";
 import { normalizeSupportText } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
 
@@ -32,6 +32,7 @@ export interface BotContext {
   db: D1Database;
   token: string;
   allowedIds: string;
+  primaryAdminId?: string;
   logChannelId?: string;
   miniAppUrl: string;
   /** Used to park the "admin is replying to user X" state between two updates. */
@@ -57,24 +58,21 @@ const replyKey = (chatId: number | string) => `support:reply:${chatId}`;
 export function isAdminChat(
   chatId: number | string,
   telegramUserId: number,
-  ctx: Pick<BotContext, "logChannelId" | "allowedIds">
+  ctx: Pick<BotContext, "logChannelId" | "allowedIds" | "primaryAdminId">
 ): boolean {
   const channel = ctx.logChannelId || "@patente_fa_logs";
   if (String(chatId) === String(channel)) return true;
 
-  return isAdminActor(telegramUserId, ctx.allowedIds);
+  return isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId);
 }
 
 /** Admin actions must resolve to a concrete, configured Telegram account. */
 export function isAdminActor(
   telegramUserId: number,
-  allowedIds: string | undefined
+  allowedIds: string | undefined,
+  primaryAdminId?: string
 ): boolean {
-  return (allowedIds || "")
-    .split(",")
-    .map((s) => Number(s.trim()))
-    .filter(Boolean)
-    .includes(telegramUserId);
+  return isPrimaryAdminUser(telegramUserId, primaryAdminId, allowedIds);
 }
 
 interface TelegramUpdate {
@@ -118,7 +116,7 @@ export async function handleUpdate(
     // Every callback handled below mutates admin state (approval or private
     // messaging). Telegram signs the actor id in callback_query.from; require a
     // concrete configured admin even when the button lives in the log channel.
-    if (!isAdminActor(cb.from.id, ctx.allowedIds)) {
+    if (!isAdminActor(cb.from.id, ctx.allowedIds, ctx.primaryAdminId)) {
       await answerCallbackQuery(ctx.token, cb.id, "دسترسی مدیریت ندارید.");
       return;
     }
@@ -446,7 +444,7 @@ async function handleStart(
   chatId: number,
   ctx: BotContext
 ): Promise<void> {
-  const isAdmin = isAdminActor(telegramUserId, ctx.allowedIds);
+  const isAdmin = isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId);
 
   const dbUser = await upsertUser(ctx.db, telegramUserId, firstName, username, isAdmin);
 
@@ -500,7 +498,7 @@ async function handleOggi(
   chatId: number,
   ctx: BotContext
 ): Promise<void> {
-  try { checkAllowList(telegramUserId, ctx.allowedIds); } catch { return; }
+  if (!(await hasBotAccess(telegramUserId, ctx))) return;
 
   const url = `${ctx.miniAppUrl}?screen=exam`;
   await sendMessage(ctx.token, {
@@ -515,7 +513,7 @@ async function handleReview(
   chatId: number,
   ctx: BotContext
 ): Promise<void> {
-  try { checkAllowList(telegramUserId, ctx.allowedIds); } catch { return; }
+  if (!(await hasBotAccess(telegramUserId, ctx))) return;
 
   const user = await getUserByTelegramId(ctx.db, telegramUserId);
   if (!user) return;
@@ -542,7 +540,7 @@ async function handleVocab(
   chatId: number,
   ctx: BotContext
 ): Promise<void> {
-  try { checkAllowList(telegramUserId, ctx.allowedIds); } catch { return; }
+  if (!(await hasBotAccess(telegramUserId, ctx))) return;
 
   const url = `${ctx.miniAppUrl}?screen=vocab`;
   await sendMessage(ctx.token, {
@@ -557,7 +555,7 @@ async function handleStats(
   chatId: number,
   ctx: BotContext
 ): Promise<void> {
-  try { checkAllowList(telegramUserId, ctx.allowedIds); } catch { return; }
+  if (!(await hasBotAccess(telegramUserId, ctx))) return;
 
   const user = await getUserByTelegramId(ctx.db, telegramUserId);
   if (!user) return;
@@ -588,4 +586,13 @@ async function handleStats(
     text: statsText,
     reply_markup: buildMiniAppButton("📈 آمار کامل", `${ctx.miniAppUrl}?screen=stats`),
   });
+}
+
+async function hasBotAccess(
+  telegramUserId: number,
+  ctx: BotContext
+): Promise<boolean> {
+  if (isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId)) return true;
+  const user = await getUserByTelegramId(ctx.db, telegramUserId);
+  return !!user && user.is_approved === 1 && !isAccessExpired(user.access_expires_at);
 }

@@ -284,7 +284,47 @@ User feedback: theory tab (explainTheory()) responses overuse a fixed opening re
 User feedback: the translate panel should clearly show VERO/FALSO before the explanation text, not launch straight into explaining. We already know the correct answer from questions.correct_answer in our own DB — this needs zero model/prompt changes, it's a pure display-order fix:
 - Confirm POST /api/translate/:questionId's response includes the question's correct_answer (VERO/FALSO) alongside translated_text/explanation — add it if it's missing.
 - In shell.tsx's translate panel render, show a clear verdict badge ("پاسخ: VERO" / "پاسخ: FALSO", styled per design.md green/red) ABOVE translated_text and explanation, not after.
-- Quick sanity check: confirm every screen where this translate panel is reachable is a context where the user has already committed/seen their answer (results, review, signs practice) — not a live in-progress exam question before they've answered. Flag it if you find an exception; don't just assume.
+- User override (2026-08-18): the three-tab AI panel is intentionally available immediately on a live, unanswered exam question. Translation, theory, grammar, and the VERO/FALSO verdict may be used as an open-book study aid before answering; do not restore a client or server answer gate.
 
 ### 19.3 Grammar tab: show infinitive alongside conjugated verbs
 User feedback: when the grammar tab (analyzeGrammar()) lists a verb form from the sentence, it should also show the verb's infinitive (مصدر) next to it. Show the current analyzeGrammar() system prompt verbatim first, then add an explicit instruction: for every verb listed in vocab_suggestions or referenced in grammar_analysis, include its infinitive form alongside the conjugated form found in the sentence — e.g. "avviene (مصدر: avvenire)".
+
+## 21. Round 11 — structured learning path (pilot chapter: Segnali di precedenza)
+
+### 21.1 What exists
+A guided loop — Learn → Practise → Understand mistakes → Review later → See progress — built on the existing features, not beside them:
+- **Lessons** live under the existing فصل‌ها (topics) screen, in a «یادگیری گام‌به‌گام» section above topic practice; home shows a «مسیر امروز» card. No new bottom-nav tab.
+- **Pilot chapter** (3 lessons, 4–5 min each): (1) DARE PRECEDENZA vs STOP + preavvisi, signs 40–43; (2) DIRITTO DI PRECEDENZA, its end, and junction warnings, signs 52/46/47/44; (3) SENSO UNICO ALTERNATO, signs 45/53. Organised around DPR 495/1992 art. 105 (signs where *you* give way vs signs where *others* give way to you).
+- Each lesson: objective → instructional visual (side-by-side comparison, warning-sign road strip, or top-down SVG diagram) → Italian terms (TTS + existing vocab saver) → a wording trap built from two real bank statements (one VERO, one FALSO, same tempting word) → 4 real bank questions with curated feedback → completion.
+
+### 21.2 Rules future changes must keep
+- **Content is curated code** in `src/content/lessons.ts`; it is never regenerated per visit. AI (existing cached theory endpoint) is an optional extra inside feedback, labelled as AI-written.
+- **Questions are referenced by `source_id` with a text + answer snapshot.** The API drops any practice question whose live row drifted (and logs it). Never edit a snapshot to match a changed bank row without re-verifying against the law. Run `npm run verify:lessons` (and `-- --remote` before deploy).
+- **Faithful translation ≠ verdict.** `translation` keeps the claim's polarity even when false; correctness lives in `why`. No keyword-guessing rules: every trap step pairs a true and a false statement that share the word.
+- **Question → lesson routing is explicit** (`related` lists, hand-pruned, one lesson per question). No topic-level fallback. Taxonomy ("è un segnale di …"), traffic-light and motorway-placement questions are deliberately unmapped.
+- **Completion ≠ mastery.** Checkpoints show not started / in progress / completed / due for review; completed is neutral ink, never green. Practice score is shown separately as "first-attempt" results.
+- **Persistence:** `lesson_progress` (furthest step, monotonic; `completed_at` written once) and `lesson_answers` (first answer wins; a wrong answer is queued in `review_queue` exactly once, in one D1 batch). The client never shows a save the server did not confirm.
+- Related practice (10 real questions, due review first) runs in the normal exam runner as `topic_practice`. Home pass rate now counts `mode = 'exam'` sessions only.
+
+### 21.3 AI help during unanswered exam questions
+The §19.2 user override stands: an uncommitted change (2026-08-31/09-01) had re-added a verdict/theory gate; it was removed again in this round. Tutor chat remains post-answer.
+
+### 21.4 Sources (reviewed 2026-09-26)
+Codice della Strada artt. 140, 145; DPR 495/1992 artt. 81 c.7, 105–114 (Normattiva). Recorded in `PILOT_CHAPTER.sources` and shown to learners on each completion screen, with the 2023-bank caveat.
+
+## 22. Round 12 — chapter 2: Precedenza negli incroci (right of way at intersections)
+
+### 22.1 What exists
+- Chapter `precedenza-incroci` in `src/content/lessons-incroci.ts`, registered after the pilot in `CHAPTERS` (`src/content/lessons.ts`). Four lessons, 4–5 min each: (1) reading a figure — letters, arrows, "your right", signs (figs 640, 633); (2) no signs: give way to the right, vehicles on rails, no privilege for bus/filobus/eccezionale (figs 614, 613); (3) turning and moving together (figs 643, 637); (4) DARE PRECEDENZA / STOP at a junction (figs 633, 655). The proposed order was changed: turning comes before signs because every sign figure in the bank also needs the left-turn rule.
+- "Who goes first?" (`order` step) and guided reading (`scenario` step) render **original SVG redrawings** of bank figures (`src/content/crossings.ts`, `public/js/crossing.js`), labelled as educational exercises. Tap-to-order with undo/reset; the verdict comes from `POST /api/learn/lessons/:id/order` (pure `checkPassageOrder`, stateless, not stored); then a step-by-step explanation with highlighted vehicles/signs, playback, replay and manual stepping. Reduced motion: no animation or autoplay, static steps, full text list.
+- Mistakes route back to the right lesson section through explicit `related` lists (202 questions), as in the pilot. No migration: progress is keyed by lesson id.
+
+### 22.2 Rules future changes must keep
+- **The order is the bank's, proven in tests.** Each scenario's `phases` must follow from its VERO `evidence` statements alone, and contradict every FALSO one (`tests/crossings.test.ts`). `move` must match the arm angles. Evidence snapshots are checked by `npm run verify:lessons`.
+- **Never annotate or animate the bank's raster figures.** They carry a third-party mark (patentati.it) and their licence is not established by the dataset's MIT notice. Show them only as the app already does (question image, "compare with the original"); redraw anything we highlight or move.
+- **Only verified figures.** Circular "everyone has someone on the right" figures (617, 638, 642), complex five-arm figures (634, 651, 652, 654, 657–668) and roundabouts are deliberately unmapped and unused.
+- **No client copy of the order rule.** `public/js/crossing.js` renders the server verdict; it only uses `phases` to animate the explanation.
+- Left turns are drawn passing with the junction centre on the driver's right (art. 154 c.3 lett. b).
+
+### 22.3 Sources (reviewed 2026-10-08)
+Codice della Strada (testo vigente, agg. 24/04/2026) artt. 145 c.1–4, 154 c.1 lett. a and c.3 lett. a–b, 177 c.3; DPR 495/1992 artt. 106–107. Bank statements cited by id in the content (practice, traps, scenario evidence). No conflict found between these articles and the 2023 bank answers for the figures used; the 2023-bank caveat still applies.

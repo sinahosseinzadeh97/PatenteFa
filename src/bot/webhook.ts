@@ -24,6 +24,7 @@ const handleWebhook = async (c: any) => {
       db: c.env.DB,
       token: c.env.TELEGRAM_BOT_TOKEN,
       allowedIds: c.env.ALLOWED_TELEGRAM_USER_IDS,
+      primaryAdminId: c.env.PRIMARY_ADMIN_TELEGRAM_USER_ID,
       logChannelId: c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
       miniAppUrl: c.env.MINI_APP_URL,
       kv: c.env.KV,

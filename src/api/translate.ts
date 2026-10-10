@@ -16,13 +16,20 @@ import {
   updateTheoryCache,
   updateGrammarCache,
 } from "../db/queries.js";
-import { translateQuestion, explainTheory, analyzeGrammar, resolveImageUrl } from "../lib/openai.js";
+import {
+  translateQuestion,
+  explainTheory,
+  analyzeGrammar,
+  hasCompleteVocabularyCoverage,
+  resolveImageUrl,
+} from "../lib/openai.js";
+import type { VocabularySuggestion } from "../lib/openai.js";
 
 const translate = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
 // ── POST /api/translate/:questionId ─────────────────────────────────────────
-// Tab 1 — ترجمه — existing §14.1 endpoint, unchanged behaviour.
-// Loads immediately when the panel opens.
+// Tab 1 — ترجمه — loads immediately when the panel opens, including before
+// the current question is answered (explicit study-mode choice from §19.2).
 translate.post("/:questionId", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
@@ -32,6 +39,7 @@ translate.post("/:questionId", async (c) => {
   // a two-path design where cache hits omit the verdict.
   const question = await getQuestionById(c.env.DB, questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
+  const userId: number = c.get("userId" as never);
 
   // §14.1: cache-first — trust only if translated_text is present and substantial.
   // The explanation must be present too: migration 0007 nulled explanations
@@ -54,8 +62,6 @@ translate.post("/:questionId", async (c) => {
     });
   }
 
-  const userId: number | undefined = c.get("userId" as never);
-
   const resolvedImageUrl = resolveImageUrl(c.env.MINI_APP_URL, question.image_url);
 
   // The sign in the picture is already known — don't make the model read it off
@@ -73,7 +79,10 @@ translate.post("/:questionId", async (c) => {
       resolvedImageUrl,
       c.env.DB,
       userId,
-      sign
+      sign,
+      cached?.translated_text && cached.translated_text.length > 10
+        ? cached.translated_text
+        : null
     );
 
     await insertTranslation(c.env.DB, questionId, lang, result.translated_text, result.explanation);
@@ -101,6 +110,7 @@ translate.post("/:questionId", async (c) => {
 translate.post("/:questionId/theory", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
+  const userId: number = c.get("userId" as never);
 
   const cached = await getCachedTranslation(c.env.DB, questionId, lang);
   if (cached && cached.theory_text && cached.theory_text.length > 10) {
@@ -114,7 +124,6 @@ translate.post("/:questionId/theory", async (c) => {
   const question = await getQuestionById(c.env.DB, questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
 
-  const userId: number | undefined = c.get("userId" as never);
   // §20.1: image questions need the picture here too — the sign IS the rule.
   const result = await explainTheory(
     c.env,
@@ -143,13 +152,19 @@ translate.post("/:questionId/grammar", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
 
+  // The source text is required to verify that a cached vocabulary list covers
+  // the whole sentence. Old prompt versions intentionally returned only 3–6
+  // words, so grammar_analysis alone is not evidence that the cache is complete.
+  const question = await getQuestionById(c.env.DB, questionId);
+  if (!question) return c.json({ error: "Question not found" }, 404);
+
   const cached = await getCachedTranslation(c.env.DB, questionId, lang);
   if (
     cached &&
     cached.grammar_analysis &&
     cached.grammar_analysis.length > 10
   ) {
-    let vocabSuggestions: Array<{ term_it: string; term_fa: string }> = [];
+    let vocabSuggestions: VocabularySuggestion[] = [];
     try {
       if (cached.vocab_suggestions) {
         vocabSuggestions = JSON.parse(cached.vocab_suggestions);
@@ -157,16 +172,15 @@ translate.post("/:questionId/grammar", async (c) => {
     } catch {
       vocabSuggestions = [];
     }
-    return c.json({
-      questionId,
-      grammarAnalysis: cached.grammar_analysis,
-      vocabSuggestions,
-      cached: true,
-    });
+    if (hasCompleteVocabularyCoverage(question.text_it, vocabSuggestions)) {
+      return c.json({
+        questionId,
+        grammarAnalysis: cached.grammar_analysis,
+        vocabSuggestions,
+        cached: true,
+      });
+    }
   }
-
-  const question = await getQuestionById(c.env.DB, questionId);
-  if (!question) return c.json({ error: "Question not found" }, 404);
 
   const userId: number | undefined = c.get("userId" as never);
   const result = await analyzeGrammar(c.env, question.text_it, c.env.DB, userId);

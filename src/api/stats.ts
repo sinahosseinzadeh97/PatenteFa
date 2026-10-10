@@ -43,8 +43,9 @@ stats.get("/", async (c) => {
   // Weakest topic
   const weakestTopic = topicAccuracy.length > 0 ? topicAccuracy[0] : null;
 
-  // Total sessions and pass rate
-  const finishedSessions = recentSessions.filter((s) => s.finished_at);
+  // Pass rate counts full exam simulations only — topic, lesson and review
+  // practice use different lengths and pass thresholds.
+  const finishedSessions = recentSessions.filter((s) => s.finished_at && s.mode === "exam");
   const passCount = finishedSessions.filter((s) => s.passed === 1).length;
   const passRate =
     finishedSessions.length > 0

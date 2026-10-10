@@ -8,6 +8,9 @@ OPENAI_MODEL=gpt-4o-mini
 # Image (sign/diagram) questions only — mini misreads road signs. Default: gpt-4o
 OPENAI_VISION_MODEL=gpt-4o
 ALLOWED_TELEGRAM_USER_IDS=123456789,987654321
+# Exactly one account can access admin APIs and receive the admin UI.
+# If omitted, the first ALLOWED_TELEGRAM_USER_IDS entry is used for compatibility.
+PRIMARY_ADMIN_TELEGRAM_USER_ID=123456789
 LOG_CHANNEL_ID=-1001234567890
 MINI_APP_URL=https://your-worker.your-account.workers.dev
 DEFAULT_TIMEZONE=Europe/Rome

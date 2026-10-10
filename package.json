@@ -5,13 +5,17 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
+    "test": "node --import tsx --test --test-concurrency=1 tests/*.test.ts",
+    "test:coverage": "node --import tsx --test --test-concurrency=1 --experimental-test-coverage tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
     "types": "wrangler types",
     "db:migrate:local": "wrangler d1 migrations apply patente-fa-db --local",
     "db:migrate:remote": "wrangler d1 migrations apply patente-fa-db --remote",
     "db:schema:local": "wrangler d1 execute patente-fa-db --local --file ./src/db/schema.sql",
     "vendor:motion": "esbuild scripts/motion.entry.js --bundle --format=esm --minify --target=es2020 --outfile=public/js/vendor/motion.js",
     "import": "tsx scripts/import-question-bank.ts",
-    "migrate:signs": "tsx scripts/migrate-signs-to-r2.ts"
+    "migrate:signs": "tsx scripts/migrate-signs-to-r2.ts",
+    "verify:lessons": "tsx scripts/verify-lessons.ts"
   },
   "dependencies": {
     "hono": "^4.7.11"

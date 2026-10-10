@@ -1,40 +1,19 @@
-/**
- * src/app/screens/support.ts
- * Support chat — the user's side of the thread they share with the admin.
- *
- * Reachable from the profile screen and, deliberately, from the pending-approval
- * screen: a user waiting for access is exactly the one who needs to ask a
- * question. The API behind it (/api/support) is not approval-gated for the same
- * reason. Replies arrive here and as a Telegram DM from the bot; the person
- * answering is never named.
- */
+/** User-to-admin support conversation. */
 export function renderSupportScreen(): string {
   return `
-<div id="screen-support" class="screen" style="padding:0 0 90px;">
-  <div class="support-content">
+<div id="screen-support" class="screen screen-with-nav support-screen">
+  <main class="page-container support-content">
+    <header class="page-header support-header-bar">
+      <button type="button" onclick="App.handleBackNavigation()" class="icon-button" aria-label="بازگشت"><svg class="ui-icon"><use href="#i-chevron-right"/></svg></button>
+      <div><span class="page-kicker">گفتگو با پشتیبانی</span><h1>پشتیبانی PatenteFa</h1><p>پاسخ هم اینجا و هم در چت ربات به تو اطلاع داده می‌شود.</p></div>
+    </header>
 
-    <div class="support-header-bar">
-      <button type="button" onclick="App.handleBackNavigation()" class="support-back-btn" aria-label="بازگشت">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="support-back-icon" aria-hidden="true"><path d="M15 18l6-6-6-6"/></svg>
-      </button>
-      <div>
-        <h1 class="support-title">پشتیبانی PatenteFa</h1>
-        <div class="support-subtitle">پاسخ معمولاً در چند ساعت — همچنین در چت ربات به شما اطلاع داده می‌شود</div>
-      </div>
-    </div>
-
-    <div id="support-thread" class="support-thread" role="log" aria-live="polite">
-      <div class="support-empty">در حال بارگذاری گفتگو…</div>
-    </div>
+    <div id="support-thread" class="support-thread" role="log" aria-live="polite" aria-label="پیام‌های پشتیبانی"><div class="support-empty">در حال دریافت گفتگو…</div></div>
 
     <form onsubmit="App.sendSupportMessage(event)" class="support-form">
-      <label for="support-input" class="visually-hidden">پیام برای پشتیبانی</label>
-      <textarea id="support-input" class="support-input" rows="2" maxlength="2000"
-        placeholder="سوال یا مشکل خود را بنویسید…"></textarea>
-      <button type="submit" id="support-send-btn" class="btn btn-primary support-send-btn">ارسال</button>
+      <div class="support-field"><label for="support-input" class="field-label">پیام جدید</label><textarea id="support-input" class="support-input" rows="2" maxlength="2000" placeholder="سؤال یا مشکل خود را بنویسید…"></textarea></div>
+      <button type="submit" id="support-send-btn" class="btn btn-primary support-send-btn" aria-label="ارسال پیام"><svg class="ui-icon"><use href="#i-send"/></svg><span id="support-send-label">ارسال</span></button>
     </form>
-
-  </div>
-</div>
-`;
+  </main>
+</div>`;
 }

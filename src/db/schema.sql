@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS users (
   daily_reminder_hour INTEGER DEFAULT 8,
   timezone TEXT DEFAULT 'Europe/Rome',
   is_approved INTEGER DEFAULT 0,
+  access_expires_at TEXT,              -- NULL = unlimited; otherwise UTC expiry
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -41,7 +42,7 @@ CREATE TABLE IF NOT EXISTS translations_cache (
   explanation TEXT,
   theory_text TEXT,                    -- 🎓 مربی تئوری (full theory explanation)
   grammar_analysis TEXT,               -- 📚 معلم گرامر (grammar analysis)
-  vocab_suggestions TEXT,              -- JSON array [{term_it, term_fa}]
+  vocab_suggestions TEXT,              -- JSON array with term, translation, POS, and infinitive
   created_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (question_id, lang)
 );
@@ -53,6 +54,7 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
   mode TEXT DEFAULT 'exam',            -- 'exam' | 'topic_practice' | 'review'
   started_at TEXT DEFAULT (datetime('now')),
   finished_at TEXT,
+  abandoned_at TEXT,                   -- left without scoring; answers remain for progress
   duration_seconds INTEGER,
   score INTEGER,
   wrong_count INTEGER,
@@ -60,6 +62,7 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON exam_sessions(user_id, started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_sessions_active ON exam_sessions(user_id, finished_at, abandoned_at);
 
 CREATE TABLE IF NOT EXISTS exam_answers (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -102,6 +105,33 @@ CREATE TABLE IF NOT EXISTS vocab_items (
 
 CREATE INDEX IF NOT EXISTS idx_vocab_user ON vocab_items(user_id, next_review_at);
 
+CREATE TABLE IF NOT EXISTS user_events (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  event_type TEXT NOT NULL,
+  event_data TEXT,
+  duration_seconds INTEGER DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_user_events_user ON user_events(user_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_events_type ON user_events(event_type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_user_events_user_type_created ON user_events(user_id, event_type, created_at DESC);
+
+CREATE TABLE IF NOT EXISTS api_usage_logs (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  user_id INTEGER REFERENCES users(id),
+  service TEXT NOT NULL DEFAULT 'openai',
+  model TEXT,
+  action TEXT NOT NULL,
+  prompt_tokens INTEGER DEFAULT 0,
+  completion_tokens INTEGER DEFAULT 0,
+  estimated_cost_usd REAL DEFAULT 0,
+  created_at TEXT DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_api_usage_user ON api_usage_logs(user_id, created_at DESC);
+
 -- Support inbox — one thread per user, written by both the Mini App and the
 -- Telegram relay. See migrations/0010_support_messages.sql for the direction
 -- and read_at semantics.
@@ -117,3 +147,26 @@ CREATE TABLE IF NOT EXISTS support_messages (
 
 CREATE INDEX IF NOT EXISTS idx_support_user ON support_messages(user_id, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_support_unread ON support_messages(direction, read_at);
+
+-- Learning path — per-user lesson state. Content lives in src/content/lessons.ts.
+-- See migrations/0015_learning_progress.sql for the idempotency rules.
+CREATE TABLE IF NOT EXISTS lesson_progress (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  lesson_id TEXT NOT NULL,
+  step INTEGER NOT NULL DEFAULT 0,     -- furthest step reached (resume point)
+  started_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  completed_at TEXT,                   -- written once, never cleared
+  PRIMARY KEY (user_id, lesson_id)
+);
+
+CREATE TABLE IF NOT EXISTS lesson_answers (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  lesson_id TEXT NOT NULL,
+  question_id INTEGER NOT NULL REFERENCES questions(id),
+  user_answer INTEGER NOT NULL,        -- first answer only
+  is_correct INTEGER NOT NULL,
+  review_queued INTEGER NOT NULL DEFAULT 0,
+  answered_at TEXT NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, lesson_id, question_id)
+);

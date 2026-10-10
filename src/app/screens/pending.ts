@@ -1,54 +1,27 @@
-/**
- * src/app/screens/pending.ts
- * Pending-approval screen (shown to users awaiting admin approval).
- */
+/** Access approval / manual subscription gate. */
 export function renderPendingScreen(): string {
   return `
-<div id="screen-pending" class="screen" style="padding:40px 20px; text-align:center; display:none; flex-direction:column; align-items:center; justify-content:center; min-height:80vh;">
-  <div class="pending-icon" aria-hidden="true">
-    ⏳
-  </div>
-  <h2 class="pending-title">در انتظار تایید مدیریت</h2>
-  <p class="pending-message" id="pending-msg">
-    درخواست دسترسی شما برای مدیریت ارسال گردید. پس از تایید مدیریت، دسترسی شما فعال می‌شود.
-  </p>
+<div id="screen-pending" class="screen pending-screen">
+  <main class="pending-content">
+    <div class="pending-status-icon"><svg class="ui-icon"><use href="#i-clock"/></svg></div>
+    <span class="page-kicker">وضعیت دسترسی</span>
+    <h1 class="pending-title">در انتظار تأیید مدیریت</h1>
+    <p class="pending-message" id="pending-msg">درخواستت ثبت شده است. بعد از تأیید، دسترسی کامل در همین صفحه فعال می‌شود.</p>
 
-  <!-- Commercial Value Proposition Card -->
-  <div class="pending-value-card">
-    <div class="pending-value-heading">
-      <span aria-hidden="true">💎</span> <b>چرا سامانه هوشمند PatenteFa؟</b>
+    <section class="pending-details" aria-labelledby="pending-details-title">
+      <h2 id="pending-details-title">پس از فعال‌سازی در دسترس است</h2>
+      <ul><li><svg class="ui-icon"><use href="#i-check"/></svg> بانک کامل سؤال‌های آزمون</li><li><svg class="ui-icon"><use href="#i-check"/></svg> ترجمه، توضیح تئوری و گرامر</li><li><svg class="ui-icon"><use href="#i-check"/></svg> مرور اشتباهات و تحلیل پیشرفت</li></ul>
+    </section>
+
+    <div class="field-group pending-note-field">
+      <label for="fun-custom-answer-input" class="field-label">توضیح برای مدیریت <span>اختیاری</span></label>
+      <input type="text" id="fun-custom-answer-input" placeholder="اگر نکته‌ای هست اینجا بنویسید" class="form-control" />
     </div>
 
-    <p class="pending-value-body">
-      با توجه به افزایش قیمت یورو و هزینه‌های سنگین <b>۱۵۰ تا ۱۶۰ یورویی</b> پکیج‌های آموزشی موجود در بازار، سامانه <b>PatenteFa</b> به گونه‌ای طراحی شده است که شما را ظرف مدت <b>۳ تا ۴ ماه</b>، با بالاترین کیفیت و تنها با <b>یک‌سوم هزینه پکیج‌های مشابه</b>، آماده قبولی در آزمون اصلی تئوری پاتنته کند.
-    </p>
-
-    <div class="pending-value-features">
-      ✨ شامل ۳ دستیار هوش مصنوعی (مترجم، مربی آیین‌نامه، استاد زبان ایتالیایی)، ۷,۱۳۹ سوال رسمی و ۲۵ فصل آموزشی
-    </div>
-
-    <label for="fun-custom-answer-input" style="display:none;">پیام تکمیلی برای مدیریت</label>
-    <input type="text" id="fun-custom-answer-input" placeholder="پیام یا توضیحات تکمیلی شما برای مدیریت (اختیاری)…" class="pending-fun-input" />
-
-    <button type="button" class="btn btn-primary btn-sm btn-full" id="btn-submit-fun" onclick="App.submitFunAnswer()">
-      ارسال درخواست فعال‌سازی دسترسی 🚀
-    </button>
-
-    <div id="fun-reward-box" class="pending-reward-box">
-      ✅ <b>درخواست شما با موفقیت ثبت شد!</b> مدیریت به‌زودی دسترسی شما را تایید خواهد کرد.
-    </div>
-  </div>
-
-  <button class="btn btn-primary btn-full pending-recheck-btn" onclick="App.checkApprovalStatus()">
-    🔄 بررسی مجدد وضعیت دسترسی
-  </button>
-
-  <!-- The support thread is not approval-gated on purpose — a user waiting
-       here is the one most likely to have a question. -->
-  <button class="btn btn-ghost btn-full pending-support-btn" onclick="App.openSupport()">
-    💬 گفتگو با پشتیبانی
-    <span id="pending-support-badge" class="profile-support-badge" hidden></span>
-  </button>
-</div>
-`;
+    <button type="button" class="btn btn-primary btn-full" id="btn-submit-fun" onclick="App.submitFunAnswer()">ارسال درخواست فعال‌سازی</button>
+    <div id="fun-reward-box" class="inline-success" role="status"><svg class="ui-icon"><use href="#i-check"/></svg><span>درخواستت ثبت شد و برای مدیریت ارسال شد.</span></div>
+    <button class="btn btn-secondary btn-full" onclick="App.checkApprovalStatus()"><svg class="ui-icon"><use href="#i-review"/></svg> بررسی دوباره وضعیت</button>
+    <button class="btn btn-quiet btn-full" onclick="App.openSupport()"><svg class="ui-icon"><use href="#i-message"/></svg> گفتگو با پشتیبانی <span id="pending-support-badge" class="profile-support-badge" hidden></span></button>
+  </main>
+</div>`;
 }

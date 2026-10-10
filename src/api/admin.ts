@@ -1,7 +1,7 @@
 /**
  * src/api/admin.ts
  * Admin Web Dashboard REST API routes.
- * Guarded by admin check (ALLOWED_TELEGRAM_USER_IDS).
+ * Guarded by the single configured primary Telegram admin.
  */
 
 import { Hono } from "hono";
@@ -19,11 +19,17 @@ import {
   insertSupportMessage,
   markSupportThreadRead,
   countUnreadSupportTotal,
+  setUserAccessExpiration,
 } from "../db/queries.js";
-import { checkAllowList } from "../lib/auth.js";
+import { checkPrimaryAdmin } from "../lib/auth.js";
 import { sendMessage, sendSupportReply, buildMiniAppButton } from "../lib/telegram.js";
 import { normalizeSupportText } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
+import {
+  renderAdminScreen,
+  renderAdminSupportModal,
+  renderAdminUserModal,
+} from "../app/screens/admin.js";
 
 const admin = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
@@ -31,11 +37,24 @@ const admin = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 admin.use("*", async (c, next) => {
   const telegramUserId: number = c.get("telegramUserId" as never);
   try {
-    checkAllowList(telegramUserId, c.env.ALLOWED_TELEGRAM_USER_IDS);
+    checkPrimaryAdmin(
+      telegramUserId,
+      c.env.PRIMARY_ADMIN_TELEGRAM_USER_ID,
+      c.env.ALLOWED_TELEGRAM_USER_IDS
+    );
   } catch (err) {
     return c.json({ error: "Access denied. Only primary admins can access the management panel." }, 403);
   }
   await next();
+});
+
+// The normal Mini App shell does not contain admin markup. It is mounted only
+// after this authenticated request succeeds, so non-admin users neither see
+// the entry point nor receive the operator interface.
+admin.get("/shell", (c) => {
+  return c.json({
+    html: [renderAdminScreen(), renderAdminUserModal(), renderAdminSupportModal()].join("\n"),
+  });
 });
 
 // GET /api/admin/overview
@@ -98,6 +117,44 @@ admin.post("/users/:id/status", async (c) => {
     userId: id,
     telegramUserId: target.telegram_user_id,
     isApproved: body.isApproved,
+  });
+});
+
+// POST /api/admin/users/:id/access — grant unlimited or time-boxed access.
+admin.post("/users/:id/access", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return c.json({ error: "Invalid user id" }, 400);
+  }
+
+  const body = (await c.req.json().catch(() => ({}))) as { durationDays?: number | null };
+  const durationDays = body.durationDays;
+  if (durationDays === undefined) {
+    return c.json({ error: "durationDays is required" }, 400);
+  }
+  if (
+    durationDays !== null &&
+    (!Number.isSafeInteger(durationDays) || durationDays < 1 || durationDays > 3650)
+  ) {
+    return c.json({ error: "durationDays must be null or an integer between 1 and 3650" }, 400);
+  }
+
+  const target = await getUserById(c.env.DB, id);
+  if (!target) return c.json({ error: "User not found" }, 404);
+
+  const accessExpiresAt = durationDays === null
+    ? null
+    : new Date(Date.now() + durationDays * 86_400_000)
+        .toISOString()
+        .replace("T", " ")
+        .slice(0, 19);
+  const updated = await setUserAccessExpiration(c.env.DB, id, accessExpiresAt);
+
+  return c.json({
+    ok: true,
+    userId: id,
+    isApproved: updated?.is_approved === 1,
+    accessExpiresAt: updated?.access_expires_at ?? null,
   });
 });
 

@@ -21,10 +21,11 @@ import { renderTutorScreen } from "./screens/tutor.js";
 import { renderVocabScreen } from "./screens/vocab.js";
 import { renderStatsScreen } from "./screens/stats.js";
 import { renderProfileScreen } from "./screens/profile.js";
-import { renderAdminScreen, renderAdminUserModal, renderAdminSupportModal } from "./screens/admin.js";
 import { renderSignsScreen } from "./screens/signs.js";
 import { renderSupportScreen } from "./screens/support.js";
+import { renderLessonScreen } from "./screens/lesson.js";
 import {
+  renderIconSprite,
   renderLoading,
   renderBottomNav,
   renderToast,
@@ -52,11 +53,9 @@ function buildScreens(): string {
     renderVocabScreen(),
     renderStatsScreen(),
     renderProfileScreen(),
-    renderAdminScreen(),
-    renderAdminUserModal(),
-    renderAdminSupportModal(),
     renderSignsScreen(),
     renderSupportScreen(),
+    renderLessonScreen(),
   ].join("\n");
 }
 
@@ -65,7 +64,7 @@ function buildHtml(): string {
 <html lang="fa" dir="rtl">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
@@ -86,7 +85,9 @@ function buildHtml(): string {
   <link rel="stylesheet" href="/css/app.css" />
 </head>
 <body>
-<div id="app-root">
+${renderIconSprite()}
+<a class="skip-link" href="#app-root">رفتن به محتوای اصلی</a>
+<div id="app-root" tabindex="-1">
 
 ${renderLoading()}
 
@@ -121,6 +122,8 @@ window.onerror = function(msg, url, line, col, err) {
 <script src="/js/navigation.js"></script>
 <script src="/js/app.js"></script>
 <script src="/js/exam.js"></script>
+<script src="/js/crossing.js"></script>
+<script src="/js/learn.js"></script>
 </body>
 </html>`;
 }

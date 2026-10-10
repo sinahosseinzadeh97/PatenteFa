@@ -16,6 +16,8 @@ export interface AppEnv {
   /** §20.1: model for image (sign/diagram) questions. Default gpt-4o — mini misreads signs. */
   OPENAI_VISION_MODEL?: string;
   ALLOWED_TELEGRAM_USER_IDS: string;
+  /** The only Telegram account allowed to open or call the admin dashboard. */
+  PRIMARY_ADMIN_TELEGRAM_USER_ID?: string;
   LOG_CHANNEL_ID: string;
   MINI_APP_URL: string;
   DEFAULT_TIMEZONE: string;
@@ -25,6 +27,4 @@ export interface AppEnv {
 export interface AppVariables {
   userId: number;
   telegramUserId: number;
-  /** Milliseconds left in the free trial; unset for approved (paid/admin) users. */
-  trialMsLeft?: number;
 }

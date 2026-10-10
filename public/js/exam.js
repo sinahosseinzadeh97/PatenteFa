@@ -9,24 +9,39 @@
 'use strict';
 
   // ── Start exam ──────────────────────────────────────────────────────────────
+  App.initializeExamState = function(data, options) {
+    options = options || {};
+    state.sessionId = data.sessionId;
+    state.questions = data.questions || [];
+    state.currentIndex = 0;
+    state.answers = {};
+    state.answerResults = {};
+    state.recordedAnswers = new Set();
+    state.flags = new Set();
+    state.startedAt = Date.now();
+    state.translateOpen = false;
+    state.translationCache = {};
+    state.theoryCache = {};
+    state.grammarCache = {};
+    state.aiPendingRequests = {};
+    state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
+    state.answerPending = {};
+    state.finishPending = false;
+    state.secondsLeft = options.secondsLeft || 1200;
+    state.examMode = options.mode || data.mode || 'exam';
+    state.examReturnScreen = options.returnScreen || 'home';
+  };
+
   App.startExam = async function(mode) {
+    if (state.examStartPending) return;
+    state.examStartPending = true;
     mode = mode || 'exam';
     const returnScreen = state.currentScreen && state.currentScreen !== 'exam'
       ? state.currentScreen
       : 'home';
     try {
       const data = await api('POST', '/exam/start', { mode });
-      state.sessionId = data.sessionId;
-      state.questions = data.questions;
-      state.currentIndex = 0;
-      state.answers = {};
-      state.flags = new Set();
-      state.startedAt = Date.now();
-      state.translateOpen = false;
-      state.translationCache = {};
-      state.secondsLeft = 1200;
-      state.examMode = mode;
-      state.examReturnScreen = returnScreen;
+      App.initializeExamState(data, { mode: mode, returnScreen: returnScreen });
 
       App.showScreen('exam');
       document.getElementById('bottom-nav').style.display = 'none';
@@ -36,6 +51,8 @@
       App.startTimer();
     } catch (e) {
       App.toast('خطا: ' + e.message);
+    } finally {
+      state.examStartPending = false;
     }
   };
 
@@ -73,6 +90,16 @@
     }
 
     clearInterval(state.timerInterval);
+    const abandonedSessionId = state.sessionId;
+    // Invalidate first: delayed answer/finish callbacks capture the old ID and
+    // must become no-ops before the asynchronous abandon request is sent.
+    state.sessionId = null;
+    state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
+    state.answerPending = {};
+    state.finishPending = false;
+    if (abandonedSessionId) {
+      api('POST', '/exam/' + abandonedSessionId + '/abandon').catch(function() {});
+    }
     state.examMode = null;
     App.applyExamMode();
 
@@ -103,7 +130,7 @@
     const s = state.secondsLeft % 60;
     const el = document.getElementById('exam-timer');
     el.textContent = m + ':' + String(s).padStart(2, '0');
-    el.className = 'timer';
+    el.className = 'timer exam-timer-inline';
     if (state.secondsLeft <= 60) el.classList.add('danger');
     else if (state.secondsLeft <= 300) el.classList.add('warning');
   };
@@ -118,7 +145,7 @@
     // Update the summary label
     const posEl = document.getElementById('exam-position');
     if (posEl) {
-      posEl.textContent = 'Q ' + (state.currentIndex + 1) + ' / ' + total;
+      posEl.textContent = (state.currentIndex + 1) + ' / ' + total;
     }
 
     state.questions.forEach(function(q, i) {
@@ -173,6 +200,97 @@
 
     // §15.3: reset AI panel on question switch (uses centralized helper)
     App._resetAiPanel();
+    App.renderAnswerState(q);
+    App.updateFinishAvailability();
+  };
+
+  App.renderAnswerState = function(q) {
+    const veroBtn = document.getElementById('btn-vero');
+    const falsoBtn = document.getElementById('btn-falso');
+    const feedback = document.getElementById('exam-answer-feedback');
+    const nextBtn = document.getElementById('btn-next-question');
+    const result = state.answerResults[q.questionId];
+    const answered = state.recordedAnswers.has(q.questionId);
+
+    [veroBtn, falsoBtn].forEach(function(btn) {
+      if (!btn) return;
+      btn.disabled = answered;
+      btn.classList.remove(
+        'btn-disabled',
+        'answer-selected',
+        'answer-correct-choice',
+        'answer-wrong-choice'
+      );
+    });
+
+    if (feedback) {
+      feedback.textContent = '';
+      feedback.className = 'exam-answer-feedback fa-text';
+      feedback.style.display = 'block';
+    }
+    if (nextBtn) {
+      nextBtn.style.display = answered && state.currentIndex < state.questions.length - 1
+        ? 'inline-flex'
+        : 'none';
+    }
+
+    if (!answered || !result) {
+      App.renderExamLessonHint(null);
+      return;
+    }
+
+    const selectedBtn = state.answers[q.questionId] === 1 ? veroBtn : falsoBtn;
+    const correctBtn = result.correctAnswer === 1 ? veroBtn : falsoBtn;
+    if (selectedBtn) selectedBtn.classList.add('answer-selected');
+    if (correctBtn) correctBtn.classList.add('answer-correct-choice');
+    if (!result.isCorrect && selectedBtn) selectedBtn.classList.add('answer-wrong-choice');
+
+    App.renderExamLessonHint(result);
+
+    if (feedback) {
+      const correctLabel = result.correctAnswer === 1 ? 'VERO' : 'FALSO';
+      feedback.textContent = result.isCorrect
+        ? 'درست انتخاب کردی — پاسخ صحیح: ' + correctLabel
+        : 'انتخابت نادرست بود — پاسخ صحیح: ' + correctLabel;
+      feedback.classList.add(result.isCorrect ? 'correct' : 'wrong', 'is-visible');
+    }
+  };
+
+  // After a wrong answer, point to the lesson section that teaches this exact
+  // question (explicit mapping from the server). Text only: leaving mid-session
+  // would abandon it, so the button to open the lesson lives on the results screen.
+  App.renderExamLessonHint = function(result) {
+    const hint = document.getElementById('exam-lesson-hint');
+    if (!hint) return;
+    const link = result && !result.isCorrect ? result.lessonLink : null;
+    hint.hidden = !link;
+    hint.textContent = link
+      ? 'این سؤال در درس «' + link.titleFa + '» توضیح داده شده است. بعد از پایان جلسه می‌توانی از صفحه‌ی نتیجه بازش کنی.'
+      : '';
+  };
+
+  App.nextQuestion = function() {
+    const q = state.questions[state.currentIndex];
+    if (!q || !state.recordedAnswers.has(q.questionId)) return;
+    if (state.currentIndex >= state.questions.length - 1) {
+      App.finishExam();
+      return;
+    }
+    state.currentIndex += 1;
+    App.renderExamTabs();
+    App.renderQuestion();
+  };
+
+  App.updateFinishAvailability = function() {
+    const btn = document.getElementById('btn-finish-exam');
+    if (!btn) return;
+    const lastQuestion = state.questions[state.questions.length - 1];
+    const canFinish = !!(
+      state.sessionId &&
+      lastQuestion &&
+      state.recordedAnswers.has(lastQuestion.questionId)
+    );
+    btn.style.display = canFinish ? 'inline-flex' : 'none';
   };
 
   // ── Answer ──────────────────────────────────────────────────────────────────
@@ -180,36 +298,44 @@
     const q = state.questions[state.currentIndex];
     if (!q) return;
     if (state.answers[q.questionId] !== undefined) return; // already answered
+    if (state.answerPending[q.questionId]) return;
 
-    state.answers[q.questionId] = value;
+    const sessionId = state.sessionId;
+    state.answerPending[q.questionId] = true;
 
     document.getElementById('btn-vero').classList.add('btn-disabled');
     document.getElementById('btn-falso').classList.add('btn-disabled');
 
-    // Update road immediately on answer
-    App.renderExamTabs();
-
     try {
-      await api('POST', '/exam/' + state.sessionId + '/answer', {
+      const result = await api('POST', '/exam/' + sessionId + '/answer', {
         questionId: q.questionId,
         answer: value,
       });
+      if (state.sessionId !== sessionId) return;
+      state.answers[q.questionId] = value;
+      state.answerResults[q.questionId] = {
+        isCorrect: result.isCorrect === true,
+        correctAnswer: result.correctAnswer === 1 ? 1 : 0,
+      };
+      state.recordedAnswers.add(q.questionId);
+      state.answerResults[q.questionId].lessonLink = result.lessonLink || null;
+      App.renderExamTabs();
+      App.updateFinishAvailability();
+      const currentQuestion = state.questions[state.currentIndex];
+      if (currentQuestion && currentQuestion.questionId === q.questionId) {
+        App.renderAnswerState(q);
+      }
     } catch (e) {
-      // Offline — continue locally
-    }
-
-    setTimeout(function() {
+      const message = e && typeof e.status === 'number'
+        ? 'پاسخ ذخیره نشد: ' + e.message
+        : 'وضعیت شبکه نامشخص است؛ برای تلاش دوباره پاسخ را بزنید.';
+      App.toast(message);
       document.getElementById('btn-vero').classList.remove('btn-disabled');
       document.getElementById('btn-falso').classList.remove('btn-disabled');
-
-      if (state.currentIndex < state.questions.length - 1) {
-        state.currentIndex++;
-        App.renderExamTabs();
-        App.renderQuestion();
-      } else {
-        App.finishExam();
-      }
-    }, 320);
+      return;
+    } finally {
+      if (state.sessionId === sessionId) delete state.answerPending[q.questionId];
+    }
   };
 
   // ── Flag / bookmark ─────────────────────────────────────────────────────────
@@ -230,7 +356,11 @@
 
   // ── TTS ─────────────────────────────────────────────────────────────────────
   App.speakQuestion = function() {
-    const text = document.getElementById('exam-question-text').textContent;
+    App.speakItalian(document.getElementById('exam-question-text').textContent);
+  };
+
+  // Shared by the exam runner and lessons (Web Speech it-IT voice, §10).
+  App.speakItalian = function(text) {
     if (!text) return;
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
@@ -238,11 +368,13 @@
       utt.lang = 'it-IT'; utt.rate = 0.9;
       window.speechSynthesis.speak(utt);
     } else {
-      App.toast('TTS در این مرورگر پشتیبانی نمی‌شود');
+      App.toast('پخش صدا روی این دستگاه پشتیبانی نمی‌شود');
     }
   };
 
   // ── §15.3 AI Panel — three independent tabs ──────────────────────────────────
+  // features.md §19.2 user override: all three tabs, including the verdict, are
+  // an open-book study aid on a live, unanswered question. No answer gate.
   // toggleTranslate: checkbox onchange — opens/closes the whole panel.
   // Opening always shows tab 0 (translation) and fires its request.
   // Tabs 1 and 2 only fire when the user explicitly taps them.
@@ -276,6 +408,7 @@
 
     const q = state.questions[state.currentIndex];
     if (!q) return;
+    const requestGeneration = state.aiRequestGeneration;
 
     if (tabIndex === 0) {
       // Translation tab — load immediately (same as before)
@@ -283,14 +416,21 @@
         App.showTranslation(state.translationCache[q.questionId]);
         return;
       }
-      document.getElementById('translate-text').textContent = '⏳ در حال ترجمه…';
+      document.getElementById('translate-text').textContent = 'در حال ترجمه…';
       document.getElementById('translate-explanation').textContent = '';
+      document.getElementById('translate-explanation').style.display = 'none';
+      document.getElementById('translate-verdict').style.display = 'none';
       try {
-        const data = await api('POST', '/translate/' + q.questionId);
+        const data = await App.getAiRequest(
+          requestGeneration + ':translation:' + q.questionId,
+          function() { return api('POST', '/translate/' + q.questionId); }
+        );
         state.translationCache[q.questionId] = data;
+        if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
         App.showTranslation(data);
       } catch (e) {
-        document.getElementById('translate-text').textContent = '⚠ خطا: ' + (e.message || 'ترجمه در دسترس نیست');
+        if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
+        document.getElementById('translate-text').textContent = 'ترجمه در دسترس نیست: ' + (e.message || 'دوباره تلاش کنید');
       }
     } else if (tabIndex === 1) {
       // Theory tab — lazy: only fires on first tap for this question
@@ -302,77 +442,96 @@
   };
 
   App.showTranslation = function(data) {
-    // §19.2: render verdict badge ABOVE translated text
     const verdictEl = document.getElementById('translate-verdict');
+    const explanationEl = document.getElementById('translate-explanation');
+
+    // §19.2: verdict first, then the faithful translation, then the explanation.
     if (verdictEl) {
       const isVero = data.verdictVero === true;
       const label = isVero ? 'VERO' : 'FALSO';
-      const labelFa = 'پاسخ: ' + label;
-      verdictEl.innerHTML =
-        '<span class="fa-text" style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:0.82rem;font-weight:700;' +
-        (isVero
-          ? 'background:rgba(22,163,74,0.15);color:var(--go);border:1px solid rgba(22,163,74,0.35);'
-          : 'background:rgba(220,38,38,0.12);color:var(--stop);border:1px solid rgba(220,38,38,0.3);') +
-        '">' + (isVero ? '✅' : '❌') + ' ' + labelFa + '</span>';
+      verdictEl.innerHTML = '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">پاسخ: ' + label + '</span>';
       verdictEl.style.display = 'block';
     }
     document.getElementById('translate-text').textContent = data.translatedText || '';
-    document.getElementById('translate-explanation').textContent = data.explanation || '';
+    if (explanationEl) {
+      explanationEl.style.display = data.explanation ? 'block' : 'none';
+      App.renderRichText(explanationEl, data.explanation || '');
+    }
     document.getElementById('exam-question-text').classList.add('translated');
   };
 
   // loadTheoryTab: fetches theory once per question, caches in state.theoryCache
   App.loadTheoryTab = async function(questionId) {
-    if (state.theoryCache && state.theoryCache[questionId]) {
-      App.renderRichText(document.getElementById('theory-text'), state.theoryCache[questionId]);
-      return;
-    }
     const loadingEl = document.getElementById('theory-loading');
     const textEl = document.getElementById('theory-text');
     const errorEl = document.getElementById('theory-error');
+    if (state.theoryCache && state.theoryCache[questionId]) {
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      App.renderRichText(textEl, state.theoryCache[questionId]);
+      return;
+    }
+    const requestGeneration = state.aiRequestGeneration;
     loadingEl.style.display = 'block';
     textEl.textContent = '';
     errorEl.style.display = 'none';
     try {
-      const data = await api('POST', '/translate/' + questionId + '/theory');
+      const data = await App.getAiRequest(
+        requestGeneration + ':theory:' + questionId,
+        function() { return api('POST', '/translate/' + questionId + '/theory'); }
+      );
       if (!state.theoryCache) state.theoryCache = {};
       state.theoryCache[questionId] = data.theoryText || '';
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       App.renderRichText(textEl, data.theoryText || '');
     } catch (e) {
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       errorEl.textContent = 'مربی تئوری در دسترس نیست — دوباره تلاش کنید';
       errorEl.style.display = 'block';
     } finally {
-      loadingEl.style.display = 'none';
+      if (App.isAiRequestCurrent(questionId, requestGeneration)) {
+        loadingEl.style.display = 'none';
+      }
     }
   };
 
   // loadGrammarTab: fetches grammar+vocab once per question, caches in state.grammarCache
   App.loadGrammarTab = async function(questionId) {
-    if (state.grammarCache && state.grammarCache[questionId]) {
-      const cached = state.grammarCache[questionId];
-      App.renderRichText(document.getElementById('grammar-analysis'), cached.grammarAnalysis || '');
-      App.renderVocabSuggestions(cached.vocabSuggestions || [], questionId);
-      return;
-    }
     const loadingEl = document.getElementById('grammar-loading');
     const analysisEl = document.getElementById('grammar-analysis');
     const errorEl = document.getElementById('grammar-error');
     const listEl = document.getElementById('vocab-suggestions-list');
+    if (state.grammarCache && state.grammarCache[questionId]) {
+      const cached = state.grammarCache[questionId];
+      loadingEl.style.display = 'none';
+      errorEl.style.display = 'none';
+      App.renderRichText(analysisEl, cached.grammarAnalysis || '');
+      App.renderVocabSuggestions(cached.vocabSuggestions || [], questionId);
+      return;
+    }
+    const requestGeneration = state.aiRequestGeneration;
     loadingEl.style.display = 'block';
     analysisEl.textContent = '';
     listEl.innerHTML = '';
     errorEl.style.display = 'none';
     try {
-      const data = await api('POST', '/translate/' + questionId + '/grammar');
+      const data = await App.getAiRequest(
+        requestGeneration + ':grammar:' + questionId,
+        function() { return api('POST', '/translate/' + questionId + '/grammar'); }
+      );
       if (!state.grammarCache) state.grammarCache = {};
       state.grammarCache[questionId] = { grammarAnalysis: data.grammarAnalysis, vocabSuggestions: data.vocabSuggestions };
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       App.renderRichText(analysisEl, data.grammarAnalysis || '');
       App.renderVocabSuggestions(data.vocabSuggestions || [], questionId);
     } catch (e) {
+      if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       errorEl.textContent = 'معلم گرامر در دسترس نیست — دوباره تلاش کنید';
       errorEl.style.display = 'block';
     } finally {
-      loadingEl.style.display = 'none';
+      if (App.isAiRequestCurrent(questionId, requestGeneration)) {
+        loadingEl.style.display = 'none';
+      }
     }
   };
 
@@ -384,19 +543,19 @@
     if (!vocabItems || vocabItems.length === 0) return;
     vocabItems.forEach(function(item) {
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:var(--surface-2);border-radius:8px;border:1px solid var(--border);gap:8px;';
+      row.className = 'vocab-suggestion-row';
       const wordPair = document.createElement('div');
-      wordPair.style.cssText = 'display:flex;flex-direction:column;gap:2px;min-width:0;flex:1;';
+      wordPair.className = 'vocab-suggestion-copy';
       const itSpan = document.createElement('span');
-      itSpan.style.cssText = 'font-family:"Public Sans",sans-serif;font-size:0.82rem;font-weight:600;color:var(--ink);';
+      itSpan.className = 'vocab-suggestion-it';
       itSpan.textContent = item.term_it || '';
       const faSpan = document.createElement('span');
-      faSpan.style.cssText = 'font-family:"Vazirmatn",sans-serif;font-size:0.75rem;color:var(--ink-muted);direction:rtl;';
+      faSpan.className = 'vocab-suggestion-fa';
       faSpan.textContent = item.term_fa || '';
       wordPair.appendChild(itSpan);
       wordPair.appendChild(faSpan);
       const addBtn = document.createElement('button');
-      addBtn.style.cssText = 'flex-shrink:0;padding:5px 10px;background:none;border:1px solid var(--border);border-radius:6px;color:var(--ink-muted);font-size:0.72rem;cursor:pointer;font-family:"Vazirmatn",sans-serif;transition:all 150ms;white-space:nowrap;';
+      addBtn.className = 'text-button vocab-suggestion-add';
       addBtn.textContent = '+ واژه‌نامه';
       addBtn.onclick = function() {
         // Reuse existing addVocabFromAgent — identical to long-press flow (§12.2)
@@ -418,6 +577,42 @@
     btn.setAttribute('aria-pressed', flagged ? 'true' : 'false');
   };
 
+  App.isAiRequestCurrent = function(questionId, requestGeneration) {
+    const q = state.questions[state.currentIndex];
+    return (
+      !!q &&
+      q.questionId === questionId &&
+      state.translateOpen &&
+      state.aiRequestGeneration === requestGeneration
+    );
+  };
+
+  App.getAiRequest = function(key, requestFactory) {
+    if (!state.aiPendingRequests) state.aiPendingRequests = {};
+    if (state.aiPendingRequests[key]) return state.aiPendingRequests[key];
+
+    const pending = Promise.resolve().then(requestFactory);
+    state.aiPendingRequests[key] = pending;
+    const clear = function() {
+      if (state.aiPendingRequests[key] === pending) {
+        delete state.aiPendingRequests[key];
+      }
+    };
+    pending.then(clear, clear);
+    return pending;
+  };
+
+  App._updateAiAvailability = function() {
+    const toggle = document.getElementById('translate-toggle');
+    const label = toggle ? toggle.closest('.ai-toggle-label') : null;
+    const sub = document.getElementById('ai-toggle-sub');
+
+    // Keep older cached markup usable when it is paired with this newer script.
+    if (toggle) toggle.disabled = false;
+    if (label) label.classList.remove('locked');
+    if (sub) sub.textContent = 'ترجمه، تئوری و گرامر — همین حالا قابل استفاده است';
+  };
+
   App._resetAiPanel = function() {
     state.translateOpen = false;
     const tog = document.getElementById('translate-toggle');
@@ -425,6 +620,7 @@
     const panel = document.getElementById('translate-panel');
     if (panel) panel.classList.remove('open');
     document.getElementById('exam-question-text').className = 'question-text';
+    App._updateAiAvailability();
   };
 
 
@@ -440,7 +636,7 @@
 
     if (btn) {
       btn.disabled = true;
-      btn.textContent = '⏳';
+      btn.textContent = 'در حال ذخیره…';
     }
     try {
       await api('POST', '/vocab', {
@@ -448,7 +644,7 @@
         termFa: termFa,
         sourceQuestionId: sourceQuestionId
       });
-      App.toast('به واژه‌نامه اضافه شد! 📚');
+      App.toast('به واژه‌نامه اضافه شد.');
       if (btn) {
         btn.textContent = '✓ اضافه شد';
         btn.style.color = 'var(--go-light)';
@@ -457,7 +653,7 @@
       App.toast('خطا در ثبت واژه');
       if (btn) {
         btn.disabled = false;
-        btn.textContent = '➕ افزودن';
+        btn.textContent = 'افزودن';
       }
     }
   };
@@ -465,15 +661,36 @@
 
   // ── Finish exam ─────────────────────────────────────────────────────────────
   App.finishExam = async function() {
+    const finishingSessionId = state.sessionId;
+    if (!finishingSessionId || state.finishPending) return;
+    if (Object.keys(state.answerPending).length > 0) {
+      setTimeout(function() {
+        if (state.sessionId === finishingSessionId) App.finishExam();
+      }, 250);
+      return;
+    }
+
+    state.finishPending = true;
+    const finishBtn = document.getElementById('btn-finish-exam');
+    if (finishBtn) finishBtn.disabled = true;
     clearInterval(state.timerInterval);
     const durationSeconds = Math.round((Date.now() - state.startedAt) / 1000);
     let data;
     try {
-      data = await api('POST', '/exam/' + state.sessionId + '/finish', { durationSeconds });
+      data = await api('POST', '/exam/' + finishingSessionId + '/finish', { durationSeconds });
     } catch (e) {
-      App.toast('خطا در ثبت نتایج: ' + e.message);
+      if (state.sessionId === finishingSessionId) {
+        App.toast('خطا در ثبت نتایج: ' + e.message);
+      }
       return;
+    } finally {
+      if (state.sessionId === finishingSessionId) {
+        state.finishPending = false;
+        if (finishBtn) finishBtn.disabled = false;
+      }
     }
+    if (state.sessionId !== finishingSessionId) return;
+    state.sessionId = null;
     document.getElementById('bottom-nav').style.display = '';
     state.examMode = null;
     App.applyExamMode();
@@ -486,33 +703,62 @@
     state.lastFinishedSessionId = data.sessionId;
 
     const tutorBanner = document.getElementById('results-tutor-banner');
+    const reviewBtn = document.getElementById('results-review-btn');
+    const nextStep = document.getElementById('results-next-step');
     if (tutorBanner) {
       if (data.wrongCount > 0) {
         tutorBanner.style.display = 'block';
+        if (nextStep) nextStep.style.display = 'block';
+        if (reviewBtn) reviewBtn.style.display = 'inline-flex';
         const bannerText = document.getElementById('results-tutor-banner-text');
         if (bannerText) {
           bannerText.textContent = 'تحلیل و رفع اشکال ' + data.wrongCount + ' سوال غلط با استاد AI';
         }
       } else {
         tutorBanner.style.display = 'none';
+        if (nextStep) nextStep.style.display = 'none';
+        if (reviewBtn) reviewBtn.style.display = 'none';
       }
     }
 
     const badge = document.getElementById('results-badge');
     badge.className = 'result-badge ' + (data.passed ? 'pass' : 'fail');
-    badge.textContent = data.passed ? 'قبول' : 'رد';
+    badge.textContent = data.passed ? 'قبول شدی' : 'نیاز به مرور';
 
-    // New copy voice from design.md
+    // New copy voice from design.md. Practice sessions are shorter than 30 and
+    // finishExamSession allows 1 mistake up to 10 questions, 3 above that.
+    const totalQuestions = Array.isArray(data.answers) && data.answers.length ? data.answers.length : 30;
+    const allowedWrong = totalQuestions <= 10 ? 1 : 3;
     document.getElementById('results-score').textContent =
-      data.score + ' از ۳۰';
+      data.score.toLocaleString('fa-IR') + ' از ' + totalQuestions.toLocaleString('fa-IR');
     document.getElementById('results-detail').textContent =
       data.passed
-        ? data.wrongCount + ' اشتباه — قبول شدی! 🎉'
-        : data.wrongCount + ' اشتباه — بیشتر از ۳ — دوباره تلاش کن';
+        ? data.wrongCount.toLocaleString('fa-IR') + ' اشتباه؛ حد قبولی را رد نکردی.'
+        : data.wrongCount.toLocaleString('fa-IR') + ' اشتباه؛ برای قبولی حداکثر ' + allowedWrong.toLocaleString('fa-IR') + ' اشتباه مجاز است.';
+    const listHeading = document.getElementById('results-list-heading');
+    if (listHeading) listHeading.textContent = 'جزئیات ' + totalQuestions.toLocaleString('fa-IR') + ' سؤال';
+
+    const correctCount = Array.isArray(data.answers)
+      ? data.answers.filter(function(answer) { return Boolean(answer.isCorrect); }).length
+      : data.score;
+    const unansweredCount = Array.isArray(data.answers)
+      ? data.answers.filter(function(answer) { return answer.userAnswer === null; }).length
+      : Math.max(0, 30 - correctCount - data.wrongCount);
+    const answeredWrongCount = Array.isArray(data.answers)
+      ? data.answers.filter(function(answer) {
+          return answer.userAnswer !== null && !answer.isCorrect;
+        }).length
+      : Math.max(0, data.wrongCount - unansweredCount);
+    const correctEl = document.getElementById('results-correct-count');
+    const wrongEl = document.getElementById('results-wrong-count');
+    const unansweredEl = document.getElementById('results-unanswered-count');
+    if (correctEl) correctEl.textContent = String(correctCount);
+    if (wrongEl) wrongEl.textContent = String(answeredWrongCount);
+    if (unansweredEl) unansweredEl.textContent = String(unansweredCount);
 
     const min = Math.floor(data.durationSeconds / 60);
     const sec = String(data.durationSeconds % 60).padStart(2, '0');
-    document.getElementById('results-time').textContent = '⏱ ' + min + ':' + sec;
+    document.getElementById('results-time').textContent = 'زمان پاسخ‌گویی ' + min + ':' + sec;
 
     // Build result rows with sign-flip animation
     const list = document.getElementById('results-list');
@@ -553,8 +799,8 @@
       answerLine.className = 'result-answer-line';
       answerLine.dir = 'ltr';
       answerLine.textContent =
-        'Risposta: ' + (a.correctAnswer === 1 ? 'VERO' : 'FALSO') +
-        (a.userAnswer !== null ? ' · Tu: ' + (a.userAnswer === 1 ? 'VERO' : 'FALSO') : ' · Saltato');
+        'Risposta corretta: ' + (a.correctAnswer === 1 ? 'VERO' : 'FALSO') +
+        (a.userAnswer !== null ? ' · La tua risposta: ' + (a.userAnswer === 1 ? 'VERO' : 'FALSO') : ' · Senza risposta');
 
       const translateBtn = document.createElement('button');
       translateBtn.className = 'result-translate-btn';
@@ -564,6 +810,17 @@
       back.appendChild(questionLine);
       back.appendChild(answerLine);
       back.appendChild(translateBtn);
+      // Route a mistake back to the exact lesson section that teaches it —
+      // only when the curated mapping exists. The copy stays neutral: we do
+      // not know why the answer was wrong.
+      if (!a.isCorrect && a.lessonLink) {
+        const lessonBtn = document.createElement('button');
+        lessonBtn.type = 'button';
+        lessonBtn.className = 'result-lesson-btn';
+        lessonBtn.textContent = 'مرور همین مبحث در درس «' + a.lessonLink.titleFa + '»';
+        lessonBtn.onclick = function() { App.openLesson(a.lessonLink.lessonId, a.lessonLink.step, 'results'); };
+        back.appendChild(lessonBtn);
+      }
       inner.appendChild(back);
       signCard.appendChild(inner);
       row.appendChild(icon);
@@ -582,7 +839,7 @@
   // §14.1: simplified — no more driving/grammar rendering in results
   App.translateResult = async function(questionId, btn) {
     btn.disabled = true;
-    btn.textContent = '⏳';
+    btn.textContent = 'در حال ترجمه…';
     try {
       const data = await api('POST', '/translate/' + questionId);
       const container = btn.parentElement;
@@ -596,13 +853,21 @@
       let content =
         '<div class="result-verdict-row">' +
         '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">' +
-        (isVero ? '✅' : '❌') + ' پاسخ: ' + label + '</span></div>';
-      content += '<div class="result-translation-text">🌐 ' + App.escapeHtml(data.translatedText) + '</div>';
-      if (data.explanation) {
-        content += '<div class="result-translation-explanation">💡 ' + App.escapeHtml(data.explanation) + '</div>';
-      }
-
+        (isVero ? 'درست: ' : 'نادرست: ') + label + '</span></div>';
+      content += '<div class="result-translation-label">ترجمه فارسی</div><div class="result-translation-text">' + App.escapeHtml(data.translatedText) + '</div>';
       block.innerHTML = content;
+      if (data.explanation) {
+        const explanationBlock = document.createElement('div');
+        explanationBlock.className = 'result-translation-explanation';
+        const explanationIcon = document.createElement('span');
+        explanationIcon.className = 'result-explanation-label';
+        explanationIcon.textContent = 'چرا؟';
+        const explanationBody = document.createElement('div');
+        App.renderRichText(explanationBody, data.explanation);
+        explanationBlock.appendChild(explanationIcon);
+        explanationBlock.appendChild(explanationBody);
+        block.appendChild(explanationBlock);
+      }
       container.insertBefore(block, btn);
       btn.style.display = 'none';
       // The row grows a lot when the explanation lands — bring it into view.
@@ -612,4 +877,3 @@
       btn.disabled = false;
     }
   };
-

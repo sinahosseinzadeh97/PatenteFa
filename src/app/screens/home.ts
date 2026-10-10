@@ -1,111 +1,96 @@
-/**
- * src/app/screens/home.ts
- * Home / personalized dashboard screen.
- */
+/** Home / personalized study dashboard. */
 export function renderHomeScreen(): string {
   return `
-<div id="screen-home" class="screen" style="padding:0 0 85px;">
-  <div class="home-content">
-    <!-- User Profile Header Card -->
-    <div class="user-profile-header card home-profile-card">
-      <div class="home-profile-top">
-        <!-- Profile Info (Avatar + Name) -->
-        <div class="home-profile-identity">
-          <div id="user-avatar-container" class="home-avatar-wrap">
-            <img id="user-photo" src="" alt="عکس پروفایل کاربر" class="home-avatar-photo" />
-            <div id="user-initials-avatar" class="home-avatar-initials" aria-hidden="true">
-              👤
-            </div>
-            <span class="home-avatar-status-dot" title="حساب فعال"></span>
-          </div>
-
-          <div class="home-name-block">
-            <div id="user-full-name" class="home-full-name">
-              کاربر پاتنته
-            </div>
-            <div class="home-name-badges">
-              <span id="user-username" class="home-username">@user</span>
-              <span class="home-dashboard-badge">داشبورد اختصاصی</span>
-              <button type="button" onclick="App.showGuideModal()" class="home-guide-btn">💡 راهنما و راز قبولی</button>
-            </div>
-          </div>
+<div id="screen-home" class="screen screen-with-nav">
+  <main class="page-container home-content">
+    <header class="home-header">
+      <div class="home-profile-identity">
+        <div id="user-avatar-container" class="home-avatar-wrap">
+          <img id="user-photo" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw==" alt="عکس پروفایل کاربر" class="home-avatar-photo" />
+          <div id="user-initials-avatar" class="home-avatar-initials" aria-hidden="true">پ</div>
+          <span class="home-avatar-status-dot"><span class="visually-hidden">حساب فعال</span></span>
         </div>
-
-        <!-- Streak Badge -->
-        <div id="home-streak" class="home-streak-badge">
-          <div class="home-streak-value" id="streak-value">0</div>
-          <div class="home-streak-label">🔥 استریک</div>
+        <div class="home-name-block">
+          <p class="home-kicker">برنامه مطالعه امروز</p>
+          <h1 id="user-full-name" class="home-full-name">کاربر پاتنته</h1>
+          <span id="user-username" class="home-username">@user</span>
         </div>
       </div>
+      <button type="button" onclick="App.showGuideModal()" class="icon-button" aria-label="راهنمای استفاده">
+        <svg class="ui-icon"><use href="#i-help"/></svg>
+      </button>
+    </header>
 
-      <!-- Key Metrics Row (3 Chips) -->
-      <div class="home-metrics-row">
-        <div class="stat-chip home-metric-chip clickable" onclick="App.openExamDateModal()" role="button" tabindex="0" aria-label="تنظیم تاریخ آزمون">
-          <div class="home-metric-label">📅 روز تا آزمون</div>
-          <div class="stat-chip-value home-metric-value amber" id="home-days">—</div>
-          <div class="home-metric-sub amber">تنظیم ✏️</div>
-        </div>
-
-        <div class="stat-chip home-metric-chip">
-          <div class="home-metric-label">📊 درصد قبولی</div>
-          <div class="stat-chip-value home-metric-value go" id="home-pass-rate">—</div>
-          <div class="home-metric-sub muted" id="home-total-exams">۰ آزمون</div>
-        </div>
-
-        <div class="stat-chip home-metric-chip">
-          <div class="home-metric-label">🔁 مرور اشتباهات</div>
-          <div class="stat-chip-value home-metric-value stop" id="home-review">0</div>
-          <div class="home-metric-sub muted">سوال معوقه</div>
-        </div>
+    <section id="home-today" class="today-card" aria-labelledby="home-today-title" aria-busy="true">
+      <div class="today-head">
+        <span class="eyebrow"><svg class="ui-icon"><use href="#i-route"/></svg> مسیر امروز</span>
+        <span id="home-today-minutes" class="today-minutes"></span>
       </div>
-    </div>
+      <h2 id="home-today-title" class="today-title">در حال آماده‌سازی مسیر امروز…</h2>
+      <ol id="home-today-list" class="today-list"></ol>
+      <div id="home-today-actions" class="today-actions"></div>
+    </section>
 
-    <!-- Weak-topic focus card -->
-    <div id="home-focus-card" class="topic-focus-card" style="display:none; margin-bottom:16px;">
-      <div class="home-focus-card-row">
-        <div>
-          <div class="home-focus-eyebrow">⚡ تمرین هدفمند موضوع ضعیف</div>
-          <div id="home-weakest" class="home-focus-weakest"></div>
-        </div>
-        <button class="btn btn-go-outline btn-sm" style="white-space:nowrap; flex-shrink:0;" onclick="App.startTopicPractice()">
-          شروع کن
+    <section class="home-primary" aria-labelledby="home-primary-title">
+      <div class="home-primary-copy">
+        <span class="eyebrow"><svg class="ui-icon"><use href="#i-exam"/></svg> شبیه‌ساز آزمون اصلی</span>
+        <h2 id="home-primary-title">آماده‌ای یک آزمون کامل بدهی؟</h2>
+        <p>۳۰ سؤال رسمی، ۲۰ دقیقه، با همان حد مجاز ۳ اشتباه.</p>
+      </div>
+      <button class="btn btn-secondary btn-full home-start-btn" id="btn-start-exam" onclick="App.startExam()">
+        شروع آزمون جامع
+        <svg class="ui-icon"><use href="#i-chevron-left"/></svg>
+      </button>
+    </section>
+
+    <section class="home-progress" aria-label="خلاصه پیشرفت">
+      <button type="button" class="home-metric" onclick="App.openExamDateModal()" aria-label="تنظیم تاریخ آزمون">
+        <svg class="ui-icon"><use href="#i-calendar"/></svg>
+        <span class="home-metric-copy"><span class="home-metric-label">تا آزمون</span><strong id="home-days">—</strong></span>
+      </button>
+      <div class="home-metric">
+        <svg class="ui-icon"><use href="#i-trend"/></svg>
+        <span class="home-metric-copy"><span class="home-metric-label">قبولی</span><strong id="home-pass-rate">—</strong><small id="home-total-exams">۰ آزمون</small></span>
+      </div>
+      <div class="home-metric">
+        <svg class="ui-icon"><use href="#i-target"/></svg>
+        <span class="home-metric-copy"><span class="home-metric-label">پیوستگی</span><strong id="streak-value">۰ روز</strong></span>
+      </div>
+    </section>
+
+    <section id="home-focus-card" class="home-focus-card" style="display:none;">
+      <div>
+        <span class="eyebrow"><svg class="ui-icon"><use href="#i-target"/></svg> پیشنهاد بعدی</span>
+        <h2>موضوع ضعیفت را تقویت کن</h2>
+        <p id="home-weakest" dir="auto"></p>
+      </div>
+      <button class="btn btn-secondary" onclick="App.startTopicPractice()">شروع تمرین</button>
+    </section>
+
+    <section class="home-section" aria-labelledby="home-tools-heading">
+      <div class="section-heading-row"><div><span class="section-kicker">مسیرهای کوتاه‌تر</span><h2 id="home-tools-heading">انتخاب نوع مطالعه</h2></div></div>
+      <div class="home-tool-grid">
+        <button type="button" class="home-tool" onclick="App.showScreen('topics')">
+          <svg class="ui-icon"><use href="#i-book"/></svg><span><strong>فصل‌ها</strong><small>درس‌ها و تمرین موضوعی</small></span><svg class="ui-icon home-tool-arrow"><use href="#i-chevron-left"/></svg>
+        </button>
+        <button type="button" class="home-tool" onclick="App.showScreen('signs')">
+          <svg class="ui-icon"><use href="#i-sign"/></svg><span><strong>تابلوها</strong><small>فلش‌کارت تصویری</small></span><svg class="ui-icon home-tool-arrow"><use href="#i-chevron-left"/></svg>
+        </button>
+        <button type="button" class="home-tool home-tool-review" id="btn-start-review" onclick="App.startReview()" style="display:none;">
+          <svg class="ui-icon"><use href="#i-review"/></svg><span><strong>مرور اشتباهات</strong><small><b id="home-review">۰</b> سؤال آماده مرور</small></span><svg class="ui-icon home-tool-arrow"><use href="#i-chevron-left"/></svg>
         </button>
       </div>
-    </div>
+    </section>
 
-    <!-- Recent Exam History Feed -->
-    <div id="home-recent-section" class="home-recent-section">
-      <div class="home-recent-heading">📜 آخرین آزمون‌های من</div>
+    <section id="home-recent-section" class="home-section home-recent-section">
+      <div class="section-heading-row"><div><span class="section-kicker">روند اخیر</span><h2>آخرین آزمون‌ها</h2></div><svg class="ui-icon"><use href="#i-history"/></svg></div>
       <div id="home-recent-list" class="home-recent-list"></div>
-    </div>
+    </section>
 
-    <!-- Data notice -->
-    <div class="home-data-notice">
-      ⚠️ بانک سوال از ۲۰۲۳ — قبل از آزمون با سایت رسمی چک کن.
-    </div>
-  </div>
-
-  <!-- Action buttons -->
-  <div class="home-actions">
-    <button class="btn btn-primary btn-full" id="btn-start-exam" onclick="App.startExam()">
-      🚗 آزمون جامع جدید — ۳۰ سوال (۲۰ دقیقه)
-    </button>
-    <button class="btn btn-amber-outline btn-full" onclick="App.showScreen('topics')">
-      📚 ۲۵ فصل آموزشی پاتنته B (Capitoli)
-    </button>
-    <button class="btn btn-ghost btn-full" id="btn-start-review" onclick="App.startReview()" style="display:none;">
-      🔁 مرور اشتباهات
-    </button>
-    <button class="btn btn-ghost btn-full" onclick="App.showScreen('signs')">
-      🚦 تمرین تابلوها
-    </button>
-    <!-- Profile & Analysis entry point (§13.4) -->
-    <button class="btn btn-full btn-profile-entry" onclick="App.showScreen('profile')">
-      <span style="font-size:1rem;" aria-hidden="true">👤</span>
-      <span>پروفایل و تحلیل عملکرد</span>
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px;opacity:0.6; flex-shrink:0;" aria-hidden="true"><path d="M9 18l6-6-6-6"/></svg>
-    </button>
-  </div>
-</div>
-`;
+    <aside class="data-notice">
+      <svg class="ui-icon"><use href="#i-alert"/></svg>
+      <span>بانک سؤال مربوط به ۲۰۲۳ است؛ نزدیک آزمون، تغییرات احتمالی را با منبع رسمی بررسی کن.</span>
+    </aside>
+  </main>
+</div>`;
 }

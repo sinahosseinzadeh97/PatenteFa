@@ -11,11 +11,14 @@ import {
   getSessionAnswers,
   getQuestionById,
   getCachedTranslation,
+  getSignCardForImage,
   insertTranslation,
 } from "../db/queries.js";
 import { translateQuestion, chatWithTutor, resolveImageUrl, type TutorChatMessage } from "../lib/openai.js";
 
 const tutor = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
+const MAX_TUTOR_HISTORY_MESSAGES = 6;
+const MAX_TUTOR_MESSAGE_LENGTH = 2_000;
 
 // ── POST /api/tutor/explain-wrong ─────────────────────────────────────────────
 tutor.post("/explain-wrong", async (c) => {
@@ -65,7 +68,11 @@ tutor.post("/explain-wrong", async (c) => {
           q.correct_answer,
           resolveImageUrl(c.env.MINI_APP_URL, q.image_url),
           c.env.DB,
-          userId
+          userId,
+          q.image_url ? await getSignCardForImage(c.env.DB, q.image_url) : null,
+          trans?.translated_text && trans.translated_text.length > 10
+            ? trans.translated_text
+            : null
         );
         await insertTranslation(
           c.env.DB,
@@ -102,15 +109,42 @@ tutor.post("/explain-wrong", async (c) => {
 // ── POST /api/tutor/chat ──────────────────────────────────────────────────────
 tutor.post("/chat", async (c) => {
   const userId: number = c.get("userId" as never);
-  const body = await c.req.json<{
-    sessionId: number;
-    questionId: number;
-    userMessage: string;
-    history?: TutorChatMessage[];
-  }>();
+  const body = (await c.req.json().catch(() => null)) as Record<string, unknown> | null;
+  if (
+    !body ||
+    typeof body.sessionId !== "number" ||
+    !Number.isInteger(body.sessionId) ||
+    typeof body.questionId !== "number" ||
+    !Number.isInteger(body.questionId) ||
+    typeof body.userMessage !== "string" ||
+    !body.userMessage.trim() ||
+    body.userMessage.length > MAX_TUTOR_MESSAGE_LENGTH
+  ) {
+    return c.json({ error: "Invalid tutor chat request" }, 400);
+  }
 
-  if (!body.sessionId || !body.questionId || !body.userMessage?.trim()) {
-    return c.json({ error: "Missing required fields" }, 400);
+  if (
+    body.history !== undefined &&
+    (!Array.isArray(body.history) || body.history.length > MAX_TUTOR_HISTORY_MESSAGES)
+  ) {
+    return c.json({ error: "Invalid tutor chat history" }, 400);
+  }
+
+  const history: TutorChatMessage[] = [];
+  for (const candidate of body.history ?? []) {
+    if (!candidate || typeof candidate !== "object") {
+      return c.json({ error: "Invalid tutor chat history" }, 400);
+    }
+    const message = candidate as Record<string, unknown>;
+    if (
+      (message.role !== "user" && message.role !== "assistant") ||
+      typeof message.content !== "string" ||
+      !message.content.trim() ||
+      message.content.length > MAX_TUTOR_MESSAGE_LENGTH
+    ) {
+      return c.json({ error: "Invalid tutor chat history" }, 400);
+    }
+    history.push({ role: message.role, content: message.content.trim() });
   }
 
   const session = await getSessionById(c.env.DB, body.sessionId);
@@ -122,8 +156,11 @@ tutor.post("/chat", async (c) => {
   const answerRow = answers.find((a) => a.question_id === body.questionId);
   const q = await getQuestionById(c.env.DB, body.questionId);
 
-  if (!q) {
-    return c.json({ error: "Question not found" }, 404);
+  if (!q || !answerRow) {
+    return c.json({ error: "Question not found in this session" }, 404);
+  }
+  if (answerRow?.user_answer == null && !session.finished_at) {
+    return c.json({ error: "Answer required before tutor chat", answerRequired: true }, 409);
   }
 
   const responseText = await chatWithTutor(
@@ -132,9 +169,9 @@ tutor.post("/chat", async (c) => {
       questionId: q.id,
       textIt: q.text_it,
       correctAnswer: q.correct_answer,
-      userAnswer: answerRow ? answerRow.user_answer : null,
+      userAnswer: answerRow.user_answer,
     },
-    body.history || [],
+    history,
     body.userMessage.trim(),
     c.env.DB,
     userId

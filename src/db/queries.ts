@@ -15,6 +15,7 @@ export interface DbUser {
   daily_reminder_hour: number;
   timezone: string;
   is_approved: number;
+  access_expires_at: string | null;
   created_at: string;
 }
 
@@ -41,6 +42,7 @@ export interface DbExamSession {
   mode: string;
   started_at: string;
   finished_at: string | null;
+  abandoned_at: string | null;
   duration_seconds: number | null;
   score: number | null;
   wrong_count: number | null;
@@ -88,7 +90,7 @@ export interface DbTranslation {
   // §15.2 — three-tab AI panel columns (nullable, populated independently per tab)
   theory_text: string | null;
   grammar_analysis: string | null;
-  vocab_suggestions: string | null; // JSON array of {term_it, term_fa}
+  vocab_suggestions: string | null; // JSON array of vocabulary items + grammatical metadata
   created_at: string;
 }
 
@@ -135,10 +137,31 @@ export async function setUserApproval(
   isApproved: number
 ): Promise<DbUser | null> {
   await db
-    .prepare(`UPDATE users SET is_approved = ? WHERE telegram_user_id = ?`)
-    .bind(isApproved, telegramUserId)
+    .prepare(
+      `UPDATE users
+       SET is_approved = ?,
+           access_expires_at = CASE WHEN ? = 1 THEN NULL ELSE access_expires_at END
+       WHERE telegram_user_id = ?`
+    )
+    .bind(isApproved, isApproved, telegramUserId)
     .run();
   return getUserByTelegramId(db, telegramUserId);
+}
+
+export async function setUserAccessExpiration(
+  db: D1Database,
+  userId: number,
+  accessExpiresAt: string | null
+): Promise<DbUser | null> {
+  await db
+    .prepare(
+      `UPDATE users
+       SET is_approved = 1, access_expires_at = ?
+       WHERE id = ?`
+    )
+    .bind(accessExpiresAt, userId)
+    .run();
+  return getUserById(db, userId);
 }
 
 export async function getUserByTelegramId(
@@ -348,19 +371,49 @@ export async function getQuestionCount(db: D1Database): Promise<number> {
 
 // ── Exam sessions ────────────────────────────────────────────────────────────
 
-export async function createExamSession(
+/**
+ * Atomically retire every open session and create its replacement.
+ * D1 batch statements commit as one transaction, so concurrent starts never
+ * expose two active sessions between the update and insert.
+ */
+export async function replaceActiveExamSession(
   db: D1Database,
   userId: number,
-  mode: "exam" | "review" | "topic_practice"
+  mode: "exam" | "review" | "topic_practice",
+  questionIds: number[]
 ): Promise<number> {
-  const result = await db
-    .prepare(
-      `INSERT INTO exam_sessions (user_id, mode) VALUES (?, ?) RETURNING id`
-    )
-    .bind(userId, mode)
-    .first<{ id: number }>();
-  if (!result) throw new Error("Failed to create exam session");
-  return result.id;
+  if (questionIds.length === 0) throw new Error("Cannot create an exam without questions");
+
+  const answerStatements = questionIds.map((questionId, index) =>
+    db
+      .prepare(
+        `INSERT INTO exam_answers
+           (session_id, question_id, position, user_answer, is_correct, answered_at)
+         SELECT es.id, ?, ?, NULL, NULL, NULL
+         FROM exam_sessions es
+         WHERE es.user_id = ? AND es.finished_at IS NULL AND es.abandoned_at IS NULL
+         ORDER BY es.id DESC
+         LIMIT 1`
+      )
+      .bind(questionId, index + 1, userId)
+  );
+
+  const results = await db.batch<{ id: number }>([
+    db
+      .prepare(
+        `UPDATE exam_sessions
+         SET abandoned_at = COALESCE(abandoned_at, datetime('now'))
+         WHERE user_id = ? AND finished_at IS NULL AND abandoned_at IS NULL`
+      )
+      .bind(userId),
+    db
+      .prepare(`INSERT INTO exam_sessions (user_id, mode) VALUES (?, ?) RETURNING id`)
+      .bind(userId, mode),
+    ...answerStatements,
+  ]);
+  const created = results[1]?.results[0];
+  if (!created) throw new Error("Failed to replace active exam session");
+  return created.id;
 }
 
 export async function insertExamAnswer(
@@ -381,6 +434,54 @@ export async function insertExamAnswer(
     .run();
 }
 
+/** Record the first answer only while its owning session is still active. */
+export type ExamAnswerRecordResult = "recorded" | "duplicate" | "conflict" | "inactive";
+
+export async function recordExamAnswer(
+  db: D1Database,
+  sessionId: number,
+  userId: number,
+  questionId: number,
+  userAnswer: 0 | 1,
+  isCorrect: 0 | 1
+): Promise<ExamAnswerRecordResult> {
+  const result = await db
+    .prepare(
+      `UPDATE exam_answers
+       SET user_answer = ?, is_correct = ?, answered_at = datetime('now')
+       WHERE session_id = ?
+         AND question_id = ?
+         AND user_answer IS NULL
+         AND EXISTS (
+           SELECT 1
+           FROM exam_sessions es
+           WHERE es.id = exam_answers.session_id
+             AND es.user_id = ?
+             AND es.finished_at IS NULL
+             AND es.abandoned_at IS NULL
+             AND es.started_at >= datetime('now', '-30 minutes')
+         )`
+    )
+    .bind(userAnswer, isCorrect, sessionId, questionId, userId)
+    .run();
+  if (result.meta.changes === 1) return "recorded";
+
+  // A response can be lost after D1 commits. Treat an exact retry as success so
+  // the client can reconcile safely without ever allowing an answer change.
+  const existing = await db
+    .prepare(
+      `SELECT ea.user_answer
+       FROM exam_answers ea
+       JOIN exam_sessions es ON es.id = ea.session_id
+       WHERE ea.session_id = ? AND ea.question_id = ? AND es.user_id = ?`
+    )
+    .bind(sessionId, questionId, userId)
+    .first<{ user_answer: number | null }>();
+  if (existing?.user_answer === userAnswer) return "duplicate";
+  if (existing?.user_answer != null) return "conflict";
+  return "inactive";
+}
+
 export async function updateAnswerFlag(
   db: D1Database,
   sessionId: number,
@@ -398,19 +499,40 @@ export async function updateAnswerFlag(
 export async function finishExamSession(
   db: D1Database,
   sessionId: number,
-  score: number,
-  wrongCount: number,
-  passed: number,
+  userId: number,
   durationSeconds: number
-): Promise<void> {
-  await db
+): Promise<boolean> {
+  const result = await db
     .prepare(
-      `UPDATE exam_sessions
-       SET finished_at = datetime('now'), score = ?, wrong_count = ?, passed = ?, duration_seconds = ?
-       WHERE id = ?`
+      `WITH result AS (
+         SELECT
+           COUNT(*) AS total_count,
+           COALESCE(SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_count,
+           COALESCE(SUM(CASE WHEN is_correct = 1 THEN 0 ELSE 1 END), 0) AS wrong_count
+         FROM exam_answers
+         WHERE session_id = ?
+       )
+       UPDATE exam_sessions
+       SET finished_at = datetime('now'),
+           score = (SELECT correct_count FROM result),
+           wrong_count = (SELECT wrong_count FROM result),
+           passed = (
+             SELECT CASE
+               WHEN wrong_count <= CASE WHEN total_count BETWEEN 1 AND 10 THEN 1 ELSE 3 END
+               THEN 1 ELSE 0
+             END
+             FROM result
+           ),
+           duration_seconds = ?
+       WHERE id = ?
+         AND user_id = ?
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL
+         AND started_at >= datetime('now', '-30 minutes')`
     )
-    .bind(score, wrongCount, passed, durationSeconds, sessionId)
+    .bind(sessionId, durationSeconds, sessionId, userId)
     .run();
+  return result.meta.changes === 1;
 }
 
 export async function getSessionAnswers(
@@ -432,6 +554,40 @@ export async function getSessionById(
     .prepare(`SELECT * FROM exam_sessions WHERE id = ?`)
     .bind(sessionId)
     .first<DbExamSession>();
+}
+
+export async function abandonExamSession(
+  db: D1Database,
+  sessionId: number,
+  userId: number
+): Promise<boolean> {
+  const result = await db
+    .prepare(
+      `UPDATE exam_sessions
+       SET abandoned_at = datetime('now')
+       WHERE id = ?
+         AND user_id = ?
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL`
+    )
+    .bind(sessionId, userId)
+    .run();
+  return result.meta.changes === 1;
+}
+
+/** Close stale unfinished sessions before dealing a new one to this user. */
+export async function abandonOpenExamSessions(
+  db: D1Database,
+  userId: number
+): Promise<void> {
+  await db
+    .prepare(
+      `UPDATE exam_sessions
+       SET abandoned_at = COALESCE(abandoned_at, datetime('now'))
+       WHERE user_id = ? AND finished_at IS NULL AND abandoned_at IS NULL`
+    )
+    .bind(userId)
+    .run();
 }
 
 // ── Review queue ─────────────────────────────────────────────────────────────
@@ -912,10 +1068,21 @@ export async function getReelsFeedItems(
        FROM questions q
        LEFT JOIN topics t ON q.topic_id = t.id
        LEFT JOIN translations_cache tr ON tr.question_id = q.id AND tr.lang = 'fa'
+       WHERE NOT EXISTS (
+         SELECT 1
+         FROM exam_answers ea
+         JOIN exam_sessions es ON es.id = ea.session_id
+         WHERE ea.question_id = q.id
+           AND es.user_id = ?
+           AND es.finished_at IS NULL
+           AND es.abandoned_at IS NULL
+           AND es.started_at >= datetime('now', '-30 minutes')
+           AND ea.user_answer IS NULL
+       )
        ORDER BY RANDOM()
        LIMIT ?`
     )
-    .bind(limit)
+    .bind(userId, limit)
     .all<{
       question_id: number;
       text_it: string;
@@ -1176,6 +1343,7 @@ export async function logApiUsage(
 export async function getAdminOverviewStats(db: D1Database): Promise<{
   totalUsers: number;
   activeTodayUsers: number;
+  activeNowUsers: number;
   pendingUsers: number;
   totalExams: number;
   overallPassRate: number | null;
@@ -1183,15 +1351,34 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
   totalApiCostUsd: number;
   totalApiCalls: number;
   totalEventsLogged: number;
+  totalInteractions: number;
 }> {
-  const [userRow, activeTodayRow, pendingRow, examRow, minutesRow, apiRow, eventsRow] = await Promise.all([
+  const [userRow, activeTodayRow, activeNowRow, pendingRow, examRow, minutesRow, apiRow, eventsRow, interactionsRow] = await Promise.all([
     db.prepare(`SELECT COUNT(*) as count FROM users`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= date('now')`).first<{ count: number }>(),
+    db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= datetime('now', '-5 minutes')`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(*) as count FROM users WHERE is_approved = 0`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(*) as total, SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as passed FROM exam_sessions WHERE finished_at IS NOT NULL`).first<{ total: number; passed: number }>(),
-    db.prepare(`SELECT COALESCE(SUM(duration_seconds), 0) / 60 as total_mins FROM user_events`).first<{ total_mins: number }>(),
+    db.prepare(
+      `SELECT COALESCE(SUM(
+         CASE WHEN tracked_seconds >= exam_seconds THEN tracked_seconds ELSE exam_seconds END
+       ), 0) / 60 AS total_mins
+       FROM (
+         SELECT
+           u.id,
+           (SELECT COALESCE(SUM(e.duration_seconds), 0)
+              FROM user_events e
+             WHERE e.user_id = u.id
+               AND e.event_type IN ('active_time', 'heartbeat')) AS tracked_seconds,
+           (SELECT COALESCE(SUM(s.duration_seconds), 0)
+              FROM exam_sessions s
+             WHERE s.user_id = u.id) AS exam_seconds
+         FROM users u
+       ) active_by_user`
+    ).first<{ total_mins: number }>(),
     db.prepare(`SELECT COUNT(*) as calls, COALESCE(SUM(estimated_cost_usd), 0) as total_cost FROM api_usage_logs`).first<{ calls: number; total_cost: number }>(),
     db.prepare(`SELECT COUNT(*) as count FROM user_events`).first<{ count: number }>(),
+    db.prepare(`SELECT COUNT(*) as count FROM user_events WHERE event_type = 'interaction'`).first<{ count: number }>(),
   ]);
 
   const totalExams = examRow?.total ?? 0;
@@ -1201,6 +1388,7 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
   return {
     totalUsers: userRow?.count ?? 0,
     activeTodayUsers: activeTodayRow?.count ?? 0,
+    activeNowUsers: activeNowRow?.count ?? 0,
     pendingUsers: pendingRow?.count ?? 0,
     totalExams,
     overallPassRate,
@@ -1208,6 +1396,7 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
     totalApiCostUsd: parseFloat((apiRow?.total_cost ?? 0).toFixed(4)),
     totalApiCalls: apiRow?.calls ?? 0,
     totalEventsLogged: eventsRow?.count ?? 0,
+    totalInteractions: interactionsRow?.count ?? 0,
   };
 }
 
@@ -1217,16 +1406,21 @@ export interface AdminUserListItem {
   first_name: string | null;
   username: string | null;
   is_approved: number;
+  access_expires_at: string | null;
   created_at: string;
   last_active_at: string | null;
   total_exams: number;
   passed_exams: number;
   total_active_minutes: number;
+  tracked_active_minutes: number;
+  exam_active_minutes: number;
   total_api_calls: number;
+  total_api_tokens: number;
   total_api_cost_usd: number;
   // §18.5: vocab depth
   vocab_count: number;
   vocab_due: number;
+  review_due: number;
   // §18.4: waste signal — API calls per finished exam
   api_per_exam: number;
 }
@@ -1247,28 +1441,39 @@ export async function getAdminUsersList(
       u.first_name,
       u.username,
       u.is_approved,
+      u.access_expires_at,
       u.created_at,
       (SELECT MAX(e.created_at)  FROM user_events e  WHERE e.user_id = u.id) AS last_active_at,
       (SELECT COALESCE(SUM(e.duration_seconds), 0) / 60
-         FROM user_events e WHERE e.user_id = u.id)                           AS total_active_minutes,
+         FROM user_events e
+        WHERE e.user_id = u.id
+          AND e.event_type IN ('active_time', 'heartbeat'))                   AS tracked_active_minutes,
+      (SELECT COALESCE(SUM(s.duration_seconds), 0) / 60
+         FROM exam_sessions s WHERE s.user_id = u.id)                         AS exam_active_minutes,
       (SELECT COUNT(*) FROM exam_sessions s
          WHERE s.user_id = u.id AND s.finished_at IS NOT NULL)                AS total_exams,
       (SELECT COUNT(*) FROM exam_sessions s
          WHERE s.user_id = u.id AND s.finished_at IS NOT NULL AND s.passed = 1) AS passed_exams,
       (SELECT COUNT(*) FROM api_usage_logs api WHERE api.user_id = u.id)      AS total_api_calls,
+      (SELECT COALESCE(SUM(api.prompt_tokens + api.completion_tokens), 0)
+         FROM api_usage_logs api WHERE api.user_id = u.id)                    AS total_api_tokens,
       (SELECT COALESCE(SUM(api.estimated_cost_usd), 0)
          FROM api_usage_logs api WHERE api.user_id = u.id)                    AS total_api_cost_usd,
       (SELECT COUNT(*) FROM vocab_items v WHERE v.user_id = u.id)             AS vocab_count,
       (SELECT COUNT(*) FROM vocab_items v
          WHERE v.user_id = u.id
            AND (v.next_review_at <= date('now') OR v.next_review_at IS NULL)) AS vocab_due
+      ,(SELECT COUNT(*) FROM review_queue rq
+          WHERE rq.user_id = u.id AND rq.cleared = 0)                         AS review_due
     FROM users u
     WHERE 1=1
   `;
   const params: any[] = [];
 
   if (statusFilter === "approved") {
-    query += ` AND u.is_approved = 1`;
+    query += ` AND u.is_approved = 1 AND (u.access_expires_at IS NULL OR u.access_expires_at > datetime('now'))`;
+  } else if (statusFilter === "expired") {
+    query += ` AND u.is_approved = 1 AND u.access_expires_at IS NOT NULL AND u.access_expires_at <= datetime('now')`;
   } else if (statusFilter === "pending") {
     query += ` AND u.is_approved = 0`;
   } else if (statusFilter === "blocked") {
@@ -1288,12 +1493,18 @@ export async function getAdminUsersList(
   return result.results.map((row) => {
     const exams = row.total_exams || 0;
     const apiCalls = row.total_api_calls || 0;
+    const trackedMinutes = row.tracked_active_minutes || 0;
+    const examMinutes = row.exam_active_minutes || 0;
     return {
       ...row,
-      total_active_minutes: Math.round(row.total_active_minutes || 0),
+      tracked_active_minutes: Math.round(trackedMinutes),
+      exam_active_minutes: Math.round(examMinutes),
+      total_active_minutes: Math.round(Math.max(trackedMinutes, examMinutes)),
+      total_api_tokens: row.total_api_tokens || 0,
       total_api_cost_usd: parseFloat((row.total_api_cost_usd || 0).toFixed(4)),
       vocab_count: row.vocab_count || 0,
       vocab_due: row.vocab_due || 0,
+      review_due: row.review_due || 0,
       api_per_exam: exams > 0 ? parseFloat((apiCalls / exams).toFixed(1)) : apiCalls,
     };
   });
@@ -1309,19 +1520,84 @@ export async function getUserActivityTimeline(
   events: DbUserEvent[];
   sessions: DbExamSession[];
   apiLogs: DbApiUsageLog[];
+  interactionSummary: Array<{
+    screen: string;
+    control: string;
+    action: string | null;
+    clicks: number;
+    last_clicked_at: string;
+  }>;
+  summary: {
+    totalActiveMinutes: number;
+    trackedActiveMinutes: number;
+    examActiveMinutes: number;
+    totalInteractions: number;
+    totalApiCalls: number;
+    totalApiTokens: number;
+    totalApiCostUsd: number;
+  };
 }> {
-  const [user, events, sessions, apiLogs] = await Promise.all([
+  const [user, events, sessions, apiLogs, interactionSummary, eventSummary, examSummary, apiSummary] = await Promise.all([
     db.prepare(`SELECT * FROM users WHERE id = ?`).bind(userId).first<DbUser>(),
     db.prepare(`SELECT * FROM user_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`).bind(userId, limit).all<DbUserEvent>(),
     db.prepare(`SELECT * FROM exam_sessions WHERE user_id = ? ORDER BY started_at DESC LIMIT ?`).bind(userId, 20).all<DbExamSession>(),
     db.prepare(`SELECT * FROM api_usage_logs WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`).bind(userId, 20).all<DbApiUsageLog>(),
+    db.prepare(
+      `SELECT
+         COALESCE(json_extract(event_data, '$.screen'), 'unknown') AS screen,
+         COALESCE(json_extract(event_data, '$.control'), 'unknown') AS control,
+         json_extract(event_data, '$.action') AS action,
+         COUNT(*) AS clicks,
+         MAX(created_at) AS last_clicked_at
+       FROM user_events
+       WHERE user_id = ? AND event_type = 'interaction'
+       GROUP BY screen, control, action
+       ORDER BY clicks DESC, last_clicked_at DESC
+       LIMIT 20`
+    ).bind(userId).all<{
+      screen: string;
+      control: string;
+      action: string | null;
+      clicks: number;
+      last_clicked_at: string;
+    }>(),
+    db.prepare(
+      `SELECT
+         COALESCE(SUM(CASE WHEN event_type IN ('active_time', 'heartbeat') THEN duration_seconds ELSE 0 END), 0) AS active_seconds,
+         SUM(CASE WHEN event_type = 'interaction' THEN 1 ELSE 0 END) AS interactions
+       FROM user_events WHERE user_id = ?`
+    ).bind(userId).first<{ active_seconds: number; interactions: number }>(),
+    db.prepare(
+      `SELECT COALESCE(SUM(duration_seconds), 0) AS active_seconds
+       FROM exam_sessions WHERE user_id = ?`
+    ).bind(userId).first<{ active_seconds: number }>(),
+    db.prepare(
+      `SELECT
+         COUNT(*) AS calls,
+         COALESCE(SUM(prompt_tokens + completion_tokens), 0) AS tokens,
+         COALESCE(SUM(estimated_cost_usd), 0) AS cost
+       FROM api_usage_logs WHERE user_id = ?`
+    ).bind(userId).first<{ calls: number; tokens: number; cost: number }>(),
   ]);
+
+  const trackedSeconds = eventSummary?.active_seconds ?? 0;
+  const examSeconds = examSummary?.active_seconds ?? 0;
 
   return {
     user,
     events: events.results,
     sessions: sessions.results,
     apiLogs: apiLogs.results,
+    interactionSummary: interactionSummary.results,
+    summary: {
+      trackedActiveMinutes: Math.round(trackedSeconds / 60),
+      examActiveMinutes: Math.round(examSeconds / 60),
+      totalActiveMinutes: Math.round(Math.max(trackedSeconds, examSeconds) / 60),
+      totalInteractions: eventSummary?.interactions ?? 0,
+      totalApiCalls: apiSummary?.calls ?? 0,
+      totalApiTokens: apiSummary?.tokens ?? 0,
+      totalApiCostUsd: parseFloat((apiSummary?.cost ?? 0).toFixed(4)),
+    },
   };
 }
 
