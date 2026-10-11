@@ -1394,7 +1394,8 @@ App.renderRichText = function(el, text) {
             const isPass = s.passed;
             const badgeClass = isPass ? 'pass' : 'fail';
             const badgeText = isPass ? 'قبول' : 'نیاز به تلاش بیشتر';
-            const modeText = s.mode === 'exam' ? 'شبیه‌ساز ۳۰ سؤالی' : s.mode === 'review' ? 'مرور اشتباهات' : 'تمرین موضوعی';
+            const modeText = (s.mode === 'exam' ? 'شبیه‌ساز ۳۰ سؤالی' : s.mode === 'review' ? 'مرور اشتباهات' : 'تمرین موضوعی') +
+              (s.aiAssisted ? ' · با کمک AI' : '');
             const total = (s.score || 0) + (s.wrongCount || 0);
             const scoreText = (s.score || 0).toLocaleString('fa-IR') + ' از ' + total.toLocaleString('fa-IR');
             html += '<div class="home-recent-row">' +
@@ -2601,6 +2602,8 @@ App.renderRichText = function(el, text) {
       App.startExam('review');
     } else {
       App.showScreen(screen);
+      // A reload mid-exam lands here; offer to continue the open exam.
+      if (typeof App.offerExamResume === 'function') App.offerExamResume();
     }
   }
 

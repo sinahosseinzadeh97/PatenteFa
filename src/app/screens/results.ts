@@ -13,6 +13,7 @@ export function renderResultsScreen(): string {
       <div class="results-score-value" id="results-score"></div>
       <div class="results-detail" id="results-detail"></div>
       <div class="results-time" id="results-time"></div>
+      <p id="results-assisted-note" class="results-assisted-note" hidden>این آزمون با کمک هوش مصنوعی انجام شد و در درصد قبولی حساب نمی‌شود.</p>
 
       <div class="results-stat-grid" aria-label="خلاصه پاسخ‌ها">
         <div class="results-stat correct"><span>درست</span><strong id="results-correct-count">۰</strong></div>

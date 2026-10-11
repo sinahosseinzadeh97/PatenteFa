@@ -285,6 +285,7 @@ User feedback: the translate panel should clearly show VERO/FALSO before the exp
 - Confirm POST /api/translate/:questionId's response includes the question's correct_answer (VERO/FALSO) alongside translated_text/explanation — add it if it's missing.
 - In shell.tsx's translate panel render, show a clear verdict badge ("پاسخ: VERO" / "پاسخ: FALSO", styled per design.md green/red) ABOVE translated_text and explanation, not after.
 - User override (2026-08-18): the three-tab AI panel is intentionally available immediately on a live, unanswered exam question. Translation, theory, grammar, and the VERO/FALSO verdict may be used as an open-book study aid before answering; do not restore a client or server answer gate.
+- Superseded for `mode = 'exam'` (2026-10-11, §25): in exam mode the panel is behind an opt-in AI switch that starts off. The override above still holds for review and topic practice (including lesson-related practice and chapter exams).
 
 ### 19.3 Grammar tab: show infinitive alongside conjugated verbs
 User feedback: when the grammar tab (analyzeGrammar()) lists a verb form from the sentence, it should also show the verb's infinitive (مصدر) next to it. Show the current analyzeGrammar() system prompt verbatim first, then add an explicit instruction: for every verb listed in vocab_suggestions or referenced in grammar_analysis, include its infinitive form alongside the conjugated form found in the sentence — e.g. "avviene (مصدر: avvenire)".
@@ -307,7 +308,7 @@ A guided loop — Learn → Practise → Understand mistakes → Review later �
 - Related practice (10 real questions, due review first) runs in the normal exam runner as `topic_practice`. Home pass rate now counts `mode = 'exam'` sessions only.
 
 ### 21.3 AI help during unanswered exam questions
-The §19.2 user override stands: an uncommitted change (2026-08-31/09-01) had re-added a verdict/theory gate; it was removed again in this round. Tutor chat remains post-answer.
+The §19.2 user override stands for practice and review modes: an uncommitted change (2026-08-31/09-01) had re-added a verdict/theory gate; it was removed again in this round. Tutor chat remains post-answer. Exam mode: see §25.
 
 ### 21.4 Sources (reviewed 2026-09-26)
 Codice della Strada artt. 140, 145; DPR 495/1992 artt. 81 c.7, 105–114 (Normattiva). Recorded in `PILOT_CHAPTER.sources` and shown to learners on each completion screen, with the 2023-bank caveat.
@@ -347,3 +348,20 @@ Codice della Strada (testo vigente, agg. 24/04/2026) artt. 145 c.1–4, 154 c.1 
 
 ### 23.3 Sources (reviewed 2026-10-10)
 Codice della Strada artt. 141, 149 (Normattiva, agg. 24/04/2026; ACI pages updated 09/10/2026); Polizia di Stato, «Comportamenti da tenere quando si guida» (reaction time, safety distance); Comune di Genova, «Determinazione dello spazio di arresto» (1 s reaction, adherence 0.65–0.72); Comune di Firenze 2023 infographic from WHO 2008 (2.5 s, 90th-percentile driver); WHO/OECD 2006 stopping distances (27/36/58 m at 50/60/80 km/h, matched within 1 m); circolare MIT 6935/2017 (exam topics: reaction times, safety distance, braking, road holding). Bank statements cited by id in the content; the 2023-bank caveat still applies.
+
+## 25. Exam mode: answers stay open until "Finish exam"; AI help is opt-in (2026-10-11)
+
+### 25.1 What exists
+- Applies to `mode = 'exam'` only (the 30-question simulation). `review` and `topic_practice` keep immediate feedback and lock the first answer.
+- A VERO/FALSO tap is a **provisional selection**: shown at once, changeable, never marked right or wrong. It is saved in `exam_answers.selected_answer`; `user_answer` and `is_correct` stay NULL until finish.
+- "Finish exam" is always available (unanswered questions count as wrong; the learner is warned with the count). The finish request carries every selection; one transaction applies them, grades them (`user_answer`, `is_correct`) and scores the session. Retrying finish returns the same results.
+- Every exam starts with AI help **off**: the panel is hidden and `/api/translate/:id`, `/theory` and `/grammar` answer 403 `aiLocked` for that exam's questions. A separate switch turns it on after a warning that guidance may reveal the answer. `exam_sessions.ai_enabled` is the switch; `ai_assisted_at` records that it was ever on and is never cleared.
+- Assisted exams are scored and shown with an "با کمک AI" label, but are excluded from every pass rate (home `passRate`, admin overall pass rate, admin per-user passed count).
+- Reload: `GET /api/exam/active` returns the open exam's questions, selections, flags, AI state and remaining time (never correctness); the client offers to continue on start-up and re-sends selections it had only stored locally.
+
+### 25.2 Rules future changes must keep
+- Nothing reachable during an open exam may reveal correctness: not `/answer`, not stats, profile or tutor routes, not `/active`. Provisional selections live only in `selected_answer`, which no stats query reads. A new reader of `user_answer`/`is_correct` is automatically safe; a new reader of `selected_answer` must not expose it as graded.
+- AI requests are refused on the server while the switch is off, not only hidden in the client.
+- Turning the switch off never clears `ai_assisted_at`.
+- The final selection is the one that counts; the finish request's selections win over earlier saves.
+

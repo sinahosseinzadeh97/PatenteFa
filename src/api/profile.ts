@@ -109,6 +109,7 @@ profile.get("/", async (c) => {
       wrongCount: s.wrongCount,
       passed: s.passed === 1,
       startedAt: s.startedAt,
+      aiAssisted: s.aiAssisted === 1,
     })),
     needsMoreWork,
   });

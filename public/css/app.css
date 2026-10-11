@@ -2519,3 +2519,19 @@ button.home-metric:hover { border-color: var(--amber); background: var(--amber-d
   .sx-read { grid-template-columns: 22px minmax(0, 1fr) auto; padding-inline: 8px; }
   .sx-swatch { width: 22px; }
 }
+
+/* Exam mode: provisional selections and the opt-in AI switch */
+.ai-toggle-label[hidden], .exam-ai-switch[hidden], .exam-assisted-badge[hidden], .results-assisted-note[hidden] { display: none; }
+.exam-tools-row.has-ai-switch .exam-ai-switch { grid-column: 1 / -1; }
+.exam-tools-row.ai-locked #btn-tts { grid-column: 1 / -1; }
+.exam-ai-switch { position: relative; justify-content: flex-start; }
+.exam-answer-row.has-selection .btn:not(.answer-selected) { opacity: .45; }
+.exam-answer-feedback.pending { color: #f0c47f; background: var(--amber-dim); border-color: rgba(232, 163, 61, .45); }
+/* A dot marks "has a selection" — never whether it is right. */
+.q-tab.answered, .q-tab.save-failed { position: relative; color: var(--ink); }
+.q-tab.answered::after, .q-tab.save-failed::after { content: ''; position: absolute; bottom: 5px; left: 50%; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--ink); }
+.q-tab.save-failed { border-style: dashed; border-color: var(--amber); }
+.q-tab.save-failed::after { background: var(--amber); }
+.q-tab.active.answered::after { background: #17181c; }
+.exam-assisted-badge { padding: 4px 8px; border-radius: 9px; background: var(--amber-dim); color: var(--amber); font-size: .68rem; white-space: nowrap; }
+.results-assisted-note { margin: 8px 0 0; color: #f0c47f; font-size: .78rem; }

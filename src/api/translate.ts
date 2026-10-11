@@ -13,6 +13,7 @@ import {
   getQuestionById,
   getSignCardForImage,
   insertTranslation,
+  isAiLockedForQuestion,
   updateTheoryCache,
   updateGrammarCache,
 } from "../db/queries.js";
@@ -27,19 +28,26 @@ import type { VocabularySuggestion } from "../lib/openai.js";
 
 const translate = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
+// All three tabs can reveal the answer (verdict, explanation, theory). In exam
+// mode they stay closed until the learner switches AI help on, so each route
+// checks this before any cache read, DB lookup or OpenAI call.
+const AI_LOCKED_BODY = { error: "AI assistance is off for this exam", aiLocked: true } as const;
+
 // ── POST /api/translate/:questionId ─────────────────────────────────────────
 // Tab 1 — ترجمه — loads immediately when the panel opens, including before
-// the current question is answered (explicit study-mode choice from §19.2).
+// the current question is answered (§19.2: practice and review modes; in exam
+// mode only once the learner has switched AI help on).
 translate.post("/:questionId", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
+  const userId: number = c.get("userId" as never);
+  if (await isAiLockedForQuestion(c.env.DB, userId, questionId)) return c.json(AI_LOCKED_BODY, 403);
 
   // §19.2: Always fetch the question row so we can include correct_answer in the
   // response. It's a single PK lookup (indexed), effectively free, and avoids
   // a two-path design where cache hits omit the verdict.
   const question = await getQuestionById(c.env.DB, questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
-  const userId: number = c.get("userId" as never);
 
   // §14.1: cache-first — trust only if translated_text is present and substantial.
   // The explanation must be present too: migration 0007 nulled explanations
@@ -111,6 +119,7 @@ translate.post("/:questionId/theory", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
   const userId: number = c.get("userId" as never);
+  if (await isAiLockedForQuestion(c.env.DB, userId, questionId)) return c.json(AI_LOCKED_BODY, 403);
 
   const cached = await getCachedTranslation(c.env.DB, questionId, lang);
   if (cached && cached.theory_text && cached.theory_text.length > 10) {
@@ -151,6 +160,8 @@ translate.post("/:questionId/theory", async (c) => {
 translate.post("/:questionId/grammar", async (c) => {
   const questionId = Number(c.req.param("questionId"));
   const lang = "fa";
+  const userId: number = c.get("userId" as never);
+  if (await isAiLockedForQuestion(c.env.DB, userId, questionId)) return c.json(AI_LOCKED_BODY, 403);
 
   // The source text is required to verify that a cached vocabulary list covers
   // the whole sentence. Old prompt versions intentionally returned only 3–6
@@ -182,7 +193,6 @@ translate.post("/:questionId/grammar", async (c) => {
     }
   }
 
-  const userId: number | undefined = c.get("userId" as never);
   const result = await analyzeGrammar(c.env, question.text_it, c.env.DB, userId);
 
   await updateGrammarCache(
