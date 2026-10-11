@@ -11,6 +11,13 @@
   // ── Start exam ──────────────────────────────────────────────────────────────
   App.initializeExamState = function(data, options) {
     options = options || {};
+    state.examMode = options.mode || data.mode || 'exam';
+    // 'deferred' (exam mode): selections stay changeable and nothing reveals
+    // correctness until finish. 'immediate': practice and review modes.
+    state.examFeedback = data.feedback || (state.examMode === 'exam' ? 'deferred' : 'immediate');
+    state.aiEnabled = data.aiEnabled === true;
+    state.aiAssisted = data.aiAssisted === true;
+    state.selectionSaves = {};
     state.sessionId = data.sessionId;
     state.questions = data.questions || [];
     state.currentIndex = 0;
@@ -18,7 +25,7 @@
     state.answerResults = {};
     state.recordedAnswers = new Set();
     state.flags = new Set();
-    state.startedAt = Date.now();
+    state.startedAt = typeof options.startedAt === 'number' ? options.startedAt : Date.now();
     state.translateOpen = false;
     state.translationCache = {};
     state.theoryCache = {};
@@ -27,9 +34,21 @@
     state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
     state.answerPending = {};
     state.finishPending = false;
-    state.secondsLeft = options.secondsLeft || 1200;
-    state.examMode = options.mode || data.mode || 'exam';
+    state.secondsLeft = typeof options.secondsLeft === 'number' ? options.secondsLeft : 1200;
     state.examReturnScreen = options.returnScreen || 'home';
+  };
+
+  App.isDeferredExam = function() {
+    return state.examFeedback === 'deferred';
+  };
+
+  App.enterExamScreen = function() {
+    App.showScreen('exam');
+    document.getElementById('bottom-nav').style.display = 'none';
+    App.applyExamMode();
+    App.renderExamTabs();
+    App.renderQuestion();
+    App.startTimer();
   };
 
   App.startExam = async function(mode) {
@@ -42,18 +61,79 @@
     try {
       const data = await api('POST', '/exam/start', { mode });
       App.initializeExamState(data, { mode: mode, returnScreen: returnScreen });
-
-      App.showScreen('exam');
-      document.getElementById('bottom-nav').style.display = 'none';
-      App.applyExamMode();
-      App.renderExamTabs();
-      App.renderQuestion();
-      App.startTimer();
+      App.enterExamScreen();
     } catch (e) {
       App.toast('خطا: ' + e.message);
     } finally {
       state.examStartPending = false;
     }
+  };
+
+  // ── Resume an exam after a reload ───────────────────────────────────────────
+  // Selections are mirrored to localStorage until the exam ends, so a choice
+  // whose save had not reached the server yet survives a reload too.
+  const EXAM_SELECTIONS_KEY = 'patente_exam_selections_v1';
+
+  App.storeExamSelections = function() {
+    if (!App.isDeferredExam() || !state.sessionId) return;
+    try {
+      localStorage.setItem(EXAM_SELECTIONS_KEY, JSON.stringify({ sessionId: state.sessionId, answers: state.answers }));
+    } catch (e) {}
+  };
+
+  App.readStoredExamSelections = function(sessionId) {
+    try {
+      const stored = JSON.parse(localStorage.getItem(EXAM_SELECTIONS_KEY) || 'null');
+      return stored && stored.sessionId === sessionId && stored.answers ? stored.answers : {};
+    } catch (e) {
+      return {};
+    }
+  };
+
+  App.clearStoredExamSelections = function() {
+    try { localStorage.removeItem(EXAM_SELECTIONS_KEY); } catch (e) {}
+  };
+
+  App.offerExamResume = async function() {
+    if (state.sessionId || state.examStartPending) return;
+    let data;
+    try {
+      data = await api('GET', '/exam/active');
+    } catch (e) {
+      return; // not approved yet, offline, … — nothing to resume
+    }
+    const active = data && data.session;
+    if (!active || state.sessionId) return;
+
+    const stored = App.readStoredExamSelections(active.sessionId);
+    const answers = Object.assign({}, active.selections, stored);
+    const answered = Object.keys(answers).length;
+    const ok = window.confirm(
+      'یک آزمون نیمه‌کاره داری (' + answered + ' از ' + active.questions.length + ' سؤال پاسخ داده شده).\n' +
+      'ادامه‌اش می‌دهی؟ اگر نه، این آزمون بسته می‌شود و نمره‌ای ثبت نمی‌شود.'
+    );
+    if (!ok) {
+      App.clearStoredExamSelections();
+      api('POST', '/exam/' + active.sessionId + '/abandon').catch(function() {});
+      return;
+    }
+    if (state.sessionId) return;
+
+    App.initializeExamState(active, {
+      mode: 'exam',
+      returnScreen: 'home',
+      secondsLeft: active.secondsLeft,
+      startedAt: Date.now() - (1200 - active.secondsLeft) * 1000,
+    });
+    state.answers = answers;
+    state.flags = new Set(active.flags || []);
+    App.storeExamSelections();
+    // Re-send anything the server does not have yet (saved locally, lost in transit).
+    Object.keys(stored).forEach(function(questionId) {
+      if (active.selections[questionId] !== stored[questionId]) App.saveSelection(Number(questionId));
+    });
+    App.enterExamScreen();
+    if (active.secondsLeft <= 0) App.finishExam({ auto: true });
   };
 
   App.startReview = function() {
@@ -97,6 +177,7 @@
     state.aiRequestGeneration = (state.aiRequestGeneration || 0) + 1;
     state.answerPending = {};
     state.finishPending = false;
+    App.clearStoredExamSelections();
     if (abandonedSessionId) {
       api('POST', '/exam/' + abandonedSessionId + '/abandon').catch(function() {});
     }
@@ -120,14 +201,15 @@
       App.updateTimerUI();
       if (state.secondsLeft <= 0) {
         clearInterval(state.timerInterval);
-        App.finishExam();
+        App.finishExam({ auto: true });
       }
     }, 1000);
   };
 
   App.updateTimerUI = function() {
-    const m = Math.floor(state.secondsLeft / 60);
-    const s = state.secondsLeft % 60;
+    const left = Math.max(0, state.secondsLeft);
+    const m = Math.floor(left / 60);
+    const s = left % 60;
     const el = document.getElementById('exam-timer');
     el.textContent = m + ':' + String(s).padStart(2, '0');
     el.className = 'timer exam-timer-inline';
@@ -158,6 +240,10 @@
         App.renderExamTabs();
       };
       if (state.flags.has(q.questionId)) tab.classList.add('flagged');
+      if (App.isDeferredExam() && state.answers[q.questionId] !== undefined) {
+        const save = state.selectionSaves[q.questionId];
+        tab.classList.add(save && save.status === 'failed' ? 'save-failed' : 'answered');
+      }
       container.appendChild(tab);
     });
 
@@ -205,6 +291,10 @@
   };
 
   App.renderAnswerState = function(q) {
+    if (App.isDeferredExam()) {
+      App.renderSelectionState(q);
+      return;
+    }
     const veroBtn = document.getElementById('btn-vero');
     const falsoBtn = document.getElementById('btn-falso');
     const feedback = document.getElementById('exam-answer-feedback');
@@ -215,6 +305,7 @@
     [veroBtn, falsoBtn].forEach(function(btn) {
       if (!btn) return;
       btn.disabled = answered;
+      btn.removeAttribute('aria-pressed');
       btn.classList.remove(
         'btn-disabled',
         'answer-selected',
@@ -256,6 +347,44 @@
     }
   };
 
+  // Exam mode: show the current selection only. Both buttons stay usable so
+  // the learner can change their mind; nothing here says whether it is right.
+  App.renderSelectionState = function(q) {
+    const veroBtn = document.getElementById('btn-vero');
+    const falsoBtn = document.getElementById('btn-falso');
+    const feedback = document.getElementById('exam-answer-feedback');
+    const nextBtn = document.getElementById('btn-next-question');
+    const selected = state.answers[q.questionId];
+    const save = state.selectionSaves[q.questionId];
+
+    [veroBtn, falsoBtn].forEach(function(btn) {
+      if (!btn) return;
+      btn.disabled = false;
+      btn.setAttribute('aria-pressed', 'false');
+      btn.classList.remove('btn-disabled', 'answer-selected', 'answer-correct-choice', 'answer-wrong-choice');
+    });
+    const selectedBtn = selected === 1 ? veroBtn : selected === 0 ? falsoBtn : null;
+    if (selectedBtn) {
+      selectedBtn.classList.add('answer-selected');
+      selectedBtn.setAttribute('aria-pressed', 'true');
+    }
+    if (veroBtn && veroBtn.parentElement) {
+      veroBtn.parentElement.classList.toggle('has-selection', !!selectedBtn);
+    }
+
+    if (feedback) {
+      const failed = !!(selectedBtn && save && save.status === 'failed');
+      feedback.className = 'exam-answer-feedback fa-text' + (failed ? ' pending is-visible' : '');
+      feedback.textContent = failed
+        ? 'انتخابت هنوز به سرور نرسیده؛ با «پایان آزمون» دوباره فرستاده می‌شود.'
+        : '';
+    }
+    if (nextBtn) {
+      nextBtn.style.display = state.currentIndex < state.questions.length - 1 ? 'inline-flex' : 'none';
+    }
+    App.renderExamLessonHint(null);
+  };
+
   // After a wrong answer, point to the lesson section that teaches this exact
   // question (explicit mapping from the server). Text only: leaving mid-session
   // would abandon it, so the button to open the lesson lives on the results screen.
@@ -271,8 +400,10 @@
 
   App.nextQuestion = function() {
     const q = state.questions[state.currentIndex];
-    if (!q || !state.recordedAnswers.has(q.questionId)) return;
+    if (!q) return;
+    if (!App.isDeferredExam() && !state.recordedAnswers.has(q.questionId)) return;
     if (state.currentIndex >= state.questions.length - 1) {
+      if (App.isDeferredExam()) return;
       App.finishExam();
       return;
     }
@@ -285,16 +416,21 @@
     const btn = document.getElementById('btn-finish-exam');
     if (!btn) return;
     const lastQuestion = state.questions[state.questions.length - 1];
+    // Exam mode can be finished at any point; unanswered questions count as wrong.
     const canFinish = !!(
       state.sessionId &&
       lastQuestion &&
-      state.recordedAnswers.has(lastQuestion.questionId)
+      (App.isDeferredExam() || state.recordedAnswers.has(lastQuestion.questionId))
     );
     btn.style.display = canFinish ? 'inline-flex' : 'none';
   };
 
   // ── Answer ──────────────────────────────────────────────────────────────────
   App.answer = async function(value) {
+    if (App.isDeferredExam()) {
+      App.selectAnswer(value);
+      return;
+    }
     const q = state.questions[state.currentIndex];
     if (!q) return;
     if (state.answers[q.questionId] !== undefined) return; // already answered
@@ -336,6 +472,86 @@
     } finally {
       if (state.sessionId === sessionId) delete state.answerPending[q.questionId];
     }
+  };
+
+  // Exam mode: a tap only selects. The selection is shown at once, backed up
+  // locally, and saved in the background; it can change until finish.
+  App.selectAnswer = function(value) {
+    const q = state.questions[state.currentIndex];
+    if (!q || !state.sessionId || state.finishPending) return;
+    state.answers[q.questionId] = value;
+    App.storeExamSelections();
+    App.saveSelection(q.questionId);
+    App.renderAnswerState(q);
+    App.renderExamTabs();
+  };
+
+  // One save in flight per question; when it returns, the latest selection is
+  // sent if it changed meanwhile, so saves never land out of order.
+  // ponytail: ordering is per tab only; add a revision column if one exam is
+  // ever answered from two devices at once. "Finish" sends every selection anyway.
+  App.saveSelection = async function(questionId) {
+    const sessionId = state.sessionId;
+    const saves = state.selectionSaves;
+    const save = saves[questionId] || (saves[questionId] = {});
+    if (!sessionId || save.inFlight) return;
+    const value = state.answers[questionId];
+    save.inFlight = true;
+    save.status = 'saving';
+    try {
+      await api('POST', '/exam/' + sessionId + '/answer', { questionId: questionId, answer: value });
+      save.status = 'saved';
+    } catch (e) {
+      save.status = 'failed';
+    } finally {
+      save.inFlight = false;
+    }
+    if (state.sessionId !== sessionId) return;
+    if (state.answers[questionId] !== value) {
+      App.saveSelection(questionId);
+      return;
+    }
+    App.renderExamTabs();
+    const current = state.questions[state.currentIndex];
+    if (current && current.questionId === questionId) App.renderAnswerState(current);
+  };
+
+  // ── AI help switch (exam mode) ──────────────────────────────────────────────
+  // Every exam starts with AI help off and the server refuses AI requests for
+  // its questions. Switching it on marks the exam as assisted for good.
+  App.toggleExamAssistance = async function(checkbox) {
+    const sessionId = state.sessionId;
+    if (!sessionId || !App.isDeferredExam()) return;
+    const enable = checkbox.checked;
+    if (enable) {
+      const ok = window.confirm(
+        'کمک هوش مصنوعی (ترجمه، تئوری و گرامر) ممکن است پاسخ درست را لو بدهد.\n' +
+        'با روشن کردنش، این آزمون «با کمک» ثبت می‌شود و در درصد قبولی حساب نمی‌شود — حتی اگر بعداً خاموشش کنی.'
+      );
+      if (!ok) {
+        checkbox.checked = false;
+        return;
+      }
+    } else {
+      // Hide first; the server is told right after.
+      state.aiEnabled = false;
+      App._resetAiPanel();
+    }
+
+    checkbox.disabled = true;
+    try {
+      const result = await api('POST', '/exam/' + sessionId + '/assistance', { enabled: enable });
+      if (state.sessionId !== sessionId) return;
+      state.aiEnabled = result.enabled === true;
+      state.aiAssisted = result.assisted === true;
+    } catch (e) {
+      if (state.sessionId !== sessionId) return;
+      if (enable) state.aiEnabled = false;
+      App.toast(enable ? 'کمک هوش مصنوعی روشن نشد؛ دوباره امتحان کن.' : 'خاموش شدن کمک در سرور ثبت نشد؛ پنل بسته ماند.');
+    } finally {
+      checkbox.disabled = false;
+    }
+    App._updateAiAvailability();
   };
 
   // ── Flag / bookmark ─────────────────────────────────────────────────────────
@@ -606,11 +822,35 @@
     const toggle = document.getElementById('translate-toggle');
     const label = toggle ? toggle.closest('.ai-toggle-label') : null;
     const sub = document.getElementById('ai-toggle-sub');
+    const deferred = App.isDeferredExam();
+    const locked = deferred && !state.aiEnabled;
 
-    // Keep older cached markup usable when it is paired with this newer script.
-    if (toggle) toggle.disabled = false;
-    if (label) label.classList.remove('locked');
-    if (sub) sub.textContent = 'ترجمه، تئوری و گرامر — همین حالا قابل استفاده است';
+    // Practice and review: the panel is open-book (§19.2). Exam mode: only
+    // after the learner switches AI help on.
+    if (toggle) toggle.disabled = locked;
+    if (label) {
+      label.classList.remove('locked');
+      label.hidden = locked;
+    }
+    if (sub) {
+      sub.textContent = !deferred
+        ? 'ترجمه، تئوری و گرامر — همین حالا قابل استفاده است'
+        : locked
+          ? 'آزمون بدون کمک: پاسخ‌ها تا پایان آزمون مشخص نمی‌شوند.'
+          : 'کمک روشن است و ممکن است پاسخ را لو بدهد.';
+    }
+
+    const toolsRow = document.querySelector('.exam-tools-row');
+    if (toolsRow) {
+      toolsRow.classList.toggle('has-ai-switch', deferred);
+      toolsRow.classList.toggle('ai-locked', locked);
+    }
+    const switchRow = document.getElementById('exam-ai-switch-row');
+    if (switchRow) switchRow.hidden = !deferred;
+    const switchInput = document.getElementById('exam-ai-switch');
+    if (switchInput) switchInput.checked = deferred && state.aiEnabled;
+    const badge = document.getElementById('exam-assisted-badge');
+    if (badge) badge.hidden = !(deferred && state.aiAssisted);
   };
 
   App._resetAiPanel = function() {
@@ -660,10 +900,21 @@
 
 
   // ── Finish exam ─────────────────────────────────────────────────────────────
-  App.finishExam = async function() {
+  App.finishExam = async function(options) {
+    options = options || {};
     const finishingSessionId = state.sessionId;
     if (!finishingSessionId || state.finishPending) return;
-    if (Object.keys(state.answerPending).length > 0) {
+    const deferred = App.isDeferredExam();
+    if (deferred && !options.auto) {
+      const unanswered = state.questions.length - Object.keys(state.answers).length;
+      if (unanswered > 0) {
+        const ok = window.confirm(
+          unanswered + ' سؤال بی‌پاسخ مانده و غلط حساب می‌شود.\nآزمون را تمام می‌کنی؟'
+        );
+        if (!ok || state.sessionId !== finishingSessionId) return;
+      }
+    }
+    if (!deferred && Object.keys(state.answerPending).length > 0) {
       setTimeout(function() {
         if (state.sessionId === finishingSessionId) App.finishExam();
       }, 250);
@@ -677,7 +928,10 @@
     const durationSeconds = Math.round((Date.now() - state.startedAt) / 1000);
     let data;
     try {
-      data = await api('POST', '/exam/' + finishingSessionId + '/finish', { durationSeconds });
+      // Exam mode sends every selection, so one whose save failed still counts.
+      data = await api('POST', '/exam/' + finishingSessionId + '/finish', deferred
+        ? { durationSeconds: durationSeconds, answers: state.answers }
+        : { durationSeconds: durationSeconds });
     } catch (e) {
       if (state.sessionId === finishingSessionId) {
         App.toast('خطا در ثبت نتایج: ' + e.message);
@@ -691,6 +945,7 @@
     }
     if (state.sessionId !== finishingSessionId) return;
     state.sessionId = null;
+    App.clearStoredExamSelections();
     document.getElementById('bottom-nav').style.display = '';
     state.examMode = null;
     App.applyExamMode();
@@ -735,6 +990,8 @@
       data.passed
         ? data.wrongCount.toLocaleString('fa-IR') + ' اشتباه؛ حد قبولی را رد نکردی.'
         : data.wrongCount.toLocaleString('fa-IR') + ' اشتباه؛ برای قبولی حداکثر ' + allowedWrong.toLocaleString('fa-IR') + ' اشتباه مجاز است.';
+    const assistedNote = document.getElementById('results-assisted-note');
+    if (assistedNote) assistedNote.hidden = data.aiAssisted !== true;
     const listHeading = document.getElementById('results-list-heading');
     if (listHeading) listHeading.textContent = 'جزئیات ' + totalQuestions.toLocaleString('fa-IR') + ' سؤال';
 

@@ -47,6 +47,8 @@ export interface DbExamSession {
   score: number | null;
   wrong_count: number | null;
   passed: number | null;
+  ai_enabled: number;
+  ai_assisted_at: string | null;
 }
 
 export interface DbExamAnswer {
@@ -58,6 +60,7 @@ export interface DbExamAnswer {
   is_correct: number | null;
   flagged: number;
   answered_at: string | null;
+  selected_answer: number | null;
 }
 
 export interface DbReviewItem {
@@ -502,7 +505,18 @@ export async function finishExamSession(
   userId: number,
   durationSeconds: number
 ): Promise<boolean> {
-  const result = await db
+  const result = await finishSessionStatement(db, sessionId, userId, durationSeconds).run();
+  return result.meta.changes === 1;
+}
+
+/** Score from the stored is_correct values and close the session, only while it is active. */
+function finishSessionStatement(
+  db: D1Database,
+  sessionId: number,
+  userId: number,
+  durationSeconds: number
+): D1PreparedStatement {
+  return db
     .prepare(
       `WITH result AS (
          SELECT
@@ -530,9 +544,192 @@ export async function finishExamSession(
          AND abandoned_at IS NULL
          AND started_at >= datetime('now', '-30 minutes')`
     )
-    .bind(sessionId, durationSeconds, sessionId, userId)
+    .bind(sessionId, durationSeconds, sessionId, userId);
+}
+
+// ── Exam mode: provisional selections, graded only at finish ────────────────
+// A selection lives in selected_answer while the exam is open. user_answer and
+// is_correct stay NULL until finish, so stats queries, the tutor gate and
+// explain-wrong (which all read those columns) cannot reveal correctness early.
+
+/** The owning exam-mode session is still open. `exam_answers` must be in scope. */
+const ACTIVE_EXAM_GUARD = `EXISTS (
+           SELECT 1
+           FROM exam_sessions es
+           WHERE es.id = exam_answers.session_id
+             AND es.user_id = ?
+             AND es.mode = 'exam'
+             AND es.finished_at IS NULL
+             AND es.abandoned_at IS NULL
+             AND es.started_at >= datetime('now', '-30 minutes')
+         )`;
+
+export type ExamSelectionResult = "saved" | "inactive" | "not_in_session";
+
+/** Overwrite the provisional selection; later saves replace earlier ones. */
+export async function saveExamSelection(
+  db: D1Database,
+  sessionId: number,
+  userId: number,
+  questionId: number,
+  answer: 0 | 1
+): Promise<ExamSelectionResult> {
+  const result = await db
+    .prepare(
+      `UPDATE exam_answers
+       SET selected_answer = ?, answered_at = datetime('now')
+       WHERE session_id = ? AND question_id = ? AND ${ACTIVE_EXAM_GUARD}`
+    )
+    .bind(answer, sessionId, questionId, userId)
     .run();
-  return result.meta.changes === 1;
+  if (result.meta.changes === 1) return "saved";
+
+  const row = await db
+    .prepare(`SELECT 1 AS found FROM exam_answers WHERE session_id = ? AND question_id = ?`)
+    .bind(sessionId, questionId)
+    .first<{ found: number }>();
+  return row ? "inactive" : "not_in_session";
+}
+
+/**
+ * Apply the selections sent with "Finish exam", promote every selection to a
+ * graded answer, then score and close the session — one transaction, so the
+ * selections and the score commit together or not at all.
+ */
+export async function finishDeferredExamSession(
+  db: D1Database,
+  sessionId: number,
+  userId: number,
+  durationSeconds: number,
+  answers: ReadonlyMap<number, 0 | 1>
+): Promise<boolean> {
+  const applySelections = [...answers].map(([questionId, answer]) =>
+    db
+      .prepare(
+        `UPDATE exam_answers SET selected_answer = ?
+         WHERE session_id = ? AND question_id = ? AND ${ACTIVE_EXAM_GUARD}`
+      )
+      .bind(answer, sessionId, questionId, userId)
+  );
+  const promote = db
+    .prepare(
+      `UPDATE exam_answers
+       SET user_answer = selected_answer,
+           is_correct = CASE
+             WHEN selected_answer IS NULL THEN NULL
+             WHEN selected_answer = (SELECT q.correct_answer FROM questions q WHERE q.id = exam_answers.question_id) THEN 1
+             ELSE 0
+           END
+       WHERE session_id = ? AND ${ACTIVE_EXAM_GUARD}`
+    )
+    .bind(sessionId, userId);
+
+  const results = await db.batch([
+    ...applySelections,
+    promote,
+    finishSessionStatement(db, sessionId, userId, durationSeconds),
+  ]);
+  return results[results.length - 1]?.meta.changes === 1;
+}
+
+/** Switch AI help; ai_assisted_at records the first switch-on and is never cleared. */
+export async function setExamAssistance(
+  db: D1Database,
+  sessionId: number,
+  userId: number,
+  enabled: boolean
+): Promise<{ enabled: boolean; assisted: boolean } | null> {
+  const flag = enabled ? 1 : 0;
+  const result = await db
+    .prepare(
+      `UPDATE exam_sessions
+       SET ai_enabled = ?,
+           ai_assisted_at = COALESCE(ai_assisted_at, CASE WHEN ? = 1 THEN datetime('now') END)
+       WHERE id = ?
+         AND user_id = ?
+         AND mode = 'exam'
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL
+         AND started_at >= datetime('now', '-30 minutes')`
+    )
+    .bind(flag, flag, sessionId, userId)
+    .run();
+  if (result.meta.changes !== 1) return null;
+
+  const row = await db
+    .prepare(`SELECT ai_enabled, ai_assisted_at FROM exam_sessions WHERE id = ?`)
+    .bind(sessionId)
+    .first<{ ai_enabled: number; ai_assisted_at: string | null }>();
+  return { enabled: row?.ai_enabled === 1, assisted: row?.ai_assisted_at != null };
+}
+
+/** AI help is off for this question because it belongs to the user's open, unassisted exam. */
+export async function isAiLockedForQuestion(
+  db: D1Database,
+  userId: number,
+  questionId: number
+): Promise<boolean> {
+  const row = await db
+    .prepare(
+      `SELECT 1 AS locked
+       FROM exam_sessions es
+       JOIN exam_answers ea ON ea.session_id = es.id
+       WHERE es.user_id = ?
+         AND es.mode = 'exam'
+         AND es.ai_enabled = 0
+         AND es.finished_at IS NULL
+         AND es.abandoned_at IS NULL
+         AND es.started_at >= datetime('now', '-30 minutes')
+         AND ea.question_id = ?
+       LIMIT 1`
+    )
+    .bind(userId, questionId)
+    .first<{ locked: number }>();
+  return row !== null;
+}
+
+export interface ActiveExamQuestion {
+  position: number;
+  question_id: number;
+  text_it: string;
+  image_url: string | null;
+  topic_id: number | null;
+  selected_answer: number | null;
+  flagged: number;
+}
+
+/** The user's newest open exam-mode session, for resuming after a reload. */
+export async function getActiveDeferredExam(
+  db: D1Database,
+  userId: number
+): Promise<{ session: DbExamSession; questions: ActiveExamQuestion[] } | null> {
+  const session = await db
+    .prepare(
+      `SELECT * FROM exam_sessions
+       WHERE user_id = ?
+         AND mode = 'exam'
+         AND finished_at IS NULL
+         AND abandoned_at IS NULL
+         AND started_at >= datetime('now', '-30 minutes')
+       ORDER BY id DESC
+       LIMIT 1`
+    )
+    .bind(userId)
+    .first<DbExamSession>();
+  if (!session) return null;
+
+  const questions = await db
+    .prepare(
+      `SELECT ea.position, ea.question_id, q.text_it, q.image_url, q.topic_id,
+              ea.selected_answer, ea.flagged
+       FROM exam_answers ea
+       JOIN questions q ON q.id = ea.question_id
+       WHERE ea.session_id = ?
+       ORDER BY ea.position`
+    )
+    .bind(session.id)
+    .all<ActiveExamQuestion>();
+  return { session, questions: questions.results };
 }
 
 export async function getSessionAnswers(
@@ -1257,6 +1454,7 @@ export interface ScoreTrendPoint {
   wrongCount: number | null;
   passed: number | null;
   startedAt: string;
+  aiAssisted: number;
 }
 
 /**
@@ -1270,7 +1468,8 @@ export async function getScoreTrend(
 ): Promise<ScoreTrendPoint[]> {
   const result = await db
     .prepare(
-      `SELECT id AS sessionId, score, wrong_count AS wrongCount, passed, started_at AS startedAt
+      `SELECT id AS sessionId, score, wrong_count AS wrongCount, passed, started_at AS startedAt,
+              ai_assisted_at IS NOT NULL AS aiAssisted
        FROM exam_sessions
        WHERE user_id = ? AND mode = 'exam' AND finished_at IS NOT NULL
        ORDER BY started_at DESC
@@ -1358,7 +1557,13 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
     db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= date('now')`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= datetime('now', '-5 minutes')`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(*) as count FROM users WHERE is_approved = 0`).first<{ count: number }>(),
-    db.prepare(`SELECT COUNT(*) as total, SUM(CASE WHEN passed = 1 THEN 1 ELSE 0 END) as passed FROM exam_sessions WHERE finished_at IS NOT NULL`).first<{ total: number; passed: number }>(),
+    // Assisted exams are counted as taken but never towards the pass rate.
+    db.prepare(
+      `SELECT COUNT(*) as total,
+              SUM(CASE WHEN ai_assisted_at IS NULL THEN 1 ELSE 0 END) as unassisted_total,
+              SUM(CASE WHEN passed = 1 AND ai_assisted_at IS NULL THEN 1 ELSE 0 END) as passed
+       FROM exam_sessions WHERE finished_at IS NOT NULL`
+    ).first<{ total: number; unassisted_total: number | null; passed: number | null }>(),
     db.prepare(
       `SELECT COALESCE(SUM(
          CASE WHEN tracked_seconds >= exam_seconds THEN tracked_seconds ELSE exam_seconds END
@@ -1382,8 +1587,9 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
   ]);
 
   const totalExams = examRow?.total ?? 0;
+  const unassistedExams = examRow?.unassisted_total ?? 0;
   const passedExams = examRow?.passed ?? 0;
-  const overallPassRate = totalExams > 0 ? Math.round((passedExams / totalExams) * 100) : null;
+  const overallPassRate = unassistedExams > 0 ? Math.round((passedExams / unassistedExams) * 100) : null;
 
   return {
     totalUsers: userRow?.count ?? 0,
@@ -1453,7 +1659,8 @@ export async function getAdminUsersList(
       (SELECT COUNT(*) FROM exam_sessions s
          WHERE s.user_id = u.id AND s.finished_at IS NOT NULL)                AS total_exams,
       (SELECT COUNT(*) FROM exam_sessions s
-         WHERE s.user_id = u.id AND s.finished_at IS NOT NULL AND s.passed = 1) AS passed_exams,
+         WHERE s.user_id = u.id AND s.finished_at IS NOT NULL AND s.passed = 1
+           AND s.ai_assisted_at IS NULL)                                      AS passed_exams,
       (SELECT COUNT(*) FROM api_usage_logs api WHERE api.user_id = u.id)      AS total_api_calls,
       (SELECT COALESCE(SUM(api.prompt_tokens + api.completion_tokens), 0)
          FROM api_usage_logs api WHERE api.user_id = u.id)                    AS total_api_tokens,

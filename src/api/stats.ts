@@ -43,9 +43,12 @@ stats.get("/", async (c) => {
   // Weakest topic
   const weakestTopic = topicAccuracy.length > 0 ? topicAccuracy[0] : null;
 
-  // Pass rate counts full exam simulations only — topic, lesson and review
-  // practice use different lengths and pass thresholds.
-  const finishedSessions = recentSessions.filter((s) => s.finished_at && s.mode === "exam");
+  // Pass rate counts unassisted full exam simulations only — topic, lesson and
+  // review practice use different lengths and pass thresholds, and an exam taken
+  // with AI help switched on says nothing about readiness.
+  const finishedSessions = recentSessions.filter(
+    (s) => s.finished_at && s.mode === "exam" && s.ai_assisted_at == null
+  );
   const passCount = finishedSessions.filter((s) => s.passed === 1).length;
   const passRate =
     finishedSessions.length > 0
@@ -77,6 +80,7 @@ stats.get("/", async (c) => {
       score: s.score,
       wrongCount: s.wrong_count,
       passed: s.passed === 1,
+      aiAssisted: s.ai_assisted_at != null,
       durationSeconds: s.duration_seconds,
       startedAt: s.started_at,
     })),

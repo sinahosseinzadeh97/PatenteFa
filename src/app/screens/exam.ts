@@ -1,4 +1,7 @@
-/** Exam runner shared by full exam, review, and topic practice. */
+/**
+ * Exam runner shared by full exam, review, and topic practice. In exam mode the
+ * AI switch row replaces the open-book panel toggle until the learner opts in.
+ */
 export function renderExamScreen(): string {
   return `
 <div id="screen-exam" class="screen exam-screen">
@@ -17,6 +20,7 @@ export function renderExamScreen(): string {
         </summary>
         <div class="question-tabs" id="exam-tabs" aria-label="فهرست سؤال‌ها"></div>
       </details>
+      <span id="exam-assisted-badge" class="exam-assisted-badge" hidden>با کمک AI</span>
       <span class="timer exam-timer-inline" id="exam-timer" aria-label="زمان باقی‌مانده">20:00</span>
       <button id="btn-flag" type="button" class="icon-button exam-flag-btn" onclick="App.toggleFlag()" aria-label="نشان‌کردن این سؤال برای مرور بعدی" aria-pressed="false">
         <svg class="ui-icon"><use href="#i-bookmark"/></svg>
@@ -39,6 +43,11 @@ export function renderExamScreen(): string {
     </section>
 
     <div class="exam-tools-row" aria-label="ابزارهای سؤال">
+      <label id="exam-ai-switch-row" class="tool-button exam-ai-switch" for="exam-ai-switch" hidden>
+        <svg class="ui-icon"><use href="#i-sparkles"/></svg><span>کمک هوش مصنوعی در آزمون</span>
+        <input type="checkbox" id="exam-ai-switch" onchange="App.toggleExamAssistance(this)" class="ai-toggle-checkbox" aria-describedby="ai-toggle-sub" />
+        <span class="switch-control" aria-hidden="true"></span>
+      </label>
       <button class="tool-button" id="btn-tts" onclick="App.speakQuestion()" aria-label="خواندن متن سؤال با صدای ایتالیایی">
         <svg class="ui-icon"><use href="#i-audio"/></svg><span>پخش ایتالیایی</span>
       </button>

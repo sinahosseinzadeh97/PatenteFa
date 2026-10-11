@@ -58,7 +58,9 @@ CREATE TABLE IF NOT EXISTS exam_sessions (
   duration_seconds INTEGER,
   score INTEGER,
   wrong_count INTEGER,
-  passed INTEGER                       -- 1/0, computed as wrong_count <= 3 for mode='exam'
+  passed INTEGER,                      -- 1/0, computed as wrong_count <= 3 for mode='exam'
+  ai_enabled INTEGER NOT NULL DEFAULT 0, -- exam mode: AI help currently switched on
+  ai_assisted_at TEXT                  -- exam mode: first time AI help was switched on; never cleared
 );
 
 CREATE INDEX IF NOT EXISTS idx_sessions_user ON exam_sessions(user_id, started_at DESC);
@@ -72,7 +74,8 @@ CREATE TABLE IF NOT EXISTS exam_answers (
   user_answer INTEGER,                 -- 1/0, NULL if skipped/timed-out
   is_correct INTEGER,
   flagged INTEGER DEFAULT 0,
-  answered_at TEXT
+  answered_at TEXT,
+  selected_answer INTEGER              -- exam mode: provisional 1/0, promoted to user_answer at finish
 );
 
 CREATE INDEX IF NOT EXISTS idx_answers_session ON exam_answers(session_id);

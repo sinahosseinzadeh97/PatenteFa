@@ -358,19 +358,44 @@ test("single-term vocabulary suggestions remain available for manual saves", asy
   assert.match(JSON.stringify(request), /precedenza/);
 });
 
-test("exam AI help is available immediately (features.md §19.2 user override)", () => {
+test("AI help is open-book in practice and an opt-in, warned switch in exam mode (features.md §19.2)", () => {
   const examClient = readFileSync("public/js/exam.js", "utf8");
 
+  // Practice and review: no "answer first" gate (§19.2 user override).
   assert.doesNotMatch(examClient, /App\.canRevealAiAnswerForCurrentQuestion/);
-  assert.doesNotMatch(examClient, /App\.canUseAiForCurrentQuestion/);
   assert.doesNotMatch(examClient, /answerLocked/);
   assert.match(examClient, /App\.renderRichText\(explanationBody,\s*data\.explanation\)/);
-
   const screenMarkup = renderExamScreen();
   assert.doesNotMatch(screenMarkup, /id="translate-toggle"[^>]*disabled/);
-  assert.doesNotMatch(screenMarkup, /id="ai-tab-btn-1"[^>]*aria-disabled="true"/);
-  assert.doesNotMatch(screenMarkup, /id="ai-answer-lock"/);
   assert.match(screenMarkup, /همین حالا قابل استفاده است/);
+
+  // Exam mode: a separate switch, off by default, that warns before enabling.
+  assert.match(screenMarkup, /id="exam-ai-switch-row"[^>]*hidden/);
+  assert.doesNotMatch(screenMarkup, /id="exam-ai-switch"[^>]*checked/);
+  assert.match(screenMarkup, /id="exam-assisted-badge"[^>]*hidden/);
+  const toggle = examClient.slice(examClient.indexOf("App.toggleExamAssistance = "), examClient.indexOf("// ── Flag / bookmark"));
+  assert.match(toggle, /window\.confirm\(/);
+  assert.match(toggle, /پاسخ درست را لو بدهد/);
+  assert.match(toggle, /'\/assistance'/);
+  assert.match(examClient, /const locked = deferred && !state\.aiEnabled/);
+});
+
+test("exam mode selects without revealing, sends every selection on finish, and can resume", () => {
+  const examClient = readFileSync("public/js/exam.js", "utf8");
+  const appClient = readFileSync("public/js/app.js", "utf8");
+
+  const selection = examClient.slice(examClient.indexOf("App.renderSelectionState = "), examClient.indexOf("// After a wrong answer"));
+  assert.doesNotMatch(selection, /answer-correct-choice'\)|isCorrect|correctAnswer/, "the exam-mode view never marks right or wrong");
+  assert.match(selection, /btn\.disabled = false/);
+
+  const saves = examClient.slice(examClient.indexOf("App.saveSelection = "), examClient.indexOf("// ── AI help switch"));
+  assert.match(saves, /save\.inFlight\) return/, "one save in flight per question");
+  assert.match(saves, /state\.answers\[questionId\] !== value/, "a newer selection is re-sent when the save returns");
+
+  assert.match(examClient, /answers: state\.answers/);
+  assert.match(examClient, /finishExam\(\{ auto: true \}\)/, "the timer finishes without the unanswered prompt");
+  assert.match(examClient, /api\('GET', '\/exam\/active'\)/);
+  assert.match(appClient, /App\.offerExamResume\(\)/);
 });
 
 test("slow AI responses cannot overwrite a different question and requests are deduplicated", () => {
@@ -384,14 +409,20 @@ test("slow AI responses cannot overwrite a different question and requests are d
   );
 });
 
-test("exam AI routes allow help before answering while tutor chat remains post-answer", () => {
+test("AI routes are open in practice, opt-in during an exam, and tutor chat stays post-answer", () => {
   const querySource = readFileSync("src/db/queries.ts", "utf8");
   const routeSource = readFileSync("src/api/translate.ts", "utf8");
   const tutorSource = readFileSync("src/api/tutor.ts", "utf8");
 
+  // No "answer first" gate (§19.2): the only lock is the exam-mode AI switch.
   assert.doesNotMatch(querySource, /hasUnansweredActiveExamQuestion/);
-  assert.doesNotMatch(routeSource, /hasUnansweredActiveExamQuestion/);
   assert.doesNotMatch(routeSource, /answerRequired/);
+  assert.equal(
+    (routeSource.match(/if \(await isAiLockedForQuestion\(/g) ?? []).length,
+    3,
+    "translation, theory and grammar each check the exam-mode AI switch"
+  );
+  assert.match(querySource, /es\.mode = 'exam'\s+AND es\.ai_enabled = 0/);
   assert.match(tutorSource, /answerRow\?\.user_answer\s*==\s*null\s*&&\s*!session\.finished_at/);
   assert.match(tutorSource, /Answer required before tutor chat/);
 });
@@ -419,7 +450,7 @@ test("abandoned sessions stop blocking study content without becoming scored exa
   );
 });
 
-test("exam answers are validated, immutable, and terminal transitions are atomic", () => {
+test("practice answers are immutable, exam selections only change while open, and terminal transitions are atomic", () => {
   const querySource = readFileSync("src/db/queries.ts", "utf8");
   const examRouteSource = readFileSync("src/api/exam.ts", "utf8");
   const recordAnswerQuery = querySource.slice(
@@ -447,6 +478,21 @@ test("exam answers are validated, immutable, and terminal transitions are atomic
   assert.match(abandonQuery, /finished_at\s+IS\s+NULL/i);
   assert.match(abandonQuery, /abandoned_at\s+IS\s+NULL/i);
   assert.match(abandonQuery, /meta\.changes/);
+
+  // Exam mode: a selection may change, but only in the owner's open exam-mode session.
+  const activeExamGuard = querySource.slice(
+    querySource.indexOf("const ACTIVE_EXAM_GUARD"),
+    querySource.indexOf("export type ExamSelectionResult")
+  );
+  for (const condition of [/es\.user_id = \?/, /es\.mode = 'exam'/, /finished_at IS NULL/, /abandoned_at IS NULL/, /-30 minutes/]) {
+    assert.match(activeExamGuard, condition);
+  }
+  const saveSelection = querySource.slice(
+    querySource.indexOf("export async function saveExamSelection"),
+    querySource.indexOf("export async function finishDeferredExamSession")
+  );
+  assert.match(saveSelection, /\$\{ACTIVE_EXAM_GUARD\}/);
+  assert.doesNotMatch(saveSelection, /user_answer|is_correct/, "a selection never writes the graded columns");
 });
 
 test("chapter exams reuse the canonical session lifecycle and client reset", () => {
