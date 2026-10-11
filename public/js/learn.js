@@ -436,6 +436,10 @@
     else App.leaveCrossing();
     if (step.type === 'content' && step.content.kind === 'stopping') App.mountStopping(step.content, step.index);
     else App.leaveStopping();
+    if (step.type === 'content' && step.content.kind === 'assess') App.mountAssess(step.content, step.index);
+    else App.leaveAssess();
+    if (step.type === 'content' && step.content.kind === 'manoeuvre') App.mountManoeuvre(step.content, step.index);
+    else App.leaveManoeuvre();
 
     if (step.type === 'practice') {
       var statement = document.getElementById('lesson-statement');
@@ -465,18 +469,20 @@
       label.textContent = 'اول جواب بده';
     } else if (orderPending(step)) {
       next.disabled = true;
-      label.textContent = step.content.kind === 'stopping' ? 'اول پیش‌بینی کن' : 'اول ترتیب را بررسی کن';
+      label.textContent = step.content.kind === 'stopping' ? 'اول پیش‌بینی کن'
+        : step.content.kind === 'assess' ? 'اول صحنه‌ها را بسنج' : 'اول ترتیب را بررسی کن';
     } else {
       next.disabled = state.lessonFinishPending;
       label.textContent = state.lessonFinishPending ? 'در حال ثبت…' : nextIsDone ? 'پایان درس' : 'بعدی';
     }
   }
 
-  /** "Who goes first?" and the stopping explorer block Next only the first time through. */
+  /** "Who goes first?", the stopping explorer and "Assess the situation" block Next only the first time through. */
   function orderPending(step) {
     if (step.type !== 'content' || state.lessonStep < state.lessonMaxStep || state.lesson.progress.state === 'completed') return false;
     if (step.content.kind === 'order') return !App.crossingDone(step.index);
     if (step.content.kind === 'stopping') return !App.stoppingDone(step.index);
+    if (step.content.kind === 'assess') return !App.assessDone(step.index);
     return false;
   }
 
@@ -511,6 +517,9 @@
     if (content.kind === 'scenario' || content.kind === 'order') return App.crossingStepHtml(content, index);
     if (content.kind === 'stopping') return App.stoppingStepHtml(content, index);
     if (content.kind === 'factors') return factorsHtml(content);
+    if (content.kind === 'markings') return App.markingsStepHtml(content, index);
+    if (content.kind === 'assess') return App.assessStepHtml(content, index);
+    if (content.kind === 'manoeuvre') return App.manoeuvreStepHtml(content, index);
     return '';
   }
 

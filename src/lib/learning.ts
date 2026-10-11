@@ -1,17 +1,23 @@
 /**
  * src/lib/learning.ts
  * Pure rules for the learning path: lesson state, snapshot integrity,
- * practice ordering, "today's path", and the "Who goes first?" order check. No I/O — src/api/learn.ts feeds it
+ * practice ordering, "today's path", the "Who goes first?" order check and the
+ * "Assess the situation" verdict. No I/O — src/api/learn.ts feeds it
  * rows from D1, and tests/learning-path.test.ts exercises it directly.
  */
 
 import {
   lessonStepCount,
   relatedSourceIds,
+  type AssessRule,
   type Chapter,
+  type LegalVerdict,
   type Lesson,
   type PracticeQuestion,
+  type SafetyCheck,
+  type SafetyVerdict,
 } from "../content/lessons.js";
+import { ASSESS_NOTES, SAFETY_CHECK_FA } from "../content/overtaking.js";
 import type { DbQuestion } from "../db/queries.js";
 import type {
   LessonAnswerRow,
@@ -237,4 +243,79 @@ export function checkPassageOrder(phases: string[][], sequence: string[]): Order
     if (waitsFor.length > 0) return { valid: false, mistake: { vehicle, waitsFor } };
   }
   return { valid: true, mistake: null };
+}
+
+// ── "Assess the situation" (chapter 4) ───────────────────────────────────────
+
+const SAFETY_CHECKS: SafetyCheck[] = ["visibility", "ahead", "behind", "space"];
+
+export interface SceneJudgement {
+  legal: { answer: LegalVerdict; decisive: number[] };
+  safety: { answer: SafetyVerdict; decisive: number[]; missing: SafetyCheck[] };
+}
+
+/**
+ * Both verdicts of a scene, derived only from its facts' rules:
+ *  - law: forbidden as soon as one fact forbids (a sign, a marking, the spot);
+ *  - safety: "fails" if any art. 148 c.2 check fails; otherwise "unknown" if a
+ *    check is stated as unknown or not stated at all; otherwise "clear".
+ * `decisive` lists the indices of the facts that settle each answer.
+ */
+export function judgeScene(facts: AssessRule[]): SceneJudgement {
+  const indices = (keep: (rule: AssessRule) => boolean) =>
+    facts.flatMap((rule, index) => (keep(rule) ? [index] : []));
+
+  const forbidding = indices((rule) => rule.legal === "forbids");
+  const legal: SceneJudgement["legal"] = forbidding.length
+    ? { answer: "forbidden", decisive: forbidding }
+    : { answer: "not_forbidden", decisive: indices((rule) => rule.legal === "allows") };
+
+  const failing = indices((rule) => rule.safety?.result === "fails");
+  // A check is answered when a fact says it is fine or that it fails; "unknown" or unstated leaves it open.
+  const settled = new Set(facts.flatMap((rule) => (rule.safety && rule.safety.result !== "unknown" ? rule.safety.checks : [])));
+  const missing = SAFETY_CHECKS.filter((check) => !settled.has(check));
+  const safety: SceneJudgement["safety"] = failing.length
+    ? { answer: "fails", decisive: failing, missing }
+    : missing.length
+      ? { answer: "unknown", decisive: indices((rule) => rule.safety?.result === "unknown"), missing }
+      : { answer: "clear", decisive: indices((rule) => rule.safety?.result === "ok"), missing };
+
+  return { legal, safety };
+}
+
+export interface AssessResult {
+  legal: { answer: LegalVerdict; chosen: LegalVerdict; correct: boolean; decisive: number[]; note: string | null };
+  safety: {
+    answer: SafetyVerdict;
+    chosen: SafetyVerdict;
+    correct: boolean;
+    decisive: number[];
+    missing: { check: SafetyCheck; fa: string }[];
+    note: string | null;
+  };
+  /** Per fact: what it does to the questions, so the client only labels, never derives. */
+  roles: ("forbids" | "allows" | "ok" | "fails" | "unknown")[];
+}
+
+/** The learner's two answers against the derived verdict, with why a wrong one is wrong. */
+export function assessAnswer(facts: AssessRule[], chosen: { legal: LegalVerdict; safety: SafetyVerdict }): AssessResult {
+  const judged = judgeScene(facts);
+  const missing = judged.safety.missing.map((check) => ({ check, fa: SAFETY_CHECK_FA[check] }));
+  const note = (text: string) => text.replace("{missing}", missing.map((m) => m.fa).join("، ")) || null;
+  return {
+    legal: {
+      ...judged.legal,
+      chosen: chosen.legal,
+      correct: chosen.legal === judged.legal.answer,
+      note: note(ASSESS_NOTES.legal[`${chosen.legal}>${judged.legal.answer}`]),
+    },
+    safety: {
+      ...judged.safety,
+      missing,
+      chosen: chosen.safety,
+      correct: chosen.safety === judged.safety.answer,
+      note: note(ASSESS_NOTES.safety[`${chosen.safety}>${judged.safety.answer}`]),
+    },
+    roles: facts.map((rule) => rule.legal ?? rule.safety?.result ?? "ok"),
+  };
 }
