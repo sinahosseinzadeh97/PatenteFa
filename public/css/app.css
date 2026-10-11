@@ -2520,6 +2520,122 @@ button.home-metric:hover { border-color: var(--amber); background: var(--amber-d
   .sx-swatch { width: 22px; }
 }
 
+/* ── Overtaking chapter (public/js/overtaking.js) ─────────────────────────── */
+/* Original drawings: you are amber, driving left → right in the lower lane.
+   Highlighted evidence = amber outline; the one changed fact = dashed outline.
+   Meaning is always carried by text too, never by colour alone. */
+.ov-figure { margin: 4px 0 10px; scroll-margin-top: 100px; }
+.ov-svg { display: block; width: 100%; max-width: 460px; height: auto; margin-inline: auto; border-radius: var(--radius-lg); }
+.ov-ground { fill: #1a1c22; stroke: var(--border-subtle); }
+.ov-road { fill: #2f323c; }
+.ov-edge { stroke: rgba(242, 240, 235, .55); stroke-width: 1.5; }
+.ov-stripe { stroke: #f2f0eb; stroke-width: 3; }
+.ov-stripe.is-dashed { stroke-dasharray: 14 10; }
+.ov-veh .ov-body { fill: #9aa0af; }
+.ov-veh.is-you .ov-body { fill: var(--amber); }
+.ov-veh.is-faint { opacity: .45; }
+.ov-veh.is-behind .ov-body { fill: #4C8DF6; }
+.ov-veh.is-truck .ov-body { fill: #6d7383; }
+.ov-veh .ov-cab { fill: #8c92a2; }
+.ov-front { fill: rgba(20, 21, 26, .55); }
+.ov-badge circle { fill: #14151a; }
+.ov-badge text { fill: #f2f0eb; font: 800 9px 'Vazirmatn', sans-serif; }
+.ov-hidden { fill: rgba(10, 11, 14, .72); stroke: rgba(242, 240, 235, .35); stroke-dasharray: 4 4; }
+.ov-q-glyph { fill: #f0c47f; font: 800 30px 'Vazirmatn', sans-serif; }
+.ov-label { fill: var(--ink); font: 700 11px 'Vazirmatn', sans-serif; }
+.ov-clear { stroke: var(--go-light); stroke-width: 2.5; stroke-dasharray: 6 5; }
+.ov-sight { stroke: rgba(242, 240, 235, .5); stroke-width: 1.5; stroke-dasharray: 3 4; }
+.ov-move { stroke: #8fb6ff; stroke-width: 2.5; }
+.ov-post { stroke: #9aa0af; stroke-width: 2.5; }
+#ov-arrow path, #ov-arrow-m path { fill: var(--ink); }
+.ov-mirror rect { fill: #14151a; stroke: var(--ink); stroke-width: 1.6; }
+.ov-mirror path { fill: none; stroke: var(--go-light); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.ov-mirror circle { fill: var(--amber); }
+.ov-gap line { stroke: var(--amber); stroke-width: 2; }
+.ov-hi { fill: transparent; stroke: transparent; stroke-width: 2.5; }
+.ov-mark.is-on .ov-hi { fill: rgba(232, 163, 61, .14); stroke: var(--amber); }
+.ov-mark.is-changed .ov-hi { stroke: #f0c47f; stroke-dasharray: 6 4; }
+.ov-ind path { fill: var(--amber); opacity: 0; }
+.ov-ind.is-on path { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .ov-ind.is-on path { animation: ovBlink 800ms steps(1, end) infinite; }
+}
+@keyframes ovBlink { 50% { opacity: .15; } }
+
+.ov-caption { margin: 8px 0 0; display: flex; align-items: flex-start; gap: 7px; color: var(--ink-muted); font-size: .72rem; line-height: 1.8; }
+.ov-caption .ui-icon { flex: 0 0 auto; width: 15px; height: 15px; margin-top: 3px; color: var(--amber); }
+
+/* Markings: which lane are you in? */
+.ov-side { margin: 0 0 12px; padding: 0; border: 0; display: grid; gap: 8px; }
+.ov-side legend { margin-bottom: 8px; padding: 0; font-size: .84rem; font-weight: 700; }
+.ov-seg { min-height: 48px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); font-size: .86rem; line-height: 1.7; cursor: pointer; }
+.ov-seg:has(input:checked) { border-color: var(--amber); background: var(--amber-dim); }
+.ov-seg input, .ov-opt input { flex: 0 0 auto; width: 20px; height: 20px; margin: 0; accent-color: var(--amber); }
+.ov-lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ov-line-card { padding: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); }
+.ov-line-svg { display: block; width: 100%; max-width: 360px; height: auto; margin-inline: auto; border-radius: var(--radius-md); }
+.ov-line-copy { padding: 8px 2px 0; }
+.ov-line-name { margin: 0 0 6px; display: flex; flex-direction: column; gap: 2px; font-size: .92rem; font-weight: 700; }
+.ov-line-it { align-self: flex-start; color: var(--amber); font-family: 'Barlow Condensed', 'Public Sans', sans-serif; font-size: .82rem; letter-spacing: .03em; }
+.ov-pill { margin: 0 0 6px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: .82rem; font-weight: 700; }
+.ov-pill .ui-icon { width: 16px; height: 16px; stroke-width: 2.6; }
+.ov-pill.is-yes { border: 1px solid rgba(74, 222, 128, .45); background: var(--go-dim); }
+.ov-pill.is-yes .ui-icon { color: var(--go-light); }
+.ov-pill.is-no { border: 1px solid rgba(248, 113, 113, .45); background: var(--stop-dim); }
+.ov-pill.is-no .ui-icon { color: var(--stop-light); }
+.ov-line-note { margin: 0; color: var(--ink); font-size: .86rem; line-height: 1.95; }
+
+/* Assess the situation */
+.ov-tablist { margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 8px; }
+.ov-tab { min-height: 44px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 7px; border: 1px solid var(--border); border-radius: 999px; background: var(--surface-2); color: var(--ink-muted); font: inherit; font-size: .8rem; cursor: pointer; }
+.ov-tab.is-current { border-color: var(--amber); background: var(--amber-dim); color: var(--ink); }
+.ov-tab .ui-icon { width: 15px; height: 15px; color: var(--go-light); }
+.ov-tab-num { width: 20px; height: 20px; display: grid; place-items: center; border-radius: 50%; border: 1.5px solid currentColor; font-size: .68rem; font-weight: 800; }
+.ov-change { margin: 0 0 10px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px; border: 1px dashed #f0c47f; border-radius: var(--radius-md); background: var(--amber-dim); font-size: .86rem; line-height: 1.9; }
+.ov-change .ui-icon, .ov-compare-line .ui-icon, .ov-missing .ui-icon { flex: 0 0 auto; margin-top: 4px; width: 16px; height: 16px; color: var(--amber); }
+.ov-setting { margin: 0 0 8px; font-size: .9rem; line-height: 1.95; }
+.ov-facts-title { margin: 0 0 6px; color: var(--amber); font-size: .78rem; }
+.ov-facts { list-style: none; margin: 0 0 14px; padding: 10px 12px; display: grid; gap: 8px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface); }
+.ov-fact { display: flex; align-items: flex-start; gap: 9px; font-size: .86rem; line-height: 1.9; }
+.ov-fact > .ui-icon { flex: 0 0 auto; margin-top: 5px; width: 16px; height: 16px; color: var(--ink-muted); }
+.ov-fact.is-changed { margin-inline: -6px; padding: 6px; border-radius: var(--radius-sm); outline: 1px dashed #f0c47f; }
+.ov-fact-copy { min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 3px; }
+.ov-tag { display: inline-flex; align-items: center; gap: 4px; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--ink-muted); font-size: .7rem; line-height: 1.7; }
+.ov-tag .ui-icon { width: 12px; height: 12px; }
+.ov-tag.is-changed { border-color: #f0c47f; color: #f0c47f; }
+.ov-tag.is-decisive { border-color: var(--amber); color: var(--amber); }
+.ov-tag.is-role-forbids, .ov-tag.is-role-fails { border-color: rgba(248, 113, 113, .55); color: #ffb3b5; }
+.ov-tag.is-role-allows, .ov-tag.is-role-ok { border-color: rgba(74, 222, 128, .5); color: #a6f0c0; }
+.ov-tag.is-role-unknown { border-color: #f0c47f; color: #f0c47f; }
+.ov-q { margin: 0 0 12px; padding: 0; border: 0; display: grid; gap: 8px; }
+.ov-q legend { margin-bottom: 8px; padding: 0; font-size: .9rem; line-height: 1.9; }
+.ov-opt { min-height: 48px; padding: 10px 12px; display: flex; align-items: center; gap: 10px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); font-size: .86rem; line-height: 1.7; cursor: pointer; }
+.ov-opt:has(input:checked) { border-color: var(--amber); background: var(--amber-dim); }
+.ov-opt:has(input:disabled) { opacity: .6; cursor: default; }
+.ov-actions { margin-top: 12px; display: flex; flex-wrap: wrap; gap: 8px; }
+.ov-actions .btn:disabled { opacity: .4; box-shadow: none; }
+.ov-verdicts { display: grid; gap: 8px; margin-bottom: 10px; outline: none; }
+.ov-verdict { padding: 10px 12px; border-radius: var(--radius-md); font-size: .88rem; line-height: 1.9; }
+.ov-verdict.is-right { border: 1px solid rgba(74, 222, 128, .45); background: var(--go-dim); }
+.ov-verdict.is-wrong { border: 1px solid rgba(248, 113, 113, .45); background: var(--stop-dim); }
+.ov-verdict-head { margin: 0; display: flex; align-items: flex-start; gap: 8px; }
+.ov-verdict-head .ui-icon { flex: 0 0 auto; margin-top: 5px; width: 17px; height: 17px; }
+.ov-verdict.is-right .ov-verdict-head .ui-icon { color: var(--go-light); }
+.ov-verdict.is-wrong .ov-verdict-head .ui-icon { color: var(--stop-light); }
+.ov-verdict-note { margin: 6px 0 0; color: var(--ink); }
+.ov-missing, .ov-compare-line { margin: 6px 0 0; display: flex; align-items: flex-start; gap: 7px; font-size: .84rem; line-height: 1.9; }
+.ov-compare-line { margin: 0 0 10px; padding: 10px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface); }
+.ov-evidence-now p { margin: 0 0 6px; }
+.ov-evidence-fact { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-weight: 700; }
+.ov-evidence .lesson-rule { margin-top: 4px; }
+
+/* Manoeuvre stages */
+.ov-stage p { margin: 0 0 6px; }
+.ov-stage-title { display: flex; align-items: center; gap: 8px; }
+.ov-stage-line { display: flex; align-items: flex-start; gap: 8px; }
+.ov-who { flex: 0 0 auto; margin-top: 3px; padding: 0 8px; border-radius: 999px; border: 1px solid var(--border); color: var(--ink-muted); font-size: .7rem; line-height: 1.9; white-space: nowrap; }
+.ov-who.is-you { border-color: var(--amber); color: var(--amber); }
+
 /* Exam mode: provisional selections and the opt-in AI switch */
 .ai-toggle-label[hidden], .exam-ai-switch[hidden], .exam-assisted-badge[hidden], .results-assisted-note[hidden] { display: none; }
 .exam-tools-row.has-ai-switch .exam-ai-switch { grid-column: 1 / -1; }

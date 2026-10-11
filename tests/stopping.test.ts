@@ -297,7 +297,7 @@ function setup() {
 test("the chapter is listed third, opens directly, and ships the model's table with its explorer", async () => {
   const { call } = setup();
   const home = await call(8001, "GET", "/learn");
-  assert.equal(home.body.chapters.length, 3);
+  assert.equal(home.body.chapters.length, CHAPTERS.length);
   assert.equal(home.body.chapters[2].id, VELOCITA_CHAPTER.id);
   assert.deepEqual(home.body.chapters[2].topicIds, [10, 11]);
   assert.equal(home.body.chapters[2].lessons.length, 4);
@@ -479,5 +479,5 @@ test("reduced motion removes playback but keeps manual steps; the client holds n
   assert.doesNotMatch(EXPLORER, /[\/*]\s*3\.6|9\.81|\b0\.7\b/, "no copy of the model's constants or formulas");
   assert.doesNotMatch(EXPLORER, /pointermove|mousemove|touchmove|draggable/, "nothing depends on dragging");
   const shell = readFileSync("src/app/shell.tsx", "utf8");
-  assert.match(shell, /<script src="\/js\/stopping\.js"><\/script>\s*<script src="\/js\/learn\.js"><\/script>/);
+  assert.match(shell, /<script src="\/js\/stopping\.js"><\/script>[\s\S]*<script src="\/js\/learn\.js"><\/script>/, "stopping.js loads before learn.js");
 });

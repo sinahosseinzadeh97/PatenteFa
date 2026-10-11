@@ -2,7 +2,8 @@
  * src/content/lessons.ts
  * Lesson content model, the pilot chapter (Segnali di precedenza), and the
  * chapter registry. Later chapters live in their own files
- * (src/content/lessons-incroci.ts) and are registered in CHAPTERS below.
+ * (src/content/lessons-incroci.ts, -velocita.ts, -sorpasso.ts) and are
+ * registered in CHAPTERS below.
  *
  * This file is the single source of truth for lesson text. It is written and
  * reviewed by hand, versioned with the code that renders it, and never
@@ -24,9 +25,10 @@
  *  - Re-run `npm run verify:lessons` after editing anything below.
  */
 
-// lessons-incroci.ts and lessons-velocita.ts only import *types* from this file
+// The chapter files (and overtaking.ts) only import *types* from this file
 // (erased at build), so this is not a runtime import cycle.
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
+import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
 import type { StoppingSetting } from "../lib/stopping.js";
 
@@ -175,6 +177,100 @@ export interface FactorItem {
   answer: BankAnswer;
 }
 
+// ── Chapter 4: overtaking (src/content/overtaking.ts, lessons-sorpasso.ts) ──
+
+/** Question 1 of "Assess the situation": does a sign, a marking or the spot itself forbid overtaking? */
+export type LegalVerdict = "forbidden" | "not_forbidden";
+/** Question 2: from what the scene states, can you judge whether overtaking can be done safely now? */
+export type SafetyVerdict = "fails" | "unknown" | "clear";
+/** The four checks Codice della Strada art. 148 c.2 requires before overtaking. */
+export type SafetyCheck = "visibility" | "ahead" | "behind" | "space";
+/** A drawn element of the scene, highlighted when the fact about it is explained. */
+export type SceneMark = "line" | "sign" | "ahead" | "view" | "behind";
+
+/** How a scene is drawn; every key comes from one of its facts, so the picture can only show what is stated. */
+export interface SceneDraw {
+  /** Centre line, the stripe next to you first: "solid-dashed" = solid on your side (bank fig. 567). */
+  line?: "dashed" | "solid-dashed" | "dashed-solid";
+  /** Prohibition sign you passed (bank sign image). */
+  sign?: 56;
+  ahead?: "car" | "moto" | "truck";
+  /** Your distance behind the vehicle ahead. */
+  gap?: "close" | "far";
+  view?: "clear" | "blocked";
+  behind?: "checked" | "overtaking" | "unknown";
+}
+
+/** A bank statement behind a rule. `agrees` is our reading: a statement that agrees must be VERO, one that contradicts FALSO. */
+export interface RuleEvidence {
+  sourceId: string;
+  textIt: string;
+  answer: BankAnswer;
+  /** Bank image number, when the statement shows one. */
+  image?: number;
+  agrees: boolean;
+}
+
+/** One condition a scene can state, with what it does to each question. */
+export interface AssessRule {
+  id: string;
+  /** The condition as the learner reads it in the scene, in Persian. */
+  fact: string;
+  /** Why it matters, shown after the verdict. */
+  explain: string;
+  /** True when a still picture cannot show it (a blinking indicator, a mirror check): the text states it. */
+  textOnly?: boolean;
+  law: string;
+  /** Effect on question 1; omitted when the fact says nothing about legality. */
+  legal?: "forbids" | "allows";
+  /** Effect on question 2: which art. 148 c.2 checks it settles, and how. */
+  safety?: { checks: SafetyCheck[]; result: "ok" | "fails" | "unknown" };
+  draw: SceneDraw;
+  marks: SceneMark[];
+  evidence: RuleEvidence[];
+}
+
+export interface AssessVariant {
+  facts: AssessRule[];
+  /** Reviewed answers; tests/overtaking.test.ts checks them against the rules. */
+  expect: { legal: LegalVerdict; safety: SafetyVerdict };
+}
+
+/** A self-contained road scene: an original educational drawing, never a bank question. */
+export interface AssessScene extends AssessVariant {
+  id: string;
+  title: string;
+  /** The situation in words: road type, who is where, what you want to do. */
+  setting: string;
+  /** The same scene with exactly one fact changed. */
+  compare: AssessVariant & { change: string };
+}
+
+/** A centre line as both drivers see it. `stripes` lists the stripe next to the lower lane first. */
+export interface LineMarking {
+  id: string;
+  nameIt: string;
+  nameFa: string;
+  stripes: ("dashed" | "solid")[];
+  /** May the driver in this lane cross it? (CdS art. 40 c.4, c.8) */
+  cross: { lower: boolean; upper: boolean };
+  note: string;
+  /** Bank statements about crossing it, read from the side whose nearest stripe is `adjacent`. */
+  evidence: (RuleEvidence & { adjacent: "dashed" | "solid"; claimsCrossable: boolean })[];
+}
+
+/** One stage of the overtaking manoeuvre: what each driver does, and where both cars are at its end. */
+export interface ManoeuvreStage {
+  title: string;
+  you: string;
+  other: string;
+  rule: string;
+  /** Position along the road (0–120, not to scale) and lane (0 = right, 1 = left) at the end of the stage. */
+  pose: { you: [number, number]; other: [number, number] };
+  indicator: "off" | "left" | "right";
+  marks: ("mirror" | "view" | "gap")[];
+}
+
 interface StepBase {
   title: string;
   /** Legal basis for the facts in this step. */
@@ -231,6 +327,27 @@ export type LessonStep =
       kind: "factors";
       body: string;
       columns: [{ title: string; items: FactorItem[] }, { title: string; items: FactorItem[] }];
+      takeaway: string;
+    })
+  | (StepBase & {
+      /** Centre lines read from either lane (public/js/overtaking.js). */
+      kind: "markings";
+      body: string;
+      lines: LineMarking[];
+      takeaway: string;
+    })
+  | (StepBase & {
+      /** "Assess the situation": two questions per scene; the verdict comes from POST …/assess. */
+      kind: "assess";
+      body: string;
+      scenes: AssessScene[];
+      takeaway: string;
+    })
+  | (StepBase & {
+      /** The overtaking manoeuvre stage by stage, with playback and manual stepping. */
+      kind: "manoeuvre";
+      body: string;
+      stages: ManoeuvreStage[];
       takeaway: string;
     })
   | (StepBase & { kind: "terms"; terms: Term[] })
@@ -969,7 +1086,7 @@ export function lessonStepCount(lesson: Lesson): number {
 }
 
 /** Every chapter, in the order learners are guided through them. */
-export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER, VELOCITA_CHAPTER];
+export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER, VELOCITA_CHAPTER, SORPASSO_CHAPTER];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {

@@ -349,6 +349,27 @@ Codice della Strada (testo vigente, agg. 24/04/2026) artt. 145 c.1–4, 154 c.1 
 ### 23.3 Sources (reviewed 2026-10-10)
 Codice della Strada artt. 141, 149 (Normattiva, agg. 24/04/2026; ACI pages updated 09/10/2026); Polizia di Stato, «Comportamenti da tenere quando si guida» (reaction time, safety distance); Comune di Genova, «Determinazione dello spazio di arresto» (1 s reaction, adherence 0.65–0.72); Comune di Firenze 2023 infographic from WHO 2008 (2.5 s, 90th-percentile driver); WHO/OECD 2006 stopping distances (27/36/58 m at 50/60/80 km/h, matched within 1 m); circolare MIT 6935/2017 (exam topics: reaction times, safety distance, braking, road holding). Bank statements cited by id in the content; the 2023-bank caveat still applies.
 
+## 24. Round 14 — chapter 4: Sorpasso e segnaletica orizzontale (overtaking and road markings)
+
+### 24.1 What exists
+- Chapter `sorpasso-segnaletica` in `src/content/lessons-sorpasso.ts`, fourth in `CHAPTERS`; `topicIds: [12, 5]` (Sorpasso, Segnaletica orizzontale). Four lessons: (1) reading the centre line from your own lane (art. 40), (2) the DIVIETO DI SORPASSO sign and its end together with the markings (DPR 495 artt. 104, 116, 119), (3) the four art. 148 c.2 checks and the places where overtaking is forbidden (c.10–13), (4) the manoeuvre stage by stage and the duties of the driver being overtaken (c.3–5, art. 154).
+- Three step kinds, drawn by `public/js/overtaking.js`: **`markings`** (four centre lines; a lane switch shows the mixed line meaning the opposite from the other side), **`assess`** ("Assess the situation"), **`manoeuvre`** (five stages with playback, replay and manual steps; static under reduced motion, full text list).
+- **Assess the situation** (`src/content/overtaking.ts`): four original scenes, each with a comparison scene that changes exactly one fact. Two separate questions: *law* (does a sign, a marking or the spot itself forbid it?) and *safety* (do the stated facts settle the four art. 148 c.2 checks: a check fails / not enough information / all stated and none blocks). The verdict comes from `POST /api/learn/lessons/:id/assess` (pure `judgeScene` + `assessAnswer` in `src/lib/learning.ts`, stateless, not stored), with the reason a wrong choice is wrong, the deciding facts highlighted on the drawing (the learner's mistake first), and an evidence stepper.
+- Mistakes route back through explicit `related` lists (206 questions: 66 / 31 / 74 / 35 per lesson). No migration: progress is keyed by lesson id.
+
+### 24.2 Rules future changes must keep
+- **Verdicts are derived, never typed.** A scene lists facts; each fact is a rule with its law and bank statements. `expect` is the reviewed answer and `tests/overtaking.test.ts` proves the rules derive it. Every rule needs an agreeing VERO statement; each `agrees` flag must match the answer key (`npm run verify:lessons` checks the snapshots against D1).
+- **"Not forbidden" is never "safe".** Law and safety are separate questions. An unstated or unknown check makes the safety answer "not enough information", never "fine". Not being able to see is a *failed* check (bank 5155), not missing information.
+- **Self-contained scenes.** Every scene states the centre line and something about all four checks; what a still picture cannot show is stated in text (`textOnly`). No numbers in any scene text: there is no gap calculator. No scene asks the learner to guess another driver's speed or intention.
+- **The picture shows only the facts.** Drawing keys come from the facts and may not conflict (tested). The comparison outline marks only what actually differs in the drawing.
+- **Centre lines: the stripe next to you decides** (art. 40 c.4, c.8). `cross` flags and every line's bank evidence are checked in tests.
+- **No client copy of the rules.** `overtaking.js` labels facts with the server's `roles`; it never reads `rule.legal`, `rule.safety` or `expect` (tested).
+- Every option of both questions is the correct one in at least one scene (tested), so none is a trick that is never right.
+- Scope left out on purpose (unmapped): overtaking on the right and trams (art. 148 c.7–9), a second overtake on multi-lane roads (c.6), motorways, trucks over 3.5 t and their signs (c.14), cyclist/pedestrian special cases, headlight or horn signals.
+
+### 24.3 Sources (reviewed 2026-10-10)
+Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/2026; read article by article); DPR 495/1992 artt. 104, 116 c.1 lett. c, 119 c.1 lett. c–d (Normattiva, agg. 24/02/2025); ACI pages for artt. 40 and 148 (updated 10/10/2026). Art. 148 c.9-bis (at least 1.5 m when overtaking a bicycle, where the road allows) is current law newer than the 2023 bank; it is mentioned in lesson 4 and not tested. Bank statements cited by id in the content; the 2023-bank caveat still applies.
+
 ## 25. Exam mode: answers stay open until "Finish exam"; AI help is opt-in (2026-10-11)
 
 ### 25.1 What exists
