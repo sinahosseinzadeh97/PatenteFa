@@ -2651,3 +2651,25 @@ button.home-metric:hover { border-color: var(--amber); background: var(--amber-d
 .q-tab.active.answered::after { background: #17181c; }
 .exam-assisted-badge { padding: 4px 8px; border-radius: 9px; background: var(--amber-dim); color: var(--amber); font-size: .68rem; white-space: nowrap; }
 .results-assisted-note { margin: 8px 0 0; color: #f0c47f; font-size: .78rem; }
+/* Sources stay below the answer controls. Details and reports use a dialog. */
+.question-source { display: grid; gap: 6px; padding: 12px 0; text-align: start; font-size: .8rem; line-height: 1.6; overflow-wrap: anywhere; }
+.question-source[hidden] { display: none; }
+.question-source a { color: var(--accent, #E8A33D); text-decoration: underline; text-underline-offset: 3px; }
+.question-source .source-note { color: var(--ink-muted, #b4b4bc); font-size: .72rem; }
+.compact-source { padding: 2px 0; gap: 6px; font-size: .72rem; grid-template-columns: minmax(0, 1fr) auto; align-items: center; }
+.compact-source .source-note { font-size: .65rem; }
+.content-report-button { justify-self: start; border: 0; background: transparent; color: var(--ink-muted, #b4b4bc); font: inherit; text-decoration: underline; cursor: pointer; min-height: 36px; padding: 4px 8px; }
+.compact-source .content-report-button { min-height: 40px; white-space: nowrap; }
+.content-quality { color: var(--ink-muted, #b4b4bc); font-size: .8rem; line-height: 1.7; }
+.content-quality > p { margin: 8px 0; }
+.content-report-dialog { color: var(--ink, #F2F0EB); background: var(--surface, #1F2128); border: 1px solid #454751; border-radius: 20px; width: min(92vw, 480px); max-height: 80dvh; padding: 22px; overflow-y: auto; direction: rtl; }
+.content-report-dialog::backdrop { background: #000b; }
+.content-report-dialog form, .content-report-dialog label, .content-review-card label { display: grid; gap: 10px; }
+.content-report-dialog form { gap: 16px; }
+.content-report-dialog select, .content-report-dialog textarea, .content-review-card textarea { width: 100%; box-sizing: border-box; font: inherit; color: inherit; background: #14151A; border: 1px solid #555762; border-radius: 10px; padding: 10px; }
+.content-report-dialog :focus-visible, .content-review-card :focus-visible, .question-source :focus-visible { outline: 2px solid #E8A33D; outline-offset: 3px; }
+.admin-content-reports { margin: 24px 0; }
+.content-review-card { border: 1px solid #454751; padding: 14px; border-radius: 12px; margin-bottom: 12px; }
+.content-review-card label { margin: 12px 0; }
+.content-review-card summary { cursor: pointer; min-height: 36px; }
+.content-review-card .btn { margin: 6px; }

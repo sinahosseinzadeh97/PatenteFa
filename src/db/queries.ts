@@ -1176,7 +1176,7 @@ export interface SignCard {
  * even from only the statements marked VERO — gives true sentences that still
  * aren't a definition: the tow-away sign's card listed three facts about impound
  * lots and wheel clamps without ever saying "parking is prohibited". So meanings
- * live in their own table (migration 0009, seeded and human-reviewed via
+ * live in their own table (migration 0009, seeded via
  * scripts/generate-sign-meanings.ts) instead of being derived from exam text.
  *
  * The true/false format belongs in the exam, which draws from the full bank
@@ -1203,10 +1203,9 @@ export async function getSignCards(db: D1Database): Promise<SignCard[]> {
  * arrow points right). A wrong left/right in the explanation is not a small
  * error — it teaches the opposite rule.
  *
- * sign_meanings is human-reviewed and covers all 413 images, so the name is a
- * fact we already hold. Passing it into the prompt turns "read the sign" into
- * "explain this named sign", which is the same anchoring that makes
- * scripts/generate-sign-meanings.ts reliable in the first place.
+ * sign_meanings covers all 413 images, but its generated definitions are not
+ * independently verified. Treat these as auxiliary hints and validate claims
+ * against question-bank evidence before publishing learning explanations.
  */
 export async function getSignCardForImage(
   db: D1Database,
@@ -1260,11 +1259,10 @@ export async function getReelsFeedItems(
          q.wrong_rate,
          t.name_it AS topic_name_it,
          t.name_fa AS topic_name_fa,
-         tr.translated_text,
-         tr.explanation
+         NULL AS translated_text,
+         NULL AS explanation
        FROM questions q
        LEFT JOIN topics t ON q.topic_id = t.id
-       LEFT JOIN translations_cache tr ON tr.question_id = q.id AND tr.lang = 'fa'
        WHERE NOT EXISTS (
          SELECT 1
          FROM exam_answers ea

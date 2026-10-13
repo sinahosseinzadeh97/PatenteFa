@@ -10,11 +10,10 @@ import {
   getSessionById,
   getSessionAnswers,
   getQuestionById,
-  getCachedTranslation,
-  getSignCardForImage,
-  insertTranslation,
 } from "../db/queries.js";
-import { translateQuestion, chatWithTutor, resolveImageUrl, type TutorChatMessage } from "../lib/openai.js";
+import { chatWithTutor, type TutorChatMessage } from "../lib/openai.js";
+
+import { getLearningContent, QUALITY_LABELS } from '../lib/content-quality.js';
 
 const tutor = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 const MAX_TUTOR_HISTORY_MESSAGES = 6;
@@ -53,39 +52,7 @@ tutor.post("/explain-wrong", async (c) => {
     const q = await getQuestionById(c.env.DB, a.question_id);
     if (!q) continue;
 
-    // Check cached translation / explanation
-    // Regenerate when the explanation is missing too — migration 0007 cleared
-    // explanations produced by the old vague prompt.
-    let trans = await getCachedTranslation(c.env.DB, q.id, "fa");
-    if (!trans || !trans.explanation) {
-      try {
-        // §20.1: must be absolute — passing the stored relative path made OpenAI
-        // reject the request, so every sign question silently fell into the catch
-        // below and rendered with an empty translation.
-        const generated = await translateQuestion(
-          c.env,
-          q.text_it,
-          q.correct_answer,
-          resolveImageUrl(c.env.MINI_APP_URL, q.image_url),
-          c.env.DB,
-          userId,
-          q.image_url ? await getSignCardForImage(c.env.DB, q.image_url) : null,
-          trans?.translated_text && trans.translated_text.length > 10
-            ? trans.translated_text
-            : null
-        );
-        await insertTranslation(
-          c.env.DB,
-          q.id,
-          "fa",
-          generated.translated_text,
-          generated.explanation
-        );
-        trans = await getCachedTranslation(c.env.DB, q.id, "fa");
-      } catch (err) {
-        console.error("Failed to generate translation for tutor:", err);
-      }
-    }
+    const content = await getLearningContent(c.env, q, userId);
 
     wrongDetails.push({
       position: a.position,
@@ -94,8 +61,11 @@ tutor.post("/explain-wrong", async (c) => {
       imageUrl: q.image_url,
       correctAnswer: q.correct_answer,
       userAnswer: a.user_answer,
-      translatedText: trans?.translated_text ?? "",
-      explanation: trans?.explanation ?? "",
+      translatedText: content.translatedText,
+      explanation: content.explanation,
+      source: content.source,
+      qualityStatus: content.qualityStatus,
+      qualityLabel: QUALITY_LABELS[content.qualityStatus],
     });
   }
 

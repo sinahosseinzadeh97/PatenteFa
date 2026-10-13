@@ -429,6 +429,7 @@ App.renderRichText = function(el, text) {
       'translate_question': 'ترجمه سؤال',
       'translate_question_text': 'ترجمه متن سؤال',
       'translate_question_explanation': 'توضیح پاسخ',
+      'content_verify':     'بازبینی ترجمه و توضیح',
       'theory_explain':     'توضیح تئوری',
       'grammar_analyze':    'تحلیل گرامر',
       'grammar_vocab_repair': 'تکمیل لغات جاافتاده',
@@ -480,6 +481,7 @@ App.renderRichText = function(el, text) {
   App.filterAdminUsers = function() { App.loadAdminUsers(); };
 
   App.loadAdminData = async function() {
+    if (App.loadContentReports) App.loadContentReports();
     try {
       const [overview, usersRes, eventsRes, costRes, supportRes] = await Promise.all([
         api('GET', '/admin/overview'),
@@ -2252,8 +2254,8 @@ App.renderRichText = function(el, text) {
 
       const textEl = document.getElementById('reel-trans-text-' + questionId);
       const explEl = document.getElementById('reel-trans-expl-' + questionId);
-      const needsTranslation = !!textEl && textEl.textContent.includes('در حال دریافت');
-      const needsExplanation = !!explEl && !explEl.textContent.trim();
+      const needsTranslation = !box.dataset.contentLoaded && !!textEl;
+      const needsExplanation = !box.dataset.contentLoaded && !!explEl;
       if (textEl && (needsTranslation || needsExplanation)) {
         let pending = state.reelTranslationRequests[questionId];
         if (!pending) {
@@ -2262,10 +2264,12 @@ App.renderRichText = function(el, text) {
         }
         try {
           const res = await pending;
-          if (res.translatedText) {
-            textEl.textContent = res.translatedText;
-          }
-          if (explEl && res.explanation) App.renderRichText(explEl, res.explanation);
+          textEl.textContent = res.translatedText || 'ترجمه هنوز تأیید نشده است.';
+          if (explEl) App.renderRichText(explEl, res.explanation || '');
+          let quality = box.querySelector('.content-quality');
+          if (!quality) { quality = document.createElement('div'); box.appendChild(quality); }
+          App.renderContentQuality(quality, res);
+          box.dataset.contentLoaded = 'true';
         } catch (e) {
           if (needsTranslation) textEl.textContent = 'خطا در دریافت ترجمه';
         } finally {
@@ -2425,21 +2429,21 @@ App.renderRichText = function(el, text) {
     if (textItEl) textItEl.textContent = q.position + '. ' + q.textIt;
 
     const textFaEl = document.getElementById('tutor-q-text-fa');
-    if (textFaEl) textFaEl.textContent = q.translatedText || 'در حال ترجمه...';
+    if (textFaEl) textFaEl.textContent = q.translatedText || 'ترجمه هنوز تأیید نشده است.';
 
     // Trap Box (§14.1: simplified — use explanation only)
     const trapBox = document.getElementById('tutor-trap-box');
     if (trapBox) {
       App.renderRichText(
         trapBox,
-        q.explanation || 'این سوال به دلیل دقت در قیدها یا کلمات حساس آیین‌نامه مطرح شده است.'
+        q.explanation || 'توضیح این سؤال هنوز تأیید نشده است.'
       );
     }
 
-    // Rule Box (§14.1: driving_explanation removed — show generic guidance)
+    // Show the review status and source for this explanation.
     const ruleBox = document.getElementById('tutor-rule-box');
     if (ruleBox) {
-      ruleBox.innerHTML = 'قانون مرتبط: همیشه به تابلوها، حق تقدم و سرعت مجاز اعلام شده در قانون راهنمایی‌ورانندگی ایتالیا توجه کنید.';
+      App.renderContentQuality(ruleBox, q);
     }
 
     // Vocab List (§14.1: grammar_explanation removed — hide vocab section)

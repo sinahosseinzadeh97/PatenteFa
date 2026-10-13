@@ -10,7 +10,7 @@ export interface TranslationResult {
   explanation: string;
 }
 
-/** The verified identity of the sign in a question's image (see sign_meanings). */
+/** Stored auxiliary sign definition; it is not evidence of human review. */
 export interface SignAnchor {
   nameIt: string;
   nameFa: string;
@@ -24,7 +24,7 @@ export interface SignAnchor {
  * side correctly 16/18 times from pixels alone — and the misses are the worst
  * kind, since a mirrored left/right teaches the exact opposite rule. The sign's
  * identity is not something we need the model to guess: sign_meanings holds a
- * human-reviewed name for all 413 images.
+ * stored name for all 413 images. These names still need source validation.
  *
  * The image still goes with the request. Intersection figures, vehicle letters
  * and the "does the picture actually match the text?" check (which is why many
@@ -34,11 +34,11 @@ export function signAnchorBlock(sign: SignAnchor | null | undefined): string {
   if (!sign) return "";
   return `
 
-تابلوی داخل تصویر از قبل شناسایی و توسط انسان بازبینی شده است — این اطلاعات قطعی است:
+تعریف ذخیره‌شدهٔ تابلو (خلاصهٔ کمکی؛ ادعای بازبینی انسانی ندارد و باید با شواهد بانک تطبیق داده شود):
 • نام رسمی ایتالیایی: «${sign.nameIt}»
 • معنی: ${sign.meaningFa}
 
-اگر برداشت شما از تصویر با این نام فرق داشت، این نام درست است — مخصوصاً درباره جهت (چپ/راست). نام تابلو را حدس نزنید و آن را عوض نکنید.`;
+نام تابلو را از تصویر حدس نزنید. اگر تعریف با شواهد بانک تعارض دارد، تعارض را اعلام کنید و توضیح قطعی نسازید.`;
 }
 
 export interface Env {
@@ -124,7 +124,8 @@ export async function translateQuestion(
   db?: D1Database,
   userId?: number,
   sign?: SignAnchor | null,
-  existingTranslatedText?: string | null
+  existingTranslatedText?: string | null,
+  evidenceText?: string
 ): Promise<TranslationResult> {
   const answerIt = correctAnswer === 1 ? "VERO" : "FALSO";
   const currentModel = model(env);
@@ -138,6 +139,8 @@ export async function translateQuestion(
   const translationSystemPrompt = `شما مترجم تخصصی آزمون تئوری رانندگی (Patente B) ایتالیا هستید که برای فارسی‌زبانان ایرانی مقیم ایتالیا ترجمه می‌کنید.
 
 هدف: ترجمه فارسی باید دقیقاً مثل جمله‌ای باشد که یک راننده ایرانی باتجربه می‌نویسد — روان، طبیعی، و بدون ساختار ترجمه‌وار.
+
+قانون وفاداری: ادعای جمله را حتی اگر نادرست باشد حفظ کنید. نفی، فقط، همیشه، شرط، عدد، جهت و اجزای بدن را تغییر ندهید. جملهٔ غلط را در ترجمه اصلاح نکنید.
 
 قوانین سبک:
 • از کلمه‌به‌کلمه پرهیز کنید — معنا را منتقل کنید، نه ساختار دستوری ایتالیایی را
@@ -231,7 +234,7 @@ ${
 • شروع با «پاسخ صحیح ${answerIt} است» — مستقیم سراغ دلیل بروید`;
 
   const explanationUserText = `سوال ایتالیایی: "${textIt}"
-پاسخ صحیح: ${answerIt}${imageUrl ? "\n(تصویر این سوال ضمیمه شده است — اول آن را بخوانید.)" : ""}${signAnchorBlock(sign)}
+پاسخ صحیح: ${answerIt}${imageUrl ? "\n(تصویر این سوال ضمیمه شده است — اول آن را بخوانید.)" : ""}${signAnchorBlock(sign)}${evidenceText ? "\n\nشواهد مرتبط از بانک سؤال (فقط در محدودهٔ این شواهد توضیح بده؛ اگر کافی نیستند ادعای تازه نساز):\n" + evidenceText : ""}
 
 خروجی دقیقاً به صورت JSON:
 {"explanation": "دلیل مشخص و دقیق به فارسی"}`;
@@ -239,6 +242,7 @@ ${
   const callOpenAI = (body: object) =>
     fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
+      signal: AbortSignal.timeout(30_000),
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${env.OPENAI_API_KEY}`,
@@ -283,12 +287,10 @@ ${
   ]);
 
   if (translationRes && !translationRes.ok) {
-    const body = await translationRes.text();
-    throw new Error(`OpenAI translation error ${translationRes.status}: ${body}`);
+    throw new Error(`OpenAI translation HTTP ${translationRes.status}`);
   }
   if (!explanationRes.ok) {
-    const body = await explanationRes.text();
-    throw new Error(`OpenAI explanation error ${explanationRes.status}: ${body}`);
+    throw new Error(`OpenAI explanation HTTP ${explanationRes.status}`);
   }
 
   const [translationData, explanationData] = await Promise.all([
@@ -591,7 +593,8 @@ export async function explainTheory(
   db?: D1Database,
   userId?: number,
   imageUrl?: string | null,
-  sign?: SignAnchor | null
+  sign?: SignAnchor | null,
+  evidenceText?: string
 ): Promise<TheoryResult> {
   const answerIt = correctAnswer === 1 ? "VERO" : "FALSO";
   // §20.1: image questions escalate to the vision model — see visionModel().
@@ -639,7 +642,7 @@ ${
 زبان: فارسی روان و ساده. اصطلاحات ایتالیایی آزمون را عیناً در متن نگه دارید (با ترجمه کوتاه در پرانتز بار اول).`;
 
   const userPrompt = `سوال آزمون: «${textIt}»
-پاسخ صحیح: ${answerIt}${imageUrl ? "\n(تصویر این سوال ضمیمه شده است — اول آن را بخوانید.)" : ""}${signAnchorBlock(sign)}
+پاسخ صحیح: ${answerIt}${imageUrl ? "\n(تصویر این سوال ضمیمه شده است — اول آن را بخوانید.)" : ""}${signAnchorBlock(sign)}${evidenceText ? "\nشواهد بانک؛ هیچ قاعده، عدد یا استثنایی خارج از این شواهد اضافه نکن:\n" + evidenceText : ""}
 
 هر چهار بخش را بنویسید (بدون JSON — متن آزاد فارسی):`;
 
@@ -657,6 +660,7 @@ ${
 
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
+    signal: AbortSignal.timeout(30_000),
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${env.OPENAI_API_KEY}`,
@@ -670,8 +674,7 @@ ${
   });
 
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`OpenAI error ${res.status}: ${body}`);
+    throw new Error(`OpenAI theory HTTP ${res.status}`);
   }
 
   const data = (await res.json()) as {

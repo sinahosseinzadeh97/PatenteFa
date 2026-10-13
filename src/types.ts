@@ -15,6 +15,7 @@ export interface AppEnv {
   OPENAI_MODEL: string;
   /** §20.1: model for image (sign/diagram) questions. Default gpt-4o — mini misreads signs. */
   OPENAI_VISION_MODEL?: string;
+  OPENAI_REVIEW_MODEL?: string;
   ALLOWED_TELEGRAM_USER_IDS: string;
   /** The only Telegram account allowed to open or call the admin dashboard. */
   PRIMARY_ADMIN_TELEGRAM_USER_ID?: string;

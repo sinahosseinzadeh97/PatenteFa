@@ -11,6 +11,7 @@ import { verifyInitData, isAccessExpired, isPrimaryAdminUser } from "./lib/auth.
 import { upsertUser, setUserApproval } from "./db/queries.js";
 import { webhook } from "./bot/webhook.js";
 import { exam } from "./api/exam.js";
+import { content } from './api/content.js';
 import { translate } from "./api/translate.js";
 import { vocab } from "./api/vocab.js";
 import { stats } from "./api/stats.js";
@@ -158,6 +159,7 @@ import { learn } from "./api/learn.js";
 
 api.route("/exam", exam);
 api.route("/translate", translate);
+api.route("/content", content);
 api.route("/vocab", vocab);
 api.route("/stats", stats);
 api.route("/signs", signs);

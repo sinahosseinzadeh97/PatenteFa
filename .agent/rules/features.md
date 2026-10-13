@@ -386,3 +386,12 @@ Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/20
 - Turning the switch off never clears `ai_assisted_at`.
 - The final selection is the one that counts; the finish request's selections win over earlier saves.
 
+
+## 26. Sourced learning content and error reports
+
+- After choosing VERO/FALSO, show the question source beneath the answer controls. Unaided active exams show attribution only; answer-key links unlock after finish or explicit AI assistance. Use the same server-side AI lock as translation.
+- `src/lib/question-sources.ts` matches the immutable 2023 import by source ID, Italian text, answer and image filename. Do not label the whole bank as the latest official list. Only explicitly curated citations carry official corroboration.
+- `src/lib/content-quality.ts` is the translation/explanation/theory publication gate. Legacy caches need review. Automatic review is labelled as such; it is never presented as human verification. Preserve false statements in translations and explain their precise error separately.
+- Keep old content and review metadata in `content_revisions`. Never replace a human-reviewed entry with a late automatic response. Failed or unsupported explanations are withheld, not replaced with generic invented guidance.
+- `/api/content/:id/report` records authenticated, bounded reports; only the primary admin can review them. Translation edits cannot repair or automatically close answer/source reports. Include report/revision tables in backups.
+- Migration 0017 must precede deployment of this code. See `CONTENT-QUALITY.md` for audit commands, source provenance and validation limits.

@@ -1,3 +1,4 @@
+import { getQuestionSource } from "../lib/question-sources.js";
 /**
  * src/api/exam.ts
  * Exam session API routes — start, resume, answer, assistance, flag, finish.
@@ -133,6 +134,7 @@ exam.post("/start", async (c) => {
       textIt: q.text_it,
       imageUrl: q.image_url,
       topicId: q.topic_id,
+      source: getQuestionSource(q, false),
     })),
   });
 });
@@ -260,6 +262,7 @@ exam.post("/:sessionId/answer", async (c) => {
     correctAnswer: question.correct_answer,
     // Explicit, curated question → lesson-section mapping (never a topic guess).
     lessonLink: lessonLinkForSourceId(question.source_id),
+    source: getQuestionSource(question),
   });
 });
 
@@ -411,6 +414,7 @@ async function buildExamResults(db: D1Database, session: DbExamSession) {
       isCorrect: a.is_correct === 1,
       flagged: a.flagged === 1,
       lessonLink: lessonLinkForSourceId(questionsData[a.question_id]?.source_id),
+      source: questionsData[a.question_id] ? getQuestionSource(questionsData[a.question_id]) : null,
     })),
   };
 }

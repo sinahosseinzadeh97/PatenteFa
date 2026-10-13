@@ -119,18 +119,11 @@ test("a cached translation can regenerate only its explanation", async (t) => {
   assert.equal(result.explanation, "توضیح تازه و ساده");
 
   const routeSource = readFileSync("src/api/translate.ts", "utf8");
-  assert.match(routeSource, /translateQuestion\([\s\S]*cached\?\.translated_text/);
+  assert.match(routeSource, /getLearningContent\(c.env, question, userId\)/);
 
   const tutorSource = readFileSync("src/api/tutor.ts", "utf8");
-  const tutorTranslationCall = tutorSource.slice(
-    tutorSource.indexOf("const generated = await translateQuestion"),
-    tutorSource.indexOf("await insertTranslation")
-  );
-  assert.match(
-    tutorTranslationCall,
-    /trans\?\.translated_text/,
-    "the tutor path must also preserve a valid cached translation"
-  );
+  assert.match(tutorSource, /getLearningContent\(c.env, q, userId\)/,
+    "the tutor must use the same publication gate as the translation panel");
 });
 
 test("image-backed learning prompts keep the verified sign identity and usable image URL", async (t) => {

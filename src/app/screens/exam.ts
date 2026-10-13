@@ -76,6 +76,7 @@ export function renderExamScreen(): string {
       <div id="ai-tab-0" role="tabpanel" style="display:block;">
         <div class="ai-panel-heading"><svg class="ui-icon"><use href="#i-globe"/></svg><span>ترجمه فارسی</span></div>
         <div id="translate-verdict" class="translate-verdict" style="display:none;"></div>
+        <div id="translate-quality" class="content-quality" role="status"></div>
         <div id="translate-text" class="fa-text translate-text-body"></div>
         <div id="translate-explanation" class="fa-text translate-explanation-body"></div>
       </div>
@@ -84,6 +85,7 @@ export function renderExamScreen(): string {
         <div class="ai-panel-heading"><svg class="ui-icon"><use href="#i-graduation"/></svg><span>مربی تئوری</span></div>
         <p class="ai-panel-subtitle">قاعده پشت سؤال و نکته‌ای که باید به خاطر بسپاری</p>
         <div id="theory-loading" class="fa-text ai-loading-msg">در حال آماده‌سازی توضیح…</div>
+        <div id="theory-quality" class="content-quality"></div>
         <div id="theory-text" class="fa-text theory-text-body"></div>
         <div id="theory-error" class="fa-text ai-error-msg" role="alert"></div>
       </div>
@@ -105,6 +107,7 @@ export function renderExamScreen(): string {
       <button class="btn btn-falso btn-full" id="btn-falso" onclick="App.answer(0)"><svg class="ui-icon"><use href="#i-x"/></svg><span>FALSO</span></button>
       <button class="btn btn-vero btn-full" id="btn-vero" onclick="App.answer(1)"><svg class="ui-icon"><use href="#i-check"/></svg><span>VERO</span></button>
     </div>
+    <div id="exam-question-source" class="question-source compact-source" hidden></div>
     <div class="exam-continue-slot">
       <button class="btn btn-primary btn-full exam-next-btn" id="btn-next-question" onclick="App.nextQuestion()">
         سؤال بعدی <svg class="ui-icon"><use href="#i-chevron-left"/></svg>

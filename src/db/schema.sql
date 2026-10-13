@@ -44,6 +44,13 @@ CREATE TABLE IF NOT EXISTS translations_cache (
   grammar_analysis TEXT,               -- 📚 معلم گرامر (grammar analysis)
   vocab_suggestions TEXT,              -- JSON array with term, translation, POS, and infinitive
   created_at TEXT DEFAULT (datetime('now')),
+  content_version TEXT,
+  content_source_key TEXT,
+  quality_status TEXT NOT NULL DEFAULT 'legacy',
+  quality_issues TEXT,
+  checked_at TEXT,
+  checked_by TEXT,
+  theory_checked_key TEXT,
   PRIMARY KEY (question_id, lang)
 );
 
@@ -173,3 +180,38 @@ CREATE TABLE IF NOT EXISTS lesson_answers (
   answered_at TEXT NOT NULL DEFAULT (datetime('now')),
   PRIMARY KEY (user_id, lesson_id, question_id)
 );
+
+-- Retain existing content for audit; the application publishes it only after checking.
+
+CREATE TABLE IF NOT EXISTS content_revisions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question_id INTEGER NOT NULL REFERENCES questions(id),
+  lang TEXT NOT NULL,
+  translated_text TEXT,
+  explanation TEXT,
+  theory_text TEXT,
+  quality_status TEXT,
+  content_version TEXT,
+  content_source_key TEXT,
+  checked_at TEXT,
+  checked_by TEXT,
+  reason TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+CREATE INDEX IF NOT EXISTS idx_content_revisions_question ON content_revisions(question_id, id);
+
+CREATE TABLE IF NOT EXISTS content_reports (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  question_id INTEGER NOT NULL REFERENCES questions(id),
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  kind TEXT NOT NULL CHECK (kind IN ('translation', 'explanation', 'answer', 'source')),
+  note TEXT NOT NULL DEFAULT '',
+  content_snapshot TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved', 'dismissed')),
+  resolution_note TEXT,
+  resolved_by INTEGER REFERENCES users(id),
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  resolved_at TEXT
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_content_reports_open ON content_reports(question_id, user_id, kind) WHERE status = 'open';
+CREATE INDEX IF NOT EXISTS idx_content_reports_status ON content_reports(status, id);

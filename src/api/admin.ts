@@ -20,7 +20,10 @@ import {
   markSupportThreadRead,
   countUnreadSupportTotal,
   setUserAccessExpiration,
+  getQuestionById,
 } from "../db/queries.js";
+import { getQuestionSource, sourceKey, type SourceQuestion } from '../lib/question-sources.js';
+import { saveReviewedContent } from '../lib/content-quality.js';
 import { checkPrimaryAdmin } from "../lib/auth.js";
 import { sendMessage, sendSupportReply, buildMiniAppButton } from "../lib/telegram.js";
 import { normalizeSupportText } from "../lib/support.js";
@@ -61,6 +64,37 @@ admin.get("/shell", (c) => {
 admin.get("/overview", async (c) => {
   const stats = await getAdminOverviewStats(c.env.DB);
   return c.json(stats);
+});
+
+admin.get('/content-reports', async c => {
+  const offset = Math.max(0, Math.min(100000, Number(c.req.query('offset')) || 0));
+  const rows = await c.env.DB.prepare(`SELECT r.*, q.source_id, q.text_it, q.correct_answer, q.image_url,
+    t.translated_text, t.explanation, t.quality_status FROM content_reports r
+    JOIN questions q ON q.id = r.question_id LEFT JOIN translations_cache t ON t.question_id = q.id AND t.lang = 'fa'
+    WHERE r.status = 'open' ORDER BY r.id LIMIT 50 OFFSET ?`).bind(Math.floor(offset)).all<SourceQuestion & Record<string, unknown>>();
+  const total = await c.env.DB.prepare("SELECT COUNT(*) AS n FROM content_reports WHERE status = 'open'").first<{ n: number }>();
+  const audit = await c.env.DB.prepare("SELECT quality_status, COUNT(*) AS count FROM translations_cache WHERE lang = 'fa' GROUP BY quality_status").all();
+  return c.json({ reports: rows.results.map(row => ({ ...row, source: getQuestionSource(row) })), total: total?.n || 0, audit: audit.results });
+});
+
+admin.post('/content-reports/:id/resolve', async c => {
+  const id = Number(c.req.param('id'));
+  const body = await c.req.json().catch(() => null) as { status?: unknown; note?: unknown; translatedText?: unknown; explanation?: unknown } | null;
+  if (!Number.isSafeInteger(id) || id < 1 || !body || !['resolved', 'dismissed'].includes(String(body.status))
+    || typeof body.note !== 'string' || !body.note.trim() || body.note.length > 1000) return c.json({ error: 'دلیل بررسی لازم است؛ حداکثر ۱۰۰۰ نویسه.' }, 400);
+  const report = await c.env.DB.prepare("SELECT * FROM content_reports WHERE id = ? AND status = 'open'").bind(id).first<{ question_id: number; kind: string }>();
+  if (!report) return c.json({ error: 'گزارش باز پیدا نشد.' }, 404);
+  const closeReport = c.env.DB.prepare("UPDATE content_reports SET status = ?, resolution_note = ?, resolved_by = ?, resolved_at = datetime('now') WHERE id = ? AND status = 'open'")
+    .bind(body.status, body.note.trim(), c.get('userId'), id);
+  if (body.status === 'resolved') {
+    if (report.kind === 'answer' || report.kind === 'source') return c.json({ error: 'این گزارش نیاز به بررسی بانک سؤال دارد؛ ویرایش ترجمه، پاسخ یا منبع بانک را تغییر نمی‌دهد.' }, 409);
+    if (typeof body.translatedText !== 'string' || body.translatedText.trim().length < 10 || body.translatedText.length > 2000
+      || typeof body.explanation !== 'string' || body.explanation.trim().length < 10 || body.explanation.length > 4000) return c.json({ error: 'ترجمه و توضیح اصلاح‌شده را کامل بنویس.' }, 400);
+    const q = await getQuestionById(c.env.DB, report.question_id);
+    if (!q || !sourceKey(q)) return c.json({ error: 'ابتدا تطبیق سؤال با منبع را اصلاح کن.' }, 409);
+    await saveReviewedContent(c.env, q, body.translatedText.trim(), body.explanation.trim(), 'human_reviewed', `admin:${c.get('userId')}`, [], [closeReport]);
+  } else await closeReport.run();
+  return c.json({ saved: true });
 });
 
 // GET /api/admin/users?search=&status=

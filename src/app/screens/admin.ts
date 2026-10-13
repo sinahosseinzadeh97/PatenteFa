@@ -84,6 +84,13 @@ export function renderAdminScreen(): string {
       </div>
     </div>
 
+    <section class="admin-content-reports" aria-labelledby="content-reports-heading">
+      <h2 id="content-reports-heading">گزارش اشکال محتوا</h2>
+      <p id="content-audit-summary"></p>
+      <div id="admin-content-reports"></div>
+      <button type="button" class="btn btn-secondary btn-sm" onclick="App.loadContentReports()">به‌روزرسانی گزارش‌ها</button>
+    </section>
+
     <!-- ── Section 4: User list ─────────────────────────────────────────────── -->
     <div class="admin-filter-row">
       <label for="admin-search-input" class="visually-hidden">جستجوی کاربر</label>

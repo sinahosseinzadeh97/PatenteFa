@@ -23,7 +23,7 @@ export async function runNightlyBackup(env: BackupEnv): Promise<void> {
   const timestamp = new Date().toISOString();
 
   try {
-    const [users, examSessions, examAnswers, reviewQueue, vocabItems, translationsCache] =
+    const [users, examSessions, examAnswers, reviewQueue, vocabItems, translationsCache, contentReports, contentRevisions] =
       await Promise.all([
         dumpTable(env.DB, "users"),
         dumpTable(env.DB, "exam_sessions"),
@@ -31,6 +31,8 @@ export async function runNightlyBackup(env: BackupEnv): Promise<void> {
         dumpTable(env.DB, "review_queue"),
         dumpTable(env.DB, "vocab_items"),
         dumpTable(env.DB, "translations_cache"),
+        dumpTable(env.DB, "content_reports"),
+        dumpTable(env.DB, "content_revisions"),
       ]);
 
     const backupData = {
@@ -42,6 +44,8 @@ export async function runNightlyBackup(env: BackupEnv): Promise<void> {
         review_queue: reviewQueue,
         vocab_items: vocabItems,
         translations_cache: translationsCache,
+        content_reports: contentReports,
+        content_revisions: contentRevisions,
       },
       stats: {
         total_users: users.length,

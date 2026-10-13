@@ -286,11 +286,14 @@
 
     // §15.3: reset AI panel on question switch (uses centralized helper)
     App._resetAiPanel();
+    const quality = document.getElementById('translate-quality');
+    if (quality) quality.replaceChildren();
     App.renderAnswerState(q);
     App.updateFinishAvailability();
   };
 
   App.renderAnswerState = function(q) {
+    App.renderQuestionSource(q);
     if (App.isDeferredExam()) {
       App.renderSelectionState(q);
       return;
@@ -455,6 +458,7 @@
       };
       state.recordedAnswers.add(q.questionId);
       state.answerResults[q.questionId].lessonLink = result.lessonLink || null;
+      q.source = result.source || q.source;
       App.renderExamTabs();
       App.updateFinishAvailability();
       const currentQuestion = state.questions[state.currentIndex];
@@ -536,6 +540,8 @@
       // Hide first; the server is told right after.
       state.aiEnabled = false;
       App._resetAiPanel();
+      const current = state.questions[state.currentIndex];
+      if (current) App.renderQuestionSource(current);
     }
 
     checkbox.disabled = true;
@@ -552,6 +558,8 @@
       checkbox.disabled = false;
     }
     App._updateAiAvailability();
+    const current = state.questions[state.currentIndex];
+    if (current) App.renderQuestionSource(current);
   };
 
   // ── Flag / bookmark ─────────────────────────────────────────────────────────
@@ -668,7 +676,9 @@
       verdictEl.innerHTML = '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">پاسخ: ' + label + '</span>';
       verdictEl.style.display = 'block';
     }
-    document.getElementById('translate-text').textContent = data.translatedText || '';
+    document.getElementById('translate-text').textContent = data.translatedText || 'ترجمه هنوز تأیید نشده است.';
+    const quality = document.getElementById('translate-quality');
+    if (quality) App.renderContentQuality(quality, data);
     if (explanationEl) {
       explanationEl.style.display = data.explanation ? 'block' : 'none';
       App.renderRichText(explanationEl, data.explanation || '');
@@ -681,15 +691,21 @@
     const loadingEl = document.getElementById('theory-loading');
     const textEl = document.getElementById('theory-text');
     const errorEl = document.getElementById('theory-error');
+    const qualityEl = document.getElementById('theory-quality');
+    const render = function(data) {
+      App.renderRichText(textEl, data.theoryText || 'توضیح این سؤال هنوز تأیید نشده است.');
+      if (qualityEl) App.renderContentQuality(qualityEl, data);
+    };
     if (state.theoryCache && state.theoryCache[questionId]) {
       loadingEl.style.display = 'none';
       errorEl.style.display = 'none';
-      App.renderRichText(textEl, state.theoryCache[questionId]);
+      render(state.theoryCache[questionId]);
       return;
     }
     const requestGeneration = state.aiRequestGeneration;
     loadingEl.style.display = 'block';
     textEl.textContent = '';
+    if (qualityEl) qualityEl.replaceChildren();
     errorEl.style.display = 'none';
     try {
       const data = await App.getAiRequest(
@@ -697,9 +713,9 @@
         function() { return api('POST', '/translate/' + questionId + '/theory'); }
       );
       if (!state.theoryCache) state.theoryCache = {};
-      state.theoryCache[questionId] = data.theoryText || '';
+      state.theoryCache[questionId] = data;
       if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
-      App.renderRichText(textEl, data.theoryText || '');
+      render(data);
     } catch (e) {
       if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       errorEl.textContent = 'مربی تئوری در دسترس نیست — دوباره تلاش کنید';
@@ -1066,6 +1082,9 @@
 
       back.appendChild(questionLine);
       back.appendChild(answerLine);
+      const sourceBlock = document.createElement('div');
+      App.renderSourceBlock(sourceBlock, a.source, a.questionId, false);
+      back.appendChild(sourceBlock);
       back.appendChild(translateBtn);
       // Route a mistake back to the exact lesson section that teaches it —
       // only when the curated mapping exists. The copy stays neutral: we do
@@ -1113,6 +1132,9 @@
         (isVero ? 'درست: ' : 'نادرست: ') + label + '</span></div>';
       content += '<div class="result-translation-label">ترجمه فارسی</div><div class="result-translation-text">' + App.escapeHtml(data.translatedText) + '</div>';
       block.innerHTML = content;
+      const quality = document.createElement('div');
+      App.renderContentQuality(quality, data);
+      block.appendChild(quality);
       if (data.explanation) {
         const explanationBlock = document.createElement('div');
         explanationBlock.className = 'result-translation-explanation';

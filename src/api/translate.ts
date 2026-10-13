@@ -1,9 +1,7 @@
 /**
  * src/api/translate.ts
- * Translation API — cache-first, OpenAI on miss.
- * §15.3: three independent lazy endpoints — translation, theory, grammar.
- *        Each has its own token budget and cache column; opening one tab
- *        never triggers the other two.
+ * Translation and theory share a versioned publication gate. Grammar stays lazy.
+ * Theory may first check the short explanation used as its safe fallback.
  */
 
 import { Hono } from "hono";
@@ -11,20 +9,16 @@ import type { AppEnv, AppVariables } from "../types.js";
 import {
   getCachedTranslation,
   getQuestionById,
-  getSignCardForImage,
-  insertTranslation,
   isAiLockedForQuestion,
-  updateTheoryCache,
   updateGrammarCache,
 } from "../db/queries.js";
 import {
-  translateQuestion,
-  explainTheory,
   analyzeGrammar,
   hasCompleteVocabularyCoverage,
-  resolveImageUrl,
 } from "../lib/openai.js";
 import type { VocabularySuggestion } from "../lib/openai.js";
+
+import { getLearningContent, getTheoryContent, QUALITY_LABELS } from '../lib/content-quality.js';
 
 const translate = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
@@ -39,118 +33,24 @@ const AI_LOCKED_BODY = { error: "AI assistance is off for this exam", aiLocked: 
 // mode only once the learner has switched AI help on).
 translate.post("/:questionId", async (c) => {
   const questionId = Number(c.req.param("questionId"));
-  const lang = "fa";
-  const userId: number = c.get("userId" as never);
+  if (!Number.isSafeInteger(questionId) || questionId < 1) return c.json({ error: "Invalid question" }, 400);
+  const userId = c.get("userId");
   if (await isAiLockedForQuestion(c.env.DB, userId, questionId)) return c.json(AI_LOCKED_BODY, 403);
-
-  // §19.2: Always fetch the question row so we can include correct_answer in the
-  // response. It's a single PK lookup (indexed), effectively free, and avoids
-  // a two-path design where cache hits omit the verdict.
   const question = await getQuestionById(c.env.DB, questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
-
-  // §14.1: cache-first — trust only if translated_text is present and substantial.
-  // The explanation must be present too: migration 0007 nulled explanations
-  // written by the old vague prompt, and those rows must regenerate.
-  const cached = await getCachedTranslation(c.env.DB, questionId, lang);
-  if (
-    cached &&
-    cached.translated_text &&
-    cached.translated_text.length > 10 &&
-    cached.explanation
-  ) {
-    return c.json({
-      questionId,
-      lang,
-      translatedText: cached.translated_text,
-      explanation: cached.explanation,
-      // §19.2: verdict badge — true = VERO, false = FALSO
-      verdictVero: question.correct_answer === 1,
-      cached: true,
-    });
-  }
-
-  const resolvedImageUrl = resolveImageUrl(c.env.MINI_APP_URL, question.image_url);
-
-  // The sign in the picture is already known — don't make the model read it off
-  // the pixels. See getSignCardForImage: it mirrors left/right often enough that
-  // explanations were teaching the opposite rule.
-  const sign = question.image_url
-    ? await getSignCardForImage(c.env.DB, question.image_url)
-    : null;
-
-  try {
-    const result = await translateQuestion(
-      c.env,
-      question.text_it,
-      question.correct_answer,
-      resolvedImageUrl,
-      c.env.DB,
-      userId,
-      sign,
-      cached?.translated_text && cached.translated_text.length > 10
-        ? cached.translated_text
-        : null
-    );
-
-    await insertTranslation(c.env.DB, questionId, lang, result.translated_text, result.explanation);
-
-    return c.json({
-      questionId,
-      lang,
-      translatedText: result.translated_text,
-      explanation: result.explanation,
-      // §19.2: verdict badge — true = VERO, false = FALSO
-      verdictVero: question.correct_answer === 1,
-      cached: false,
-    });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    console.error(`[translate] questionId=${questionId} error: ${msg}`);
-    return c.json({ error: msg }, 500);
-  }
+  const result = await getLearningContent(c.env, question, userId);
+  return c.json({ questionId, lang: 'fa', ...result, qualityLabel: QUALITY_LABELS[result.qualityStatus], verdictVero: question.correct_answer === 1 });
 });
 
-// ── POST /api/translate/:questionId/theory ───────────────────────────────────
-// Tab 2 — توضیح کامل تئوری — 🎓 مربی تئوری
-// Lazy: only called when the user taps this tab.
-// Checks theory_text cache column first.  §20.1: vision when the question has an image.
 translate.post("/:questionId/theory", async (c) => {
   const questionId = Number(c.req.param("questionId"));
-  const lang = "fa";
-  const userId: number = c.get("userId" as never);
+  if (!Number.isSafeInteger(questionId) || questionId < 1) return c.json({ error: "Invalid question" }, 400);
+  const userId = c.get("userId");
   if (await isAiLockedForQuestion(c.env.DB, userId, questionId)) return c.json(AI_LOCKED_BODY, 403);
-
-  const cached = await getCachedTranslation(c.env.DB, questionId, lang);
-  if (cached && cached.theory_text && cached.theory_text.length > 10) {
-    return c.json({
-      questionId,
-      theoryText: cached.theory_text,
-      cached: true,
-    });
-  }
-
   const question = await getQuestionById(c.env.DB, questionId);
   if (!question) return c.json({ error: "Question not found" }, 404);
-
-  // §20.1: image questions need the picture here too — the sign IS the rule.
-  const result = await explainTheory(
-    c.env,
-    question.text_it,
-    question.correct_answer,
-    c.env.DB,
-    userId,
-    resolveImageUrl(c.env.MINI_APP_URL, question.image_url),
-    question.image_url ? await getSignCardForImage(c.env.DB, question.image_url) : null
-  );
-
-  await updateTheoryCache(c.env.DB, questionId, lang, result.theory_text);
-
-  return c.json({
-    questionId,
-    theoryText: result.theory_text,
-    cached: false,
-  });
+  const result = await getTheoryContent(c.env, question, userId);
+  return c.json({ questionId, ...result, qualityLabel: QUALITY_LABELS[result.qualityStatus as keyof typeof QUALITY_LABELS] });
 });
 
 // ── POST /api/translate/:questionId/grammar ──────────────────────────────────

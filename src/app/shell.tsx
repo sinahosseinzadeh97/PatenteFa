@@ -121,6 +121,7 @@ window.onerror = function(msg, url, line, col, err) {
 <!-- ── Client JavaScript (static assets — see public/js/) ─────────────────────── -->
 <script src="/js/navigation.js"></script>
 <script src="/js/app.js"></script>
+<script src="/js/content.js"></script>
 <script src="/js/exam.js"></script>
 <script src="/js/crossing.js"></script>
 <script src="/js/stopping.js"></script>
