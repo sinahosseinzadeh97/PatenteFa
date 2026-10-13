@@ -1,0 +1,876 @@
+{
+  "contentVersion": "evidence-2026-10-12-v1",
+  "generatedAt": "2026-10-13T05:11:50.667Z",
+  "readOnly": true,
+  "inputCount": 33,
+  "completed": 33,
+  "modelChecks": 33,
+  "records": [
+    {
+      "questionId": 668,
+      "sourceId": "668",
+      "status": "needs_review",
+      "evidenceCount": 13,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 668",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L2955",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [
+          "668",
+          "658"
+        ],
+        "issues": [
+          "توضیح به شواهد مرتبط نیست"
+        ]
+      }
+    },
+    {
+      "questionId": 693,
+      "sourceId": "693",
+      "status": "machine_pass",
+      "evidenceCount": 12,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 693",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L3082",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "693",
+          "685",
+          "690"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 715,
+      "sourceId": "715",
+      "status": "machine_pass",
+      "evidenceCount": 14,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 715",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L3194",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "715",
+          "718"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 1016,
+      "sourceId": "1016",
+      "status": "machine_pass",
+      "evidenceCount": 6,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 1016",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L4733",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "1009",
+          "1013",
+          "1012",
+          "1014",
+          "1010",
+          "1011"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 1461,
+      "sourceId": "1461",
+      "status": "machine_pass",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 1461",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L7026",
+        "official": {
+          "title": "بانک رسمی وزارت حمل‌ونقل ایتالیا — A/B، ۲۰۲۴",
+          "reference": "صفحهٔ ۵۶؛ گروه 03023، گزاره‌های V02، V03 و V04",
+          "url": "https://www.ilportaledellautomobilista.it/gms/dettaglionormativa.downloadallegato_1%3Adownload/210779/Circ.%24002019281%240020del%24002005.07.24%240020All.%240020LISTATO_definitivo%240020in%240020pdf.pdf#page=56"
+        },
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": {
+        "translatedText": "در محل این تابلو، عبور خودروهای سواری متان‌سوز مجاز است.",
+        "explanation": "این تابلو عبور خودروهای حامل مواد منفجره یا مواد به‌آسانی قابل‌اشتعال را ممنوع می‌کند. سوختی که برای حرکت خود خودرو در مخزن آن قرار دارد، مشمول این ممنوعیت نیست. بنابراین متان‌سوز بودنِ خودروی سواری به‌تنهایی مانع عبور آن نیست.",
+        "citation": {
+          "title": "بانک رسمی وزارت حمل‌ونقل ایتالیا — A/B، ۲۰۲۴",
+          "reference": "صفحهٔ ۵۶؛ گروه 03023، گزاره‌های V02، V03 و V04",
+          "url": "https://www.ilportaledellautomobilista.it/gms/dettaglionormativa.downloadallegato_1%3Adownload/210779/Circ.%24002019281%240020del%24002005.07.24%240020All.%240020LISTATO_definitivo%240020in%240020pdf.pdf#page=56"
+        }
+      },
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "1459",
+          "1460"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 1771,
+      "sourceId": "1771",
+      "status": "machine_pass",
+      "evidenceCount": 10,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 1771",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L8622",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "1771",
+          "1765",
+          "1762",
+          "1766",
+          "1768",
+          "1770"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 2165,
+      "sourceId": "2165",
+      "status": "machine_pass",
+      "evidenceCount": 13,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 2165",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L10648",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "2155",
+          "2148",
+          "2149"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 2224,
+      "sourceId": "2224",
+      "status": "needs_review",
+      "evidenceCount": 5,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 2224",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L10951",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [
+          "2218",
+          "2220",
+          "2221",
+          "2222"
+        ],
+        "issues": [
+          "توضیح به اشتباه می‌گوید که علامت به خودروهای سمت راست حق تقدم می‌دهد، در حالی که شواهد نشان می‌دهند که علامت به طور کلی حق تقدم را نشان می‌دهد."
+        ]
+      }
+    },
+    {
+      "questionId": 2294,
+      "sourceId": "2294",
+      "status": "needs_review",
+      "evidenceCount": 8,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 2294",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L11307",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "2287",
+          "2285",
+          "2291"
+        ],
+        "issues": [
+          "ترجمه نادرست: حق تقدم به وسایل نقلیه از راست داده نمی‌شود"
+        ]
+      }
+    },
+    {
+      "questionId": 2371,
+      "sourceId": "2371",
+      "status": "needs_review",
+      "evidenceCount": 9,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 2371",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L11704",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [
+          "2371",
+          "2374",
+          "2372"
+        ],
+        "issues": [
+          "توضیح با پاسخ سازگار نیست"
+        ]
+      }
+    },
+    {
+      "questionId": 2464,
+      "sourceId": "2464",
+      "status": "machine_pass",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 2464",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L12182",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "2459"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 2742,
+      "sourceId": "2742",
+      "status": "needs_review",
+      "evidenceCount": 9,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 2742",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L13615",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 2937,
+      "sourceId": "2937",
+      "status": "needs_review",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 2937",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L14599",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 3064,
+      "sourceId": "3064",
+      "status": "needs_review",
+      "evidenceCount": 5,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3064",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L15258",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 3090,
+      "sourceId": "3090",
+      "status": "needs_review",
+      "evidenceCount": 6,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3090",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L15392",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 3095,
+      "sourceId": "3095",
+      "status": "needs_review",
+      "evidenceCount": 5,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3095",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L15419",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 3361,
+      "sourceId": "3361",
+      "status": "needs_review",
+      "evidenceCount": 5,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3361",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L16805",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 3471,
+      "sourceId": "3471",
+      "status": "machine_pass",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3471",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L17379",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "3466",
+          "3468",
+          "3465",
+          "3467"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 3493,
+      "sourceId": "3493",
+      "status": "needs_review",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3493",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L17495",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 3509,
+      "sourceId": "3509",
+      "status": "needs_review",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3509",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L17581",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 3577,
+      "sourceId": "3577",
+      "status": "needs_review",
+      "evidenceCount": 6,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3577",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L17935",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [
+          "3577",
+          "3576"
+        ],
+        "issues": [
+          "توضیح به تابلو خاصی اشاره دارد که در متن اصلی نیست"
+        ]
+      }
+    },
+    {
+      "questionId": 3652,
+      "sourceId": "3652",
+      "status": "machine_pass",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3652",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L18326",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "3652",
+          "3653",
+          "3655"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 3854,
+      "sourceId": "3854",
+      "status": "machine_pass",
+      "evidenceCount": 5,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 3854",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L19376",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "3847",
+          "3848",
+          "3849",
+          "3850",
+          "3851"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 4022,
+      "sourceId": "4022",
+      "status": "needs_review",
+      "evidenceCount": 16,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 4022",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L20172",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [
+          "4022",
+          "4023"
+        ],
+        "issues": [
+          "شواهد کافی برای تأیید سرعت 40 کیلومتر بر ساعت برای ماشین کشاورزی چرخ‌دار وجود ندارد"
+        ]
+      }
+    },
+    {
+      "questionId": 4765,
+      "sourceId": "4765",
+      "status": "machine_pass",
+      "evidenceCount": 5,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 4765",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L23401",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "4765",
+          "4766"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 4919,
+      "sourceId": "4919",
+      "status": "machine_pass",
+      "evidenceCount": 6,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 4919",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L24201",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "4919",
+          "4920",
+          "4924"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 5723,
+      "sourceId": "5723",
+      "status": "needs_review",
+      "evidenceCount": 11,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 5723",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L27826",
+        "official": {
+          "title": "بانک رسمی وزارت حمل‌ونقل ایتالیا — بازبینی A/B، ۲۰۲۵",
+          "reference": "صفحهٔ ۱۰۹؛ سؤال 24117، گزارهٔ مثبتِ مرتبط",
+          "url": "https://www.ilportaledellautomobilista.it/documents/56611/57321/Domande%2BRevisione%2BAB%2Bitaliano%2B04%2B04%2B2025/37af530b-c893-4d69-ba4a-a94fc4622fe6?version=1.0#page=109"
+        },
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": {
+        "translatedText": "وقتی در سرازیری تند تریلر می‌کشید، لازم نیست نیروی فشاری تریلر بر خودروی کشنده را در نظر بگیرید.",
+        "explanation": "عبارت «لازم نیست در نظر بگیرید» غلط است. هنگام یدک‌کشیدن در سرازیری تند، باید نیرویی را که تریلر به خودروی کشنده وارد می‌کند در نظر گرفت. motrice در این جمله یعنی خودروی کشنده و rimorchio یعنی تریلر یا یدک.",
+        "citation": {
+          "title": "بانک رسمی وزارت حمل‌ونقل ایتالیا — بازبینی A/B، ۲۰۲۵",
+          "reference": "صفحهٔ ۱۰۹؛ سؤال 24117، گزارهٔ مثبتِ مرتبط",
+          "url": "https://www.ilportaledellautomobilista.it/documents/56611/57321/Domande%2BRevisione%2BAB%2Bitaliano%2B04%2B04%2B2025/37af530b-c893-4d69-ba4a-a94fc4622fe6?version=1.0#page=109"
+        }
+      },
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 6169,
+      "sourceId": "6169",
+      "status": "machine_pass",
+      "evidenceCount": 6,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 6169",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L29797",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "6169"
+        ],
+        "issues": []
+      }
+    },
+    {
+      "questionId": 6325,
+      "sourceId": "6325",
+      "status": "needs_review",
+      "evidenceCount": 11,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 6325",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L30443",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 6831,
+      "sourceId": "6831",
+      "status": "needs_review",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 6831",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L32598",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 6896,
+      "sourceId": "6896",
+      "status": "needs_review",
+      "evidenceCount": 4,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 6896",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L32882",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": false,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [],
+        "issues": [
+          "بررسی خودکار کامل نشد"
+        ]
+      }
+    },
+    {
+      "questionId": 7114,
+      "sourceId": "7114",
+      "status": "needs_review",
+      "evidenceCount": 6,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 7114",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L33794",
+        "official": {
+          "title": "بانک رسمی وزارت حمل‌ونقل ایتالیا — بازبینی A/B، ۲۰۲۵",
+          "reference": "صفحهٔ ۱۲۹؛ سؤال‌های 25419، 25421 و 25429",
+          "url": "https://www.ilportaledellautomobilista.it/documents/56611/57321/Domande%2BRevisione%2BAB%2Bitaliano%2B04%2B04%2B2025/37af530b-c893-4d69-ba4a-a94fc4622fe6?version=1.0#page=129"
+        },
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": {
+        "translatedText": "برای آسان‌تر خاموش‌کردن موتور، وسایل نقلیهٔ موتوری دوچرخ به کلید قطع اضطراری مجهز هستند که با فشار پای راست فعال می‌شود.",
+        "explanation": "بخش غلط جمله «با فشار پای راست» است. کلید قطع اضطراری موتور وجود دارد و روی فرمان قرار دارد؛ با آن می‌توان موتور را بدون برداشتن دست‌ها از فرمان خاموش کرد. پس وجود کلید درست است، اما روش فعال‌کردنی که سؤال گفته نادرست است.",
+        "citation": {
+          "title": "بانک رسمی وزارت حمل‌ونقل ایتالیا — بازبینی A/B، ۲۰۲۵",
+          "reference": "صفحهٔ ۱۲۹؛ سؤال‌های 25419، 25421 و 25429",
+          "url": "https://www.ilportaledellautomobilista.it/documents/56611/57321/Domande%2BRevisione%2BAB%2Bitaliano%2B04%2B04%2B2025/37af530b-c893-4d69-ba4a-a94fc4622fe6?version=1.0#page=129"
+        }
+      },
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": false,
+        "verdictConsistent": false,
+        "evidenceIds": [
+          "7106",
+          "7107",
+          "7104",
+          "7105",
+          "7108",
+          "7109"
+        ],
+        "issues": [
+          "توضیح نادرست درباره وجود کلید اضطراری"
+        ]
+      }
+    },
+    {
+      "questionId": 7129,
+      "sourceId": "7129",
+      "status": "machine_pass",
+      "evidenceCount": 7,
+      "source": {
+        "title": "بانک QuizPatenteB — نسخهٔ ۲۰۲۳",
+        "reference": "شناسهٔ بانک برنامه: 7129",
+        "url": "https://github.com/Ed0ardo/QuizPatenteB/blob/512dd5d2193d5ca805fbd4c0a9789d9670207dfe/quizPatenteB2023.json#L33856",
+        "official": null,
+        "note": "بانک واردشده مربوط به ۲۰۲۳ است؛ تطبیق همهٔ سؤال‌ها با آخرین فهرست رسمی هنوز کامل نشده است."
+      },
+      "reviewedReplacement": null,
+      "review": {
+        "translationFaithful": true,
+        "explanationSupported": true,
+        "verdictConsistent": true,
+        "evidenceIds": [
+          "7120"
+        ],
+        "issues": []
+      }
+    }
+  ],
+  "auditScope": {
+    "model": "gpt-4o (default reviewer)",
+    "questions": 33,
+    "selection": "30 existing sample records plus source IDs 1461, 5723, 7114",
+    "userAuthorized": true,
+    "userDataIncluded": false,
+    "productionModified": false,
+    "limitations": [
+      "Machine pass is not certification. Known defective explanation 1461 passed.",
+      "2294 was incorrectly judged unfaithful for preserving a false exam claim.",
+      "2224 review rationale contradicts supplied true statements 2218 and 2220.",
+      "12 records produced the conservative invalid/insufficient-evidence fallback; these are inconclusive, not proven wrong."
+    ]
+  }
+}
