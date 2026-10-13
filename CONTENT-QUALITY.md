@@ -1,7 +1,9 @@
 # Learning content and question sources
 
 Implemented on top of upstream `609fe29`. Local validation: 13 October 2026.
-**Not deployed. Production provenance was audited; a full semantic audit is still outstanding.**
+**Deployed with user approval on 13 October 2026. A full semantic audit is still outstanding.**
+Production release: Worker `60a6e18c-385e-4f53-b046-9b02a53ed6ed`, migration
+`0017_content_quality.sql`. See `RELEASE-2026-10-13.md` for live verification and backup details.
 Cloudflare access was restored on 13 October 2026. A read-only joined export contains
 7,139 questions, all matching the pinned bank's text, answer and image filename.
 There are 808 records with both Persian translation and explanation, 1,046 with
@@ -87,4 +89,4 @@ User journeys were derived from the screenshots and the request to display sourc
 | Read-only audit export matching and malformed input refusal | CLI fixtures plus actual joined production export | PASS; all 7,139 source records match; all 30 legacy sample mappings confirmed |
 | Mobile source/report journey | Local in-memory preview, 390×844, CUA browser | Source appears after selection, disappears on next question, locked source dialog has no links, report submission acknowledged; report appears in admin list |
 
-Visual limitation: the in-app browser automation stalled on the native AI-assistance confirmation. The assisted-mode, final-results and admin-edit behavior are covered by API tests but their complete visual journeys still require a real Telegram smoke test. Model requests in automated tests are mocked; they prove gate behavior, not model accuracy. The separate real 33-question audit demonstrates both useful flags and reviewer errors. No production release or full production semantic audit is implied by these checks.
+Visual limitation: the in-app browser automation stalled on the native AI-assistance confirmation. The assisted-mode, final-results and admin-edit behavior are covered by API tests but their complete visual journeys still require a real Telegram visual smoke test. Authenticated production API checks now confirm all three sourced corrections, source links and the admin report list. A real production model review of 693 produced an inconclusive result and the gate withheld its content as designed; this is not a semantic pass. Model requests in automated tests are mocked; they prove gate behavior, not model accuracy. The separate real 33-question audit demonstrates both useful flags and reviewer errors. A full production semantic audit remains outstanding.

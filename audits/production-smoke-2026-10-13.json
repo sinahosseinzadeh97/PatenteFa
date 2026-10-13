@@ -1,0 +1,81 @@
+{
+  "at": "2026-10-13T05:33:48.749Z",
+  "base": "https://patentefarsi.online",
+  "results": [
+    {
+      "name": "health",
+      "ok": true
+    },
+    {
+      "name": "asset js/content.js",
+      "ok": true
+    },
+    {
+      "name": "asset js/exam.js",
+      "ok": true
+    },
+    {
+      "name": "asset js/app.js",
+      "ok": true
+    },
+    {
+      "name": "asset css/app.css",
+      "ok": true
+    },
+    {
+      "name": "source requires authentication",
+      "ok": true
+    },
+    {
+      "name": "macOS metadata is not served",
+      "ok": true
+    },
+    {
+      "name": "source 1461",
+      "ok": true,
+      "linksLocked": false
+    },
+    {
+      "name": "correction 1461",
+      "ok": true,
+      "quality": "source_checked"
+    },
+    {
+      "name": "source 5723",
+      "ok": true,
+      "linksLocked": false
+    },
+    {
+      "name": "correction 5723",
+      "ok": true,
+      "quality": "source_checked"
+    },
+    {
+      "name": "source 7114",
+      "ok": true,
+      "linksLocked": false
+    },
+    {
+      "name": "correction 7114",
+      "ok": true,
+      "quality": "source_checked"
+    },
+    {
+      "name": "admin report list",
+      "ok": true
+    },
+    {
+      "name": "production AI gate withholds inconclusive content on sample 693",
+      "ok": true,
+      "httpStatus": 200,
+      "qualityStatus": "needs_review",
+      "elapsedMs": 6403,
+      "automaticApprovalObserved": false,
+      "explanationWithheld": true,
+      "translationWithheld": true,
+      "note": "The initial expectation of a model pass was not met. Actual OpenAI review calls completed, but the evidence validator rejected their results. Verified safe fallback in the API response and stored cache; this is not a semantic pass."
+    }
+  ],
+  "workerVersion": "60a6e18c-385e-4f53-b046-9b02a53ed6ed",
+  "migration": "0017_content_quality.sql"
+}
