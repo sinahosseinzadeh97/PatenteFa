@@ -103,7 +103,8 @@
   App.renderContentQuality = function(container, data) {
     container.replaceChildren();
     container.classList.add('content-quality');
-    container.appendChild(element('p', data.qualityLabel || 'وضعیت بررسی مشخص نشده است.'));
+    // Approved content speaks for itself; only tell the learner when it is still pending.
+    if (data.qualityStatus === 'needs_review') container.appendChild(element('p', data.qualityLabel));
     if (data.source && data.questionId) {
       const sourceBox = element('div');
       App.renderSourceBlock(sourceBox, data.source, data.questionId, false);
