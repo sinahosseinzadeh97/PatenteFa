@@ -136,8 +136,28 @@ test('only a complete review citing supplied evidence can approve content', asyn
     const check = await verifyLearningContent(env, q, { translatedText: 'متن نمونه', explanation: 'توضیح' }, evidence, 1);
     assert.equal(check.explanationSupported, false);
   }
+  for (const outage of [async () => new Response('', { status: 429 }), async () => { throw new TypeError('network down'); }]) {
+    globalThis.fetch = outage;
+    assert.equal((await verifyLearningContent(env, q, { translatedText: 'متن نمونه', explanation: 'توضیح' }, evidence, 1)).explanationSupported, false, 'an unavailable reviewer is inconclusive, not an error');
+  }
   globalThis.fetch = async () => completion(acceptance());
   assert.equal((await verifyLearningContent(env, q, { translatedText: 'نمونه', explanation: 'توضیح' }, evidence, 1)).explanationSupported, true);
+});
+
+test('a reviewer outage still publishes freshly generated content as unreviewed', async t => {
+  const { env, raw } = setup(); const q = ordinaryQuestion();
+  raw.prepare('INSERT INTO questions (id, source_id, text_it, correct_answer, image_url) VALUES (?, ?, ?, ?, ?)').run(q.id, q.source_id, q.text_it, q.correct_answer, q.image_url);
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  globalThis.fetch = async (_input, init) => {
+    const prompt = JSON.parse(String(init?.body)).messages[0].content;
+    if (prompt.includes('بازبین مستقل')) return new Response('', { status: 503 });
+    return completion(prompt.includes('توضیح‌دهنده') ? { explanation: 'توضیح تازهٔ تولیدشده' } : { translated_text: 'ترجمهٔ تازهٔ تولیدشده' });
+  };
+  const result = await getLearningContent(env, q, 1);
+  assert.equal(result.translatedText, 'ترجمهٔ تازهٔ تولیدشده');
+  assert.equal(result.explanation, 'توضیح تازهٔ تولیدشده');
+  assert.equal(result.qualityStatus, 'needs_review');
+  assert.equal(raw.prepare('SELECT quality_status FROM translations_cache').get()!.quality_status, 'needs_review', 'stored, so it is not regenerated');
 });
 
 test('verified legacy content is versioned, reused without another API call and kept in history', async t => {
@@ -154,7 +174,7 @@ test('verified legacy content is versioned, reused without another API call and 
   assert.equal(raw.prepare('SELECT COUNT(*) AS n FROM content_revisions').get()!.n, 1);
 });
 
-test('rejected explanations are hidden and retained; faithful translation survives regeneration', async t => {
+test('rejected content stays visible as unreviewed, is retained, and is not reviewed again', async t => {
   const { env, raw } = setup(); const q = seedOrdinary(raw);
   const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
   let calls = 0;
@@ -167,20 +187,65 @@ test('rejected explanations are hidden and retained; faithful translation surviv
   };
   const result = await getLearningContent(env, q, 1);
   assert.equal(result.qualityStatus, 'needs_review');
-  assert.equal(result.explanation, '');
+  assert.equal(result.explanation, 'توضیح تولیدشدهٔ بی‌شاهد');
   assert.equal(result.translatedText, 'ترجمهٔ نمونه برای بررسی');
   assert.equal(calls, 3);
   assert.equal(raw.prepare("SELECT COUNT(*) AS n FROM content_revisions WHERE quality_status = 'rejected'").get()!.n, 1);
-  await getLearningContent(env, q, 1);
+  assert.equal((await getLearningContent(env, q, 1)).explanation, 'توضیح تولیدشدهٔ بی‌شاهد');
   assert.equal(calls, 3, 'a rejected version must not cause repeated automatic spending');
 });
 
-test('review failure does not leak a legacy explanation', async t => {
+test('a failed review shows the stored text as unreviewed instead of an empty panel', async t => {
   const { env, raw } = setup(); const q = seedOrdinary(raw);
   const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
   globalThis.fetch = async () => new Response('', { status: 503 });
-  assert.equal((await getLearningContent(env, q, 1)).explanation, '');
-  assert.equal(raw.prepare('SELECT explanation FROM translations_cache').get()!.explanation, 'توضیح نمونه برای بررسی');
+  const result = await getLearningContent(env, q, 1);
+  assert.equal(result.qualityStatus, 'needs_review');
+  assert.equal(result.translatedText, 'ترجمهٔ نمونه برای بررسی');
+  assert.equal(result.explanation, 'توضیح نمونه برای بررسی');
+  assert.equal(raw.prepare('SELECT quality_status FROM translations_cache').get()!.quality_status, 'legacy', 'a failed review is retried later');
+});
+
+test('a question blanked by an inconclusive review gets its content back once and keeps it', async t => {
+  const { env, raw } = setup(); const q = ordinaryQuestion();
+  raw.prepare('INSERT INTO questions (id, source_id, text_it, correct_answer, image_url) VALUES (?, ?, ?, ?, ?)').run(q.id, q.source_id, q.text_it, q.correct_answer, q.image_url);
+  // Production state on 2026-10-16: the old gate stored both texts blank.
+  raw.prepare("INSERT INTO translations_cache (question_id, lang, translated_text, explanation, content_version, content_source_key, quality_status) VALUES (1, 'fa', '', '', ?, ?, 'needs_review')").run(CONTENT_VERSION, sourceKey(q));
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  let calls = 0;
+  globalThis.fetch = async (_input, init) => {
+    calls++;
+    const prompt = JSON.parse(String(init?.body)).messages[0].content;
+    // As in production, the reviewer answers without citing any evidence.
+    if (prompt.includes('بازبین مستقل')) return completion({ ...acceptance(), evidenceIds: [] });
+    return completion(prompt.includes('توضیح‌دهنده') ? { explanation: 'توضیح تازهٔ تولیدشده' } : { translated_text: 'ترجمهٔ تازهٔ تولیدشده' });
+  };
+  const result = await getLearningContent(env, q, 1);
+  assert.equal(result.qualityStatus, 'needs_review');
+  assert.equal(result.translatedText, 'ترجمهٔ تازهٔ تولیدشده');
+  assert.equal(result.explanation, 'توضیح تازهٔ تولیدشده');
+  assert.equal(calls, 3);
+  assert.equal((await getLearningContent(env, q, 1)).translatedText, 'ترجمهٔ تازهٔ تولیدشده');
+  assert.equal(calls, 3, 'stored unreviewed content is reused, not regenerated');
+});
+
+test('a question with no bank evidence still gets content, labelled as unreviewed', async t => {
+  const { env, raw } = setup();
+  const toQuestion = ([text, answer, image]: unknown[], i: number) => ({ id: i + 1, source_id: String(i + 1), text_it: String(text), correct_answer: Number(answer), image_url: image ? '/images/signs/' + image : null });
+  const q = provenance.entries.map(toQuestion).find(candidate => !getQuestionEvidence(candidate).length)!;
+  raw.prepare('INSERT INTO questions (id, source_id, text_it, correct_answer, image_url) VALUES (?, ?, ?, ?, ?)').run(q.id, q.source_id, q.text_it, q.correct_answer, q.image_url);
+  const original = globalThis.fetch; t.after(() => { globalThis.fetch = original; });
+  const prompts: string[] = [];
+  globalThis.fetch = async (_input, init) => {
+    const prompt = JSON.parse(String(init?.body)).messages[0].content;
+    prompts.push(prompt);
+    return completion(prompt.includes('توضیح‌دهنده') ? { explanation: 'توضیح سؤال بدون شاهد' } : { translated_text: 'ترجمهٔ سؤال بدون شاهد' });
+  };
+  const result = await getLearningContent(env, q, 1);
+  assert.equal(result.qualityStatus, 'needs_review');
+  assert.equal(result.translatedText, 'ترجمهٔ سؤال بدون شاهد');
+  assert.equal(result.explanation, 'توضیح سؤال بدون شاهد');
+  assert.ok(prompts.every(p => !p.includes('بازبین مستقل')), 'there is nothing to review against');
 });
 
 test('an in-flight automatic review cannot overwrite a human edit or return its stale result', async t => {
