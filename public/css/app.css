@@ -324,7 +324,13 @@ html, body {
   background: var(--surface);
   border-bottom: 1px solid var(--border);
   padding: 10px 16px;
-  position: sticky; top: 0; z-index: 50;
+  position: sticky; top: var(--app-content-safe-top); z-index: 50;
+}
+/* Sticky bars stop below Telegram's fullscreen controls; paint the strip above
+   them so scrolled content does not show under the status bar. */
+.exam-topbar::before, .lesson-topbar::before, .tutor-header::before {
+  content: ''; position: absolute; inset-inline: 0; bottom: 100%;
+  height: var(--app-content-safe-top); background: var(--bg); pointer-events: none;
 }
 
 /* ── Question tabs (inside details) ─────────────────────────────────────── */
@@ -1098,7 +1104,7 @@ html, body {
 
 /* ── AI exam tutor review screen ─────────────────────────────────────────── */
 .tutor-header {
-  position: sticky; top: 0; z-index: 10; background: var(--bg);
+  position: sticky; top: var(--app-content-safe-top); z-index: 10; background: var(--bg);
   padding: 14px 16px; border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: space-between;
 }
@@ -2102,7 +2108,7 @@ button.home-metric:hover { border-color: var(--amber); background: var(--amber-d
 
 /* Lesson screen */
 .lesson-screen { min-height: calc(var(--tg-viewport-stable-height, 100dvh) - var(--app-content-safe-top)); }
-.lesson-topbar { position: sticky; top: 0; z-index: 50; padding: 8px 12px 10px; background: var(--surface); border-bottom: 1px solid var(--border-subtle); }
+.lesson-topbar { position: sticky; top: var(--app-content-safe-top); z-index: 50; padding: 8px 12px 10px; background: var(--surface); border-bottom: 1px solid var(--border-subtle); }
 .lesson-topbar-row { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
 .lesson-topbar-copy { min-width: 0; display: flex; flex-direction: column; }
 .lesson-topbar-kicker { color: var(--ink-muted); font-size: .66rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
