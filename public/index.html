@@ -9,8 +9,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <title data-fa="پاتنته‌فا — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی" data-en="PatenteFa — Italian driving theory, in Persian">پاتنته‌فا — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی</title>
 <meta name="description" content="تمرین آزمون تئوری پاتنته B ایتالیا به زبان فارسی. ۷٬۱۳۹ سوال رسمی، ترجمه و توضیح فارسی، شبیه‌سازی آزمون واقعی و مرور اشتباهات." />
-<meta name="theme-color" content="#FBFBF8" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#101216" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)" />
 <link rel="canonical" href="https://patentefarsi.online/" />
 <link rel="alternate" hreflang="fa" href="https://patentefarsi.online/" />
 <link rel="alternate" hreflang="en" href="https://patentefarsi.online/?lang=en" />
@@ -21,36 +21,27 @@
 <meta property="og:url" content="https://patentefarsi.online" />
 <meta property="og:image" content="https://patentefarsi.online/img/ai-panel.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<!-- Flat sign-plate mark: amber field, ink letter. Inline so it costs no request. -->
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23E8A33D'/%3E%3Cpath d='M11 24V8h6.4a5.1 5.1 0 0 1 0 10.2H14.6V24z' fill='%2316181D'/%3E%3C/svg%3E" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<!-- Two families, two jobs: Vazirmatn carries every Persian glyph, IBM Plex Sans
-     every Latin one. No third display face — the old build used a condensed Latin
-     display that simply vanished in Persian mode, which is precisely how a
-     Persian-first product ends up with an English personality. Hierarchy here
-     is weight, size and rule-work, so it survives the language switch intact.
-
-     Plex rather than the usual neo-grotesque default: it was drawn as an
-     institutional/engineering face, which is the exact register of the Codice
-     della Strada text it mostly sets; its figures are strongly differentiated,
-     and numerals are load-bearing on this page (7,139 · €54 · 01–06); and its
-     own Arabic sibling shares a skeleton with Naskh, so pairing it with
-     Vazirmatn is a structural relationship rather than a coincidence. -->
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Vazirmatn:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<!-- Three families, three jobs. Markazi Text is the voice: a Naskh-based book
+     face by Borna Izadpanah, drawn for Persian first, with a Latin companion,
+     so one display face survives the language switch. Vazirmatn reads Persian
+     body text; IBM Plex Sans reads Latin body text and the Italian exam
+     sentences, which should look like an official screen, not like a book. -->
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=Markazi+Text:wght@500..700&family=Vazirmatn:wght@400;500;700;800&display=swap" rel="stylesheet" />
 
 <script>
 /* Language resolves BEFORE first paint. The document ships Persian in the
-   markup, so the default path needs no JS at all and cannot shift; this only
-   handles a returning English reader, and it runs here (not at </body>) so the
-   swap happens before anything is painted rather than as a visible flash. */
+   markup, so the default path needs no JS at all; this only handles a
+   returning English reader, before anything is painted. */
 (function () {
   var l;
   try { l = localStorage.getItem('pf-lang'); } catch (e) {}
   var q = location.search.match(/[?&]lang=(en|fa)\b/);
   if (q) l = q[1];
-  if (l !== 'en') return;                       // Persian is the served default
+  if (l !== 'en') return;
   document.documentElement.lang = 'en';
   document.documentElement.dir = 'ltr';
   document.documentElement.setAttribute('data-lang-pending', 'en');
@@ -59,78 +50,66 @@
 
 <style>
 /* ═══════════════════════════════════════════════════════════════════════════
-   PatenteFa — "Segnaletica" design system
+   PatenteFa — "Scheda" design system (design-system/patentefa-web/MASTER.md)
    ---------------------------------------------------------------------------
-   The premise: Italian road signage is itself a system engineered for
-   unambiguous comprehension under time pressure — which is the same problem
-   this page, and the exam behind it, actually has. So every visual decision
-   borrows signage LOGIC, not signage decoration:
+   The page is an annotated exam sheet. The visitor answers a real question
+   from the bank before reading a single claim, then the page takes that same
+   sentence apart the way a teacher would: a red pen for what trips you up,
+   an amber highlighter for the phrase the answer hangs on.
 
-     · High contrast on a printed-paper ground, never a mood-lit one.
-     · Meaning carried by shape + label + colour together, never colour alone.
-     · Structure from 1px rules and plate borders, not shadow and blur.
-     · A closed palette where each colour already means something on a road:
-       amber = attention/brand, red = prohibition/error, green = permitted/
-       correct, blue = information/action.
-     · Numerals are load-bearing (limits, distances, counts) so they are always
-       tabular and always in the reader's own numeral system.
-
-   Persian is the design's first language, not a translation layer: the type
-   scale, line-height, numerals and flow direction are authored for Vazirmatn
-   RTL first, and Latin is the variant.
+   Kept from the previous system: the closed signage palette (amber brand,
+   red stop, green go, blue action), Persian-first bidi, and every contrast
+   floor. Changed: the template rhythm (eyebrow → heading → card grid, seven
+   times) is gone; each section has its own form.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  /* ── Surfaces ─────────────────────────────────────────────────────────── */
-  --paper:      #FBFBF8;   /* warm white — printed stock, not screen white */
+  --paper:      #F6F4EE;   /* exam-paper stock */
   --surface:    #FFFFFF;
-  --sunken:     #F3F3EF;   /* recessed: quotes, specimens, code */
-  --line:       #E4E4DD;   /* hairline — the primary structural device */
-  --line-2:     #C8C8BF;   /* emphasised rule / plate border */
+  --sunken:     #EDEAE2;
+  --line:       #DEDAD0;
+  --line-2:     #BDB8AC;
 
-  /* ── Ink ──────────────────────────────────────────────────────────────── */
-  --ink:        #16181D;   /* 15.9:1 on paper */
-  --ink-2:      #3C4048;   /* 9.6:1  — secondary headings */
-  --ink-muted:  #5D6068;   /* 5.9:1  — body support, AA at every size used */
+  --ink:        #17181C;   /* 16.1:1 on paper */
+  --ink-2:      #3A3C43;   /* 10.0:1 */
+  --ink-muted:  #5C5E66;   /* 5.9:1 */
 
-  /* ── Signal colours (all verified ≥4.5:1 as text on --paper) ──────────── */
-  --amber:      #E8A33D;   /* brand fill — same amber as the app's CTAs */
-  --amber-ink:  #7A4E06;   /* amber as text: 7.0:1 */
-  --amber-bg:   #FDF3E2;
-  --blue:       #1B4FA0;   /* action / link: 7.5:1 */
-  --blue-bg:    #EDF2FB;
-  --go:         #15803D;   /* correct, pass: 4.7:1 */
-  --go-bg:      #EAF6EE;
-  --stop:       #C1272D;   /* wrong, prohibited: 5.5:1 — carried over from app */
-  --stop-bg:    #FBECEC;
-  --on-amber:   #16181D;   /* 8.3:1 on the amber fill */
+  --amber:      #E8A33D;   /* brand fill — the app's CTA amber */
+  --amber-ink:  #7A4E06;   /* 6.9:1 */
+  --amber-bg:   #FBEFD9;
+  --hl:         #F6D58E;   /* highlighter swipe, behind ink only */
+  --blue:       #1B4FA0;   /* 7.2:1 */
+  --go:         #13703A;   /* 5.5:1 */
+  --go-bg:      #E3F1E7;
+  --stop:       #C1272D;   /* 5.2:1 */
+  --stop-bg:    #F8E5E4;
+  --on-amber:   #17181C;
+  --bezel:      #111216;
 
-  /* ── Type ─────────────────────────────────────────────────────────────── */
+  /* The red pen. A data: URI, so it costs no request and no origin. */
+  --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5C25 4.2 52 3.6 78 5.2c14 .9 27 2.4 39 4.6' fill='none' stroke='%23C1272D' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+
+  --font-display: 'Markazi Text', Georgia, serif;
   --font-fa:  'Vazirmatn', system-ui, sans-serif;
   --font-lat: 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
 
-  --t-display: clamp(2rem, 1.28rem + 3.1vw, 3.35rem);
-  --t-h2:      clamp(1.5rem, 1.18rem + 1.5vw, 2.15rem);
+  --t-display: clamp(2.6rem, 1.6rem + 4vw, 4.9rem);
+  --t-h2:      clamp(2rem, 1.45rem + 2.1vw, 3.2rem);
   --t-h3:      1.125rem;
-  --t-body:    1.0625rem;   /* 17px — reading comfort floor for Persian body */
-  --t-sm:      0.9375rem;   /* 15px */
-  --t-xs:      0.8125rem;   /* 13px — hard floor, nothing on this page is smaller */
+  --t-body:    1.0625rem;
+  --t-sm:      0.9375rem;
+  --t-xs:      0.8125rem;   /* hard floor */
 
-  /* ── Space (4px base) ─────────────────────────────────────────────────── */
   --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px; --s5: 24px;
   --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px; --s10: 128px;
+  --section: clamp(72px, 5rem + 4vw, 136px);
 
-  /* ── Shape ────────────────────────────────────────────────────────────── */
-  --r-sm: 4px; --r-md: 8px; --r-lg: 12px; --r-pill: 999px;
+  --r-sm: 4px; --r-md: 8px; --r-lg: 14px; --r-pill: 999px;
+  --lift-1: 0 1px 0 var(--line);
+  --lift-2: 0 22px 44px -22px rgba(23,24,28,.32), 0 2px 6px rgba(23,24,28,.06);
 
-  /* Elevation is deliberately near-absent: two levels, both reserved for
-     things that genuinely float (sticky nav, device frames). Everything else
-     is separated by a rule. */
-  --lift-1: 0 1px 2px rgba(22,24,29,.05);
-  --lift-2: 0 12px 32px -12px rgba(22,24,29,.22), 0 2px 6px rgba(22,24,29,.05);
-
-  --maxw: 1140px;
-  --measure: 68ch;         /* prose column cap */
+  --maxw: 1200px;
+  --measure: 64ch;
   --nav-h: 64px;
   --ease: cubic-bezier(.2,.7,.3,1);
   color-scheme: light;
@@ -138,24 +117,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper:     #101216;
-    --surface:   #171A20;
-    --sunken:    #1D2027;
-    --line:      #272B34;
-    --line-2:    #3A3F4C;
-    --ink:       #F1F0EC;
-    --ink-2:     #C7CAD2;
-    --ink-muted: #9AA0AE;   /* 7.2:1 on the dark ground */
+    --paper:     #121316;
+    --surface:   #1A1C21;
+    --sunken:    #202329;
+    --line:      #2A2D35;
+    --line-2:    #3D414C;
+    --ink:       #F1EFE9;
+    --ink-2:     #C9CBD2;
+    --ink-muted: #9DA1AD;
     --amber-ink: #F0BA6B;
-    --amber-bg:  #2A2113;
-    --blue:      #7FA9F0;
-    --blue-bg:   #16203A;
-    --go:        #4ADE80;
-    --go-bg:     #12241A;
-    --stop:      #F87171;
-    --stop-bg:   #2A1618;
-    --lift-1: 0 1px 2px rgba(0,0,0,.4);
-    --lift-2: 0 12px 32px -12px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.3);
+    --amber-bg:  #2B2214;
+    --hl:        #5A4310;
+    --blue:      #8AB0F2;
+    --go:        #5BD68A;
+    --go-bg:     #13261B;
+    --stop:      #F47C7C;
+    --stop-bg:   #2C1719;
+    --bezel:     #050506;
+    --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5C25 4.2 52 3.6 78 5.2c14 .9 27 2.4 39 4.6' fill='none' stroke='%23F47C7C' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
+    --lift-2: 0 22px 44px -22px rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.3);
     color-scheme: dark;
   }
 }
@@ -164,437 +144,367 @@
 *, *::before, *::after { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: calc(var(--nav-h) + var(--s4)); }
 body {
-  margin: 0;
-  background: var(--paper);
-  color: var(--ink);
-  font-family: var(--font-fa);
-  font-size: var(--t-body);
-  line-height: 1.9;            /* Persian needs the extra leading */
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--font-fa); font-size: var(--t-body); line-height: 1.9;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
   overflow-x: hidden;
 }
 html[lang="en"] body { font-family: var(--font-lat); line-height: 1.65; }
 img { max-width: 100%; height: auto; display: block; }
 a { color: inherit; text-decoration: none; }
 button { font: inherit; }
-:where(h1,h2,h3,h4,p,ul,ol,figure) { margin: 0; }
-ul { padding: 0; list-style: none; }
+:where(h1,h2,h3,p,ul,ol,dl,dd,figure,blockquote) { margin: 0; }
+:where(ul,ol) { padding: 0; list-style: none; }
 
-/* Focus: a solid two-tone ring that survives both themes and every surface.
-   Never removed — only replaced with something more visible. */
-:focus-visible {
-  outline: 2px solid var(--blue);
-  outline-offset: 3px;
-  border-radius: var(--r-sm);
-}
+:focus-visible { outline: 2px solid var(--blue); outline-offset: 3px; border-radius: var(--r-sm); }
 
-/* ── Bidi isolation ─────────────────────────────────────────────────────────
-   Persian body copy is full of Italian terms, Latin acronyms and figures. Each
-   gets an isolation class so a stray "D1" or "€20" cannot reorder the Persian
-   sentence around it — the single most common way an RTL page breaks. */
-.lat  { direction: ltr; unicode-bidi: isolate; font-family: var(--font-lat); }
-.num  { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
-/* Italian exam text. It reads as a quoted official document by structure —
-   sunken ground, a rule on the leading edge, a labelled origin — rather than
-   by importing a whole third typeface for a handful of strings. */
-.it {
-  direction: ltr; unicode-bidi: isolate; text-align: left;
-  font-family: var(--font-lat); font-size: var(--t-sm); line-height: 1.55;
-  background: var(--sunken);
-  border-inline-start: 3px solid var(--line-2);
-  border-radius: 0 var(--r-md) var(--r-md) 0;
-  padding: var(--s3) var(--s4);
-  color: var(--ink-2);
-}
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+/* ── Bidi ───────────────────────────────────────────────────────────────── */
+.lat { direction: ltr; unicode-bidi: isolate; font-family: var(--font-lat); }
+.num { direction: ltr; unicode-bidi: isolate; font-variant-numeric: tabular-nums; }
+.fa-text { direction: rtl; unicode-bidi: isolate; font-family: var(--font-fa); line-height: 1.9; }
+[dir="rtl"] .flip { transform: scaleX(-1); }
 
 /* ── Layout ─────────────────────────────────────────────────────────────── */
 .wrap { max-width: var(--maxw); margin-inline: auto; padding-inline: var(--s5); }
-section { padding-block: var(--s9); }
-/* Major sections are separated by a rule, not by a colour change or a card —
-   the hairline is this system's whole idea of "a new topic starts here". */
-.ruled { border-top: 1px solid var(--line); }
-.prose { max-width: var(--measure); }
+.sec { padding-block: var(--section); border-top: 1px solid var(--line); }
+/* Heading in a side column, content in the main one. Not every section uses
+   it — the point is that sections stop sharing one skeleton. */
+.split { display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: var(--s8); align-items: start; }
 
-/* ── Type scale ─────────────────────────────────────────────────────────── */
-h1 { font-size: var(--t-display); font-weight: 800; line-height: 1.45; letter-spacing: 0; }
-h2 { font-size: var(--t-h2); font-weight: 700; line-height: 1.5; letter-spacing: 0; }
-/* Headings set their own rag: a hand-placed <br> only balances at one width,
-   and Persian and English break at completely different points. */
+/* ── Type ───────────────────────────────────────────────────────────────── */
+h1, h2 { font-family: var(--font-display); font-weight: 700; letter-spacing: 0; }
+h1 { font-size: var(--t-display); line-height: 1.32; }
+h2 { font-size: var(--t-h2); line-height: 1.38; }
+h3 { font-size: var(--t-h3); font-weight: 700; line-height: 1.6; }
+html[lang="en"] h1 { line-height: 1.02; letter-spacing: -.012em; }
+html[lang="en"] h2 { line-height: 1.08; letter-spacing: -.008em; }
+html[lang="en"] h3 { line-height: 1.35; }
 h1, h2, h3, .lede { text-wrap: balance; }
 p { text-wrap: pretty; }
-h3 { font-size: var(--t-h3); font-weight: 700; line-height: 1.6; }
-html[lang="en"] h1 { line-height: 1.08; letter-spacing: -.025em; }
-html[lang="en"] h2 { line-height: 1.15; letter-spacing: -.02em; }
-html[lang="en"] h3 { line-height: 1.35; letter-spacing: -.01em; }
-
-.lede { font-size: 1.09rem; color: var(--ink-muted); max-width: var(--measure); }
+.lede { font-size: 1.125rem; color: var(--ink-2); max-width: var(--measure); }
 .small { font-size: var(--t-sm); color: var(--ink-muted); }
+.head { max-width: 46rem; margin-bottom: var(--s7); }
+.head .lede { margin-top: var(--s4); }
 
-/* Section label. Uppercase and letter-spacing are Latin typographic devices —
-   Persian has no case and letter-spacing severs its joined letterforms, so the
-   Persian variant drops both instead of inheriting a broken version. */
-.eyebrow {
-  display: block; font-size: var(--t-xs); font-weight: 700;
-  color: var(--amber-ink); margin-bottom: var(--s3);
+/* The red pen: a hand-drawn stroke under the one word a heading is about. */
+.pen {
+  background: var(--pen) left 100% / 100% .3em no-repeat;
+  padding-bottom: .12em;
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
 }
-html[lang="en"] .eyebrow { text-transform: uppercase; letter-spacing: .14em; }
-
-.section-head { margin-bottom: var(--s7); max-width: var(--measure); }
 
 /* ── Buttons ────────────────────────────────────────────────────────────── */
 .btn {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
-  min-height: 48px;                       /* touch target, with room to spare */
-  padding: var(--s3) var(--s6);
-  border-radius: var(--r-pill);
+  min-height: 52px; padding: var(--s3) var(--s6);
+  border-radius: var(--r-pill); border: 1.5px solid transparent; cursor: pointer;
   font-weight: 700; font-size: var(--t-sm);
-  border: 1.5px solid transparent; cursor: pointer;
-  transition: background-color .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease);
+  transition: background-color .18s var(--ease), border-color .18s var(--ease), transform .18s var(--ease);
 }
+.btn:active { transform: translateY(1px); }
 .btn svg { width: 18px; height: 18px; flex: none; }
-.btn-primary { background: var(--amber); color: var(--on-amber); }
-.btn-primary:hover { background: #d8912a; }
+.btn-primary { background: var(--amber); color: var(--on-amber); box-shadow: inset 0 -2px 0 rgba(0,0,0,.14); }
+.btn-primary:hover { background: #D8912A; }
 .btn-secondary { background: transparent; color: var(--ink); border-color: var(--line-2); }
 .btn-secondary:hover { background: var(--sunken); border-color: var(--ink-muted); }
 .btn-block { width: 100%; }
 
-/* ── Nav ────────────────────────────────────────────────────────────────── */
-.nav {
-  position: sticky; top: 0; z-index: 50;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter: saturate(1.4) blur(10px);
-  border-bottom: 1px solid transparent;
-  transition: border-color .2s, box-shadow .2s;
+.link-arrow {
+  display: inline-flex; align-items: center; gap: var(--s2);
+  font-weight: 700; color: var(--ink); min-height: 44px;
+  text-decoration: underline; text-decoration-color: var(--line-2);
+  text-underline-offset: .35em; text-decoration-thickness: 1.5px;
+  transition: text-decoration-color .18s;
 }
-.nav[data-stuck] { border-bottom-color: var(--line); box-shadow: var(--lift-1); }
-.nav-in {
-  max-width: var(--maxw); margin-inline: auto;
-  padding: var(--s2) var(--s5); min-height: var(--nav-h);
-  display: flex; align-items: center; gap: var(--s5);
-}
-.brand { display: flex; align-items: center; gap: var(--s2); font-weight: 800; font-size: 1.0625rem; flex: none; }
-.brand-mark {
-  width: 30px; height: 30px; border-radius: 7px; flex: none;
-  background: var(--amber); color: var(--on-amber);
-  display: grid; place-items: center;
-  font-family: var(--font-lat); font-weight: 800; font-size: 16px;
-}
-.nav-links { display: flex; gap: var(--s5); margin-inline-start: auto; align-items: center; }
-.nav-links a {
-  color: var(--ink-muted); font-size: var(--t-sm); font-weight: 500;
-  padding-block: var(--s2); border-bottom: 2px solid transparent;
-  transition: color .18s, border-color .18s;
-}
-.nav-links a:hover { color: var(--ink); border-bottom-color: var(--amber); }
-.nav-end { display: flex; align-items: center; gap: var(--s3); flex: none; margin-inline-start: auto; }
-.nav-cta { display: none; }
+.link-arrow:hover { text-decoration-color: var(--ink); }
+.link-arrow svg { width: 18px; height: 18px; flex: none; }
 
-/* Language switch: two real buttons, pressed state announced. */
+/* ── Nav ────────────────────────────────────────────────────────────────── */
+.nav { position: sticky; top: 0; z-index: 50; background: var(--paper); border-bottom: 1px solid transparent; transition: border-color .2s; }
+.nav[data-stuck] { border-bottom-color: var(--line); }
+.nav-in { max-width: var(--maxw); margin-inline: auto; padding: var(--s2) var(--s5); min-height: var(--nav-h); display: flex; align-items: center; gap: var(--s6); }
+.brand { display: flex; align-items: baseline; gap: var(--s2); flex: none; }
+.brand b { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; }
+.brand small { font-family: var(--font-lat); font-size: var(--t-xs); color: var(--ink-muted); font-weight: 500; direction: ltr; unicode-bidi: isolate; }
+.nav-links { display: flex; gap: var(--s5); align-items: center; }
+.nav-links a { color: var(--ink-muted); font-size: var(--t-sm); font-weight: 500; padding-block: var(--s2); transition: color .18s; }
+.nav-links a:hover { color: var(--ink); }
+.nav-end { display: flex; align-items: center; gap: var(--s3); margin-inline-start: auto; flex: none; }
+.nav-cta { min-height: 44px; padding-inline: var(--s5); }
+
 .lang { display: flex; border: 1px solid var(--line-2); border-radius: var(--r-pill); overflow: hidden; flex: none; }
-.lang button {
-  background: none; border: 0; color: var(--ink-muted); cursor: pointer;
-  min-height: 44px; min-width: 44px; padding-inline: var(--s4);
-  font-size: var(--t-xs); font-weight: 700;
-  transition: background-color .18s, color .18s;
-}
+.lang button { background: none; border: 0; color: var(--ink-muted); cursor: pointer; min-height: 44px; min-width: 44px; padding-inline: var(--s4); font-size: var(--t-xs); font-weight: 700; transition: background-color .18s, color .18s; }
 .lang button:hover { color: var(--ink); }
 .lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 
-/* Mobile menu: a native <details> disclosure. No JS, keyboard-operable and
-   screen-reader-announced for free, and it still works if scripts fail. */
 .menu { display: none; position: relative; flex: none; }
-.menu > summary {
-  list-style: none; cursor: pointer;
-  width: 44px; height: 44px; display: grid; place-items: center;
-  border: 1px solid var(--line-2); border-radius: var(--r-md); color: var(--ink);
-}
+.menu > summary { list-style: none; cursor: pointer; width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line-2); border-radius: var(--r-md); color: var(--ink); }
 .menu > summary::-webkit-details-marker { display: none; }
 .menu > summary svg { width: 20px; height: 20px; }
 .menu[open] > summary { background: var(--sunken); }
-.menu-panel {
-  position: absolute; inset-inline-end: 0; top: calc(100% + var(--s2));
-  min-width: 210px; background: var(--surface);
-  border: 1px solid var(--line); border-radius: var(--r-lg);
-  box-shadow: var(--lift-2); padding: var(--s2); z-index: 60;
-}
-.menu-panel a {
-  display: block; padding: var(--s3) var(--s4); border-radius: var(--r-md);
-  font-size: var(--t-sm); font-weight: 500; color: var(--ink-2);
-}
+.menu-panel { position: absolute; inset-inline-end: 0; top: calc(100% + var(--s2)); min-width: 220px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--lift-2); padding: var(--s2); z-index: 60; }
+.menu-panel a { display: block; padding: var(--s3) var(--s4); border-radius: var(--r-md); font-size: var(--t-sm); font-weight: 500; color: var(--ink-2); }
 .menu-panel a:hover { background: var(--sunken); color: var(--ink); }
 
-.skip-link {
-  position: absolute; inset-inline-start: -9999px; top: var(--s2); z-index: 100;
-  background: var(--ink); color: var(--paper);
-  padding: var(--s3) var(--s5); border-radius: var(--r-md); font-weight: 700;
-}
+.skip-link { position: absolute; inset-inline-start: -9999px; top: var(--s2); z-index: 100; background: var(--ink); color: var(--paper); padding: var(--s3) var(--s5); border-radius: var(--r-md); font-weight: 700; }
 .skip-link:focus { inset-inline-start: var(--s5); }
 
 /* ── Hero ───────────────────────────────────────────────────────────────── */
 .hero { padding-block: var(--s8) var(--s9); }
-.hero-grid { display: grid; grid-template-columns: 1.05fr .95fr; gap: var(--s8); align-items: center; }
-.hero h1 { margin-bottom: var(--s5); }
-/* The one place a colour is allowed to carry emphasis in a heading. It is a
-   solid ink-weight amber, not a gradient fade: the old build faded every h2 to
-   50% opacity, which looked like a style and read like a rendering bug. */
-.hero h1 .hl { color: var(--amber-ink); }
-.hero .lede { margin-bottom: var(--s6); font-size: 1.14rem; }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr); gap: var(--s9); align-items: start; }
+.hero h1 { margin-bottom: var(--s6); }
+.hero .lede { margin-bottom: var(--s6); }
+.cta-row { display: flex; gap: var(--s5); flex-wrap: wrap; align-items: center; margin-bottom: var(--s4); }
+.cta-note { font-size: var(--t-xs); color: var(--ink-muted); max-width: 52ch; }
 
-.badge {
-  display: inline-flex; align-items: center; gap: var(--s2);
-  background: var(--go-bg); color: var(--go);
-  border: 1px solid color-mix(in srgb, var(--go) 30%, transparent);
-  border-radius: var(--r-pill); padding: var(--s1) var(--s3);
-  font-size: var(--t-xs); font-weight: 700; margin-bottom: var(--s5);
+/* ── The question card ──────────────────────────────────────────────────────
+   One real statement from the bank, answerable right here. Radios + :has(),
+   so it works without JavaScript and is a native radio group to a screen
+   reader. Two offset sheets behind it say "one of a stack". */
+.sheet { position: relative; max-width: 500px; margin-inline: auto; width: 100%; margin-top: var(--s6); }
+.sheet::before, .sheet::after {
+  content: ""; position: absolute; inset: 0;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-md);
 }
-.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
-
-.cta-row { display: flex; gap: var(--s3); flex-wrap: wrap; margin-bottom: var(--s4); }
-/* Answers "what happens after I press this?" — the question the old page's
-   single "Request access" button left the visitor holding. */
-.cta-note { display: flex; align-items: flex-start; gap: var(--s2); font-size: var(--t-xs); color: var(--ink-muted); }
-.cta-note svg { width: 15px; height: 15px; flex: none; margin-top: 5px; color: var(--ink-muted); }
-
-/* Device frame. Restrained on purpose: a hairline plate that says "this is a
-   phone screen", not a photorealistic mockup competing with its own contents. */
-.phone {
-  position: relative; margin-inline: auto;
-  width: 100%; max-width: 300px;
-  border: 1px solid var(--line-2); border-radius: 26px;
-  background: var(--surface); padding: var(--s2);
+.sheet::before { transform: rotate(-2.4deg) translate(-6px, 10px); opacity: .55; }
+.sheet::after  { transform: rotate(1.6deg) translate(5px, 6px); opacity: .8; }
+.q {
+  position: relative; z-index: 1;
+  background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-md);
   box-shadow: var(--lift-2);
 }
-.phone::before {
-  content: ""; position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
-  width: 62px; height: 4px; border-radius: var(--r-pill);
-  background: var(--line-2); opacity: .8; z-index: 2;
+.q-head {
+  display: flex; justify-content: space-between; align-items: center; gap: var(--s3);
+  padding: var(--s3) var(--s5); border-bottom: 1px dashed var(--line-2);
+  font-size: var(--t-xs); color: var(--ink-muted);
 }
-.phone img { border-radius: 20px; }
-.hero .phone { max-width: 320px; }
+.q-head b { color: var(--amber-ink); font-weight: 700; }
+.q-body {
+  direction: ltr;                     /* the ministerial screen: figure left, statement right */
+  display: grid; grid-template-columns: 112px 1fr; gap: var(--s5); align-items: center;
+  padding: var(--s6) var(--s5) var(--s5);
+}
+.q-sign { width: 112px; border-radius: var(--r-sm); }   /* the sign art ships on a white plate; round it so dark mode reads it as one */
+.q-text { font-family: var(--font-lat); font-size: 1.22rem; font-weight: 600; line-height: 1.45; color: var(--ink); text-align: left; }
 
-/* ── Proof band ─────────────────────────────────────────────────────────── */
-.proof { display: grid; grid-template-columns: repeat(4, 1fr); }
-.proof-item { padding: var(--s5) var(--s4); border-inline-start: 1px solid var(--line); }
-.proof-item:first-child { border-inline-start: 0; }
-.proof .n {
-  display: block; font-size: clamp(1.6rem, 1.2rem + 1.6vw, 2.3rem); font-weight: 800;
-  line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; margin-bottom: var(--s1);
+.vf { border: 0; padding: 0 var(--s5) var(--s5); margin: 0; min-inline-size: 0; }
+.vf legend { padding: 0; margin-bottom: var(--s3); font-size: var(--t-sm); font-weight: 700; color: var(--ink-2); }
+.vf-row { direction: ltr; display: grid; grid-template-columns: 1fr 1fr; gap: var(--s3); }
+.vf input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.vf label {
+  position: relative; cursor: pointer; min-height: 64px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  border: 1.5px solid var(--line-2); border-radius: var(--r-md); background: var(--paper);
+  transition: background-color .18s var(--ease), border-color .18s var(--ease), color .18s var(--ease);
 }
-.proof .l { font-size: var(--t-xs); color: var(--ink-muted); font-weight: 500; line-height: 1.5; }
+.vf label:hover { border-color: var(--ink-muted); }
+.vf label b { font-family: var(--font-lat); font-size: 1.05rem; letter-spacing: .08em; line-height: 1.3; }
+.vf label span { font-size: var(--t-xs); color: var(--ink-muted); line-height: 1.4; }
+.vf input:focus-visible + label { outline: 2px solid var(--blue); outline-offset: 3px; }
+.vf-ico { position: absolute; top: 8px; inset-inline-end: 8px; width: 18px; height: 18px; display: none; }
+#q-v:checked + label { background: var(--go-bg); border-color: var(--go); color: var(--go); }
+#q-f:checked + label { background: var(--stop-bg); border-color: var(--stop); color: var(--stop); }
+#q-v:checked + label span, #q-f:checked + label span { color: inherit; }
+.vf input:checked + label .vf-ico { display: block; }
+/* Answered wrong: the right answer is shown by outline and a mark, not only hue. */
+.q:has(#q-f:checked) label[for="q-v"] { border-color: var(--go); border-style: dashed; color: var(--go); }
+.q:has(#q-f:checked) label[for="q-v"] .vf-ico { display: block; }
 
-/* ── Screens gallery ────────────────────────────────────────────────────── */
-.screens { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s6); }
-.screens figure { display: flex; flex-direction: column; gap: var(--s4); }
-.screens figcaption { font-size: var(--t-sm); color: var(--ink-muted); }
-.screens figcaption b { display: block; color: var(--ink); font-weight: 700; margin-bottom: var(--s1); }
+.q-reveal > * { display: none; }
+.q-reveal { padding-inline: var(--s5); }
+.q:has(:checked) .q-reveal { border-top: 1px solid var(--line); padding-block: var(--s5); background: var(--sunken); border-radius: 0 0 var(--r-md) var(--r-md); animation: reveal .3s var(--ease); }
+.q:has(#q-v:checked) .v-yes, .q:has(#q-f:checked) .v-no { display: flex; }
+.q:has(:checked) .q-explain { display: grid; }
+.q:has(:checked) .q-more { display: inline-flex; }
+@keyframes reveal { from { opacity: 0; transform: translateY(-4px); } }
 
-/* ── Lists that carry meaning ───────────────────────────────────────────── */
-/* Icon + text, never icon alone, and never colour alone: the glyph shape (✕ vs
-   ✓) and the label both survive greyscale and colour-blindness. */
-.marks { display: grid; gap: var(--s4); }
-.marks li { display: grid; grid-template-columns: auto 1fr; gap: var(--s3); align-items: start; }
-.marks .mark {
-  width: 24px; height: 24px; border-radius: 50%; flex: none;
-  display: grid; place-items: center; margin-top: 3px;
-}
-.marks .mark svg { width: 14px; height: 14px; }
-.mark-no { background: var(--stop-bg); color: var(--stop); }
-.mark-yes { background: var(--go-bg); color: var(--go); }
-.marks b { color: var(--ink); font-weight: 700; }
-.marks li > div { color: var(--ink-muted); font-size: var(--t-sm); }
+.verdict { align-items: center; gap: var(--s2); font-size: var(--t-sm); margin-bottom: var(--s4); }
+.verdict svg { width: 22px; height: 22px; padding: 4px; border-radius: 50%; flex: none; }
+.v-yes svg { background: var(--go); color: var(--surface); }
+.v-no svg  { background: var(--stop); color: var(--surface); }
+.v-yes b { color: var(--go); }
+.v-no b  { color: var(--stop); }
+.q-explain { gap: var(--s3); font-size: var(--t-sm); }
+.q-explain dt { font-size: var(--t-xs); font-weight: 700; color: var(--ink-muted); }
+.q-explain dd { color: var(--ink); margin-top: -2px; }
+.q-explain .gloss-en { color: var(--ink-muted); font-style: italic; margin-top: var(--s1); }
+.q-more { margin-top: var(--s4); }
 
-/* ── Numbered steps (the teaching pipeline) ─────────────────────────────── */
-.steps { display: grid; gap: 0; border-top: 1px solid var(--line); }
-.step {
-  display: grid; grid-template-columns: auto 1fr auto; gap: var(--s5);
-  align-items: start; padding-block: var(--s5);
-  border-bottom: 1px solid var(--line);
+/* ── Exam facts: a printed form, not a stat band ────────────────────────── */
+.facts { display: grid; grid-template-columns: repeat(6, 1fr); border-block: 2px solid var(--ink); }
+.facts > div { padding: var(--s3) var(--s4) var(--s4); border-inline-start: 1px solid var(--line-2); display: flex; flex-direction: column; justify-content: space-between; gap: var(--s3); }
+.facts > div:first-child { border-inline-start: 0; }
+.facts > div:nth-child(4) { border-inline-start: 2px solid var(--ink); }
+.facts dt { font-size: var(--t-xs); color: var(--ink-muted); font-weight: 500; line-height: 1.5; }
+.facts dd { font-family: var(--font-display); font-weight: 700; font-size: clamp(2rem, 1.5rem + 1.5vw, 2.85rem); line-height: 1; color: var(--ink); font-variant-numeric: tabular-nums; }
+.facts-cap { display: flex; justify-content: space-between; font-size: var(--t-xs); color: var(--ink-muted); padding-top: var(--s2); }
+/* The facts strip already closes on a 2px rule; the next section needs no second one. */
+#problem { border-top: 0; }
+
+/* ── Problem: the sentence under a magnifying glass ─────────────────────── */
+.specimen { margin-block: var(--s7); padding: var(--s7) 0 var(--s6); border-block: 1px solid var(--line); }
+.specimen figcaption { font-size: var(--t-sm); color: var(--ink-muted); margin-bottom: var(--s5); }
+.spec-it {
+  direction: ltr; text-align: left; unicode-bidi: isolate;
+  font-family: var(--font-display); font-weight: 600;
+  font-size: clamp(1.9rem, 1.1rem + 3.2vw, 3.6rem); line-height: 1.3; color: var(--ink);
 }
-.step-n {
-  width: 34px; height: 34px; border-radius: var(--r-md); flex: none;
-  border: 1px solid var(--line-2); background: var(--surface);
-  display: grid; place-items: center;
-  font-weight: 700; font-size: var(--t-sm);
-  color: var(--ink-muted); font-variant-numeric: tabular-nums;
+.spec-it .m { background: var(--pen) left 100% / 100% .22em no-repeat; padding-bottom: .1em; }
+.spec-it .trap { background: linear-gradient(transparent 52%, var(--hl) 52%, var(--hl) 92%, transparent 92%); }
+.spec-it sup { font-family: var(--font-fa); font-size: .32em; font-weight: 700; color: var(--stop); vertical-align: super; margin-inline-start: .1em; }
+.gloss { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s5) var(--s7); margin-top: var(--s7); counter-reset: g; }
+.gloss li { counter-increment: g; display: grid; grid-template-columns: auto 1fr; gap: var(--s3); font-size: var(--t-sm); color: var(--ink-2); }
+.gloss li::before {
+  content: counter(g, persian); width: 26px; height: 26px; border-radius: 50%;
+  border: 1.5px solid var(--stop); color: var(--stop);
+  display: grid; place-items: center; font-size: var(--t-xs); font-weight: 700; margin-top: 4px;
 }
-html[lang="en"] .step-n, html[lang="en"] .how .k { font-family: var(--font-lat); }
+html[lang="en"] .gloss li::before { content: counter(g); }
+.gloss .lat { display: block; direction: inherit; font-weight: 600; color: var(--ink); }
+
+.tried { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 var(--s7); border-top: 1px solid var(--line); }
+.tried > div { padding-block: var(--s5); border-bottom: 1px solid var(--line); }
+.tried dt { display: flex; align-items: center; gap: var(--s2); font-weight: 700; margin-bottom: var(--s1); }
+.tried dt svg { width: 16px; height: 16px; color: var(--stop); flex: none; }
+.tried dd { font-size: var(--t-sm); color: var(--ink-muted); }
+
+/* ── How it teaches: sticky screen + steps ──────────────────────────────── */
+.how-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s9); align-items: start; }
+.how-fig { position: sticky; top: calc(var(--nav-h) + var(--s6)); }
+.steps { counter-reset: s; }
+.step { display: grid; grid-template-columns: 3.2rem 1fr; gap: var(--s4); padding-block: var(--s5); border-top: 1px solid var(--line); }
+.step:last-child { border-bottom: 1px solid var(--line); }
+.step-n { font-family: var(--font-display); font-weight: 700; font-size: 2.4rem; line-height: 1; color: var(--amber-ink); font-variant-numeric: tabular-nums; }
 .step h3 { margin-bottom: var(--s2); }
-.step p { color: var(--ink-muted); font-size: var(--t-sm); max-width: 62ch; }
-.tag {
-  align-self: center; flex: none;
-  font-family: var(--font-lat); direction: ltr;
-  font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted);
-  background: var(--sunken); border: 1px solid var(--line);
-  border-radius: var(--r-pill); padding: var(--s1) var(--s3);
-  white-space: nowrap;
-}
+.step p { color: var(--ink-muted); font-size: var(--t-sm); }
+.tag { display: inline-block; margin-top: var(--s3); font-family: var(--font-lat); direction: ltr; unicode-bidi: isolate; font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 0 var(--s2); line-height: 1.8; }
 
-/* ── Feature cards ──────────────────────────────────────────────────────── */
-/* A card is used only where items are genuinely parallel and independently
-   scannable. Prose and steps get rules instead — the old build wrapped every
-   single thing on the page in the same glass box, which flattened all
-   hierarchy into one texture. */
-.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s5); }
-.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s5); }
-.card {
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--r-lg); padding: var(--s5);
-  transition: border-color .2s var(--ease);
-}
-.card:hover { border-color: var(--line-2); }
-.card h3 { margin-bottom: var(--s2); }
-.card p { color: var(--ink-muted); font-size: var(--t-sm); }
-.ico {
-  width: 38px; height: 38px; border-radius: var(--r-md);
-  display: grid; place-items: center; margin-bottom: var(--s4);
-  background: var(--amber-bg); color: var(--amber-ink);
-}
-.ico svg { width: 20px; height: 20px; }
+/* ── Device frame ───────────────────────────────────────────────────────── */
+.phone { background: var(--bezel); border-radius: 30px; padding: 7px; box-shadow: var(--lift-2); max-width: 300px; margin-inline: auto; }
+.phone img { border-radius: 24px; }
 
-/* ── Getting started ────────────────────────────────────────────────────── */
-.howto { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--s5); counter-reset: how; }
-.how { padding-top: var(--s4); border-top: 3px solid var(--line-2); }
-.how:first-child { border-top-color: var(--amber); }
-.how .k {
-  font-size: var(--t-xs); font-weight: 700;
-  color: var(--ink-muted); display: block; margin-bottom: var(--s2);
-}
-.how h3 { margin-bottom: var(--s2); }
-.how p { color: var(--ink-muted); font-size: var(--t-sm); }
+/* ── Inside: a staggered strip of screens ───────────────────────────────── */
+.inside-grid { display: grid; grid-template-columns: minmax(0, 6fr) minmax(0, 5fr); gap: var(--s8); align-items: start; }
+.screens { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s6); align-items: start; }
+.screens figure { display: grid; gap: var(--s5); }
+.screens figure:nth-child(2) { margin-top: var(--s9); }
+.screens figcaption { font-size: var(--t-sm); color: var(--ink-muted); max-width: 34ch; }
+.screens figcaption b { display: block; color: var(--ink); font-weight: 700; font-size: var(--t-body); margin-bottom: var(--s1); }
 
-/* ── Pricing ────────────────────────────────────────────────────────────── */
-.price-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--s5); max-width: 760px; margin-inline: auto; }
-.plan {
-  position: relative; display: flex; flex-direction: column;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--r-lg); padding: var(--s6);
-}
-.plan.best { border-color: var(--amber); border-width: 2px; padding: calc(var(--s6) - 1px); }
-.plan-flag {
-  position: absolute; top: 0; inset-inline-start: var(--s6); transform: translateY(-50%);
-  background: var(--amber); color: var(--on-amber);
-  font-size: var(--t-xs); font-weight: 700;
-  padding: var(--s1) var(--s3); border-radius: var(--r-pill);
-}
-.plan .name { font-size: var(--t-sm); font-weight: 700; color: var(--ink-muted); margin-bottom: var(--s3); }
-.plan .amount {
-  font-family: var(--font-lat); direction: ltr; display: inline-block;
-  font-size: 2.75rem; font-weight: 800; line-height: 1; color: var(--ink);
-  font-variant-numeric: tabular-nums;
-}
-.plan .per { color: var(--ink-muted); font-size: var(--t-sm); margin: var(--s2) 0 var(--s5); }
-.plan .save { color: var(--go); font-weight: 700; }
-.plan ul { display: grid; gap: var(--s3); margin-bottom: var(--s6); flex: 1; }
-.plan li { display: grid; grid-template-columns: auto 1fr; gap: var(--s2); align-items: start; font-size: var(--t-sm); color: var(--ink-muted); }
-.plan li svg { width: 16px; height: 16px; color: var(--go); margin-top: 6px; flex: none; }
+.also { position: sticky; top: calc(var(--nav-h) + var(--s6)); }
+.also .side-h { margin-bottom: var(--s5); }
+.side-h { font-family: var(--font-display); font-size: 2rem; line-height: 1.3; }
+.also ul { display: grid; border-top: 1px solid var(--line); }
+.also li { padding-block: var(--s5); border-bottom: 1px solid var(--line); }
+.also li b { display: block; margin-bottom: var(--s1); }
+.also li span { font-size: var(--t-sm); color: var(--ink-muted); }
 
-.callout {
-  display: grid; grid-template-columns: auto 1fr; gap: var(--s3);
-  align-items: start; max-width: var(--measure); margin-inline: auto;
-  background: var(--blue-bg); border: 1px solid color-mix(in srgb, var(--blue) 22%, transparent);
-  border-radius: var(--r-lg); padding: var(--s4) var(--s5);
-  font-size: var(--t-sm); color: var(--ink-2);
-}
-.callout svg { width: 18px; height: 18px; color: var(--blue); margin-top: 5px; flex: none; }
-.callout b { color: var(--ink); font-weight: 700; }
+/* ── Getting started: the actual conversation ───────────────────────────── */
+.chat { background: var(--sunken); border: 1px solid var(--line); border-radius: var(--r-lg); padding: var(--s6) var(--s5); display: grid; gap: var(--s5); }
+.turn { display: grid; gap: var(--s2); }
+.turn-cap { font-size: var(--t-sm); color: var(--ink-muted); }
+.turn-cap b { color: var(--ink); display: block; font-size: var(--t-body); }
+.turn-cap .k { font-family: var(--font-display); font-weight: 700; color: var(--amber-ink); margin-inline-end: var(--s2); font-size: 1.3em; }
+.bubble { max-width: 86%; padding: var(--s3) var(--s4); border-radius: 16px; font-size: var(--t-sm); line-height: 1.85; box-shadow: 0 1px 0 rgba(0,0,0,.06); }
+.bubble-in  { background: var(--surface); justify-self: start; border-end-start-radius: 4px; }
+.bubble-out { background: var(--amber-bg); justify-self: end; border-end-end-radius: 4px; font-family: var(--font-lat); direction: ltr; }
+.bubble .who { display: block; font-size: var(--t-xs); font-weight: 700; color: var(--blue); }
+.bubble .en { display: block; font-family: var(--font-lat); direction: ltr; text-align: left; color: var(--ink-muted); font-size: var(--t-xs); line-height: 1.5; margin-top: var(--s2); }
+.bubble-btn { display: block; margin-top: var(--s3); text-align: center; border-top: 1px solid var(--line); padding-top: var(--s2); color: var(--blue); font-weight: 700; font-size: var(--t-sm); }
 
-.note {
-  margin-top: var(--s6); font-size: var(--t-sm); color: var(--ink-muted);
-  border-top: 1px solid var(--line); padding-top: var(--s4);
-  max-width: var(--measure); margin-inline: auto;
-}
+/* ── Pricing: one product, two durations ────────────────────────────────── */
+.price-grid { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--s8); align-items: start; }
+.included { display: grid; gap: var(--s3); }
+.included li { display: grid; grid-template-columns: auto 1fr; gap: var(--s3); align-items: start; font-size: var(--t-sm); color: var(--ink-2); padding-bottom: var(--s3); border-bottom: 1px solid var(--line); }
+.included svg { width: 16px; height: 16px; color: var(--go); margin-top: 7px; }
+.fares { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
+.fare { position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-md); padding: var(--s6) var(--s5) var(--s5); }
+.fare.best { border: 2px solid var(--amber); padding: calc(var(--s6) - 1px) calc(var(--s5) - 1px) calc(var(--s5) - 1px); }
+.fare-flag { position: absolute; top: 0; inset-inline-start: var(--s5); transform: translateY(-50%); background: var(--amber); color: var(--on-amber); font-size: var(--t-xs); font-weight: 700; padding: 0 var(--s3); border-radius: var(--r-pill); line-height: 1.9; }
+.fare .name { font-size: var(--t-sm); font-weight: 700; color: var(--ink-muted); }
+.fare .amount { font-family: var(--font-display); direction: ltr; unicode-bidi: isolate; font-size: 4rem; font-weight: 700; line-height: 1; margin-block: var(--s3) var(--s2); }
+.fare .per { font-size: var(--t-sm); color: var(--ink-muted); margin-bottom: var(--s5); flex: 1; }
+.fare .save { color: var(--go); font-weight: 700; }
+.access { display: grid; grid-template-columns: auto 1fr; gap: var(--s3); margin-top: var(--s5); font-size: var(--t-sm); color: var(--ink-2); }
+.access svg { width: 18px; height: 18px; color: var(--blue); margin-top: 5px; }
+.access b { color: var(--ink); }
+.source { margin-top: var(--s7); padding-top: var(--s4); border-top: 1px solid var(--line); font-size: var(--t-xs); color: var(--ink-muted); max-width: 80ch; }
 
-/* ── Engineering (secondary audience) ───────────────────────────────────── */
-.chips { display: flex; flex-wrap: wrap; gap: var(--s2); }
-.chip {
-  font-family: var(--font-lat); direction: ltr;
-  background: var(--surface); border: 1px solid var(--line);
-  border-radius: var(--r-pill); padding: var(--s2) var(--s4);
-  font-size: var(--t-xs); font-weight: 500; color: var(--ink-muted);
-}
-.chip b { color: var(--ink); font-weight: 700; }
+/* ── Colophon (the engineering reader) ──────────────────────────────────── */
+.colophon { background: var(--sunken); }
+.colophon h2 { font-size: clamp(1.7rem, 1.3rem + 1.4vw, 2.4rem); }
+.colophon .stack { margin-top: var(--s5); font-family: var(--font-lat); font-size: var(--t-sm); color: var(--ink-2); }
+.notes { display: grid; gap: var(--s5); }
+.notes p { font-size: var(--t-sm); color: var(--ink-muted); padding-bottom: var(--s5); border-bottom: 1px solid var(--line-2); }
+.notes p:last-child { border-bottom: 0; padding-bottom: 0; }
+.notes b { color: var(--ink); }
 
 /* ── Footer ─────────────────────────────────────────────────────────────── */
-.foot { border-top: 1px solid var(--line); padding-block: var(--s8) var(--s7); background: var(--sunken); }
-.foot-cta { text-align: center; max-width: var(--measure); margin-inline: auto; margin-bottom: var(--s8); }
-.foot-cta h2 { margin-bottom: var(--s3); }
-.foot-cta .lede { margin-inline: auto; margin-bottom: var(--s5); }
+.foot { padding-block: var(--section) var(--s7); border-top: 2px solid var(--ink); }
+.foot-cta { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--s6); align-items: end; padding-bottom: var(--s8); }
+.foot-cta h2 { font-size: clamp(2.2rem, 1.4rem + 3.2vw, 4.2rem); }
+.foot-cta p { margin-top: var(--s3); color: var(--ink-muted); }
 .foot-grid { display: flex; flex-wrap: wrap; gap: var(--s5); align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: var(--s5); }
 .foot-links { display: flex; flex-wrap: wrap; gap: var(--s5); }
 .foot-links a { font-size: var(--t-sm); color: var(--ink-muted); display: inline-block; padding-block: var(--s2); }
 .foot-links a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
 .foot-meta { display: flex; align-items: center; gap: var(--s3); flex-wrap: wrap; font-size: var(--t-xs); color: var(--ink-muted); }
-.social { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; color: var(--ink-muted); transition: color .18s, border-color .18s; }
-.social:hover { color: var(--ink); border-color: var(--line-2); }
+.social { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--line-2); border-radius: 50%; color: var(--ink-muted); transition: color .18s, border-color .18s; }
+.social:hover { color: var(--ink); border-color: var(--ink-muted); }
 .social svg { width: 16px; height: 16px; }
 
 /* ── i18n visibility ────────────────────────────────────────────────────── */
-html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: none; }
-
-/* ── Motion ─────────────────────────────────────────────────────────────────
-   One effect, one job: mark that a section has arrived. IntersectionObserver
-   plus a CSS transition — no animation library, so there is no failure mode
-   where a blocked bundle leaves the page's content stuck at opacity 0. The
-   reveal is opt-in via a class the script adds, so with JS off nothing is ever
-   hidden in the first place. */
-.js [data-reveal] > * {
-  opacity: 0; transform: translateY(10px);
-  transition: opacity .45s var(--ease), transform .45s var(--ease);
-}
-.js [data-reveal][data-shown] > * { opacity: 1; transform: none; }
-.js [data-reveal][data-shown] > *:nth-child(2) { transition-delay: .06s; }
-.js [data-reveal][data-shown] > *:nth-child(3) { transition-delay: .12s; }
-.js [data-reveal][data-shown] > *:nth-child(4) { transition-delay: .18s; }
-.js [data-reveal][data-shown] > *:nth-child(5) { transition-delay: .24s; }
-.js [data-reveal][data-shown] > *:nth-child(6) { transition-delay: .3s; }
+html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation: none !important; transition: none !important; }
-  .js [data-reveal] > * { opacity: 1 !important; transform: none !important; }
 }
 
-/* ── Responsive ─────────────────────────────────────────────────────────────
-   Breakpoints are placed where this page's own content breaks, not at device
-   names: 1024 is where the 3-up gallery stops holding a legible phone frame,
-   860 is where the hero's two columns stop having room for a 46ch measure,
-   560 is where a 2-up proof band stops fitting its longest Persian label. */
-@media (max-width: 1024px) {
-  .screens { grid-template-columns: 1fr; gap: var(--s7); max-width: 520px; margin-inline: auto; }
-  .screens figure { display: grid; grid-template-columns: 180px 1fr; gap: var(--s5); align-items: center; }
-  .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .howto { grid-template-columns: 1fr; }
-  .how { border-top-width: 2px; }
-}
-
-@media (max-width: 860px) {
-  section { padding-block: var(--s8); }
-  .hero { padding-block: var(--s6) var(--s8); }
-  .hero-grid { grid-template-columns: 1fr; gap: var(--s7); }
-  .hero .phone { max-width: 260px; }
-  .grid-2 { grid-template-columns: 1fr; }
-  .price-grid { grid-template-columns: 1fr; }
-  .step { grid-template-columns: auto 1fr; gap: var(--s4); }
-  .step .tag { grid-column: 2; justify-self: start; margin-top: var(--s3); }
+/* ── Responsive — breakpoints where this content breaks ─────────────────── */
+@media (max-width: 1080px) {
   .nav-links { display: none; }
   .menu { display: block; }
-  .nav-in { gap: var(--s3); }
+  .facts { grid-template-columns: repeat(3, 1fr); }
+  .facts > div:nth-child(4) { border-inline-start: 0; }
+  .facts > div:nth-child(n+4) { border-top: 2px solid var(--ink); }
 }
 
-@media (max-width: 560px) {
-  :root { --t-display: clamp(1.85rem, 1.3rem + 2.6vw, 2.4rem); }
+@media (max-width: 900px) {
+  .hero { padding-block: var(--s6) var(--s8); }
+  .hero-grid, .split, .how-grid, .inside-grid, .price-grid, .foot-cta { grid-template-columns: 1fr; }
+  .hero-grid { gap: var(--s6); }
+  .sheet { margin-top: 0; }
+  .split, .how-grid, .price-grid { gap: var(--s6); }
+  .also { position: static; }
+  .how-fig { position: static; }
+  .how-fig .phone { max-width: 260px; }
+  .nav-cta { display: none; }
+  /* The strip becomes swipeable rather than a tall stack of three phones. */
+  .screens { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; gap: var(--s5); padding-bottom: var(--s4); margin-inline: calc(var(--s5) * -1); padding-inline: var(--s5); scrollbar-width: thin; }
+  .screens figure { flex: 0 0 min(72vw, 260px); scroll-snap-align: start; margin-top: 0 !important; }
+}
+
+@media (max-width: 600px) {
   .wrap { padding-inline: var(--s4); }
-  .proof { grid-template-columns: repeat(2, 1fr); }
-  .proof-item { border-inline-start: 0; border-top: 1px solid var(--line); }
-  .proof-item:nth-child(-n+2) { border-top: 0; }
-  .proof-item:nth-child(even) { border-inline-start: 1px solid var(--line); }
-  .grid-3 { grid-template-columns: 1fr; }
-  .screens figure { grid-template-columns: 1fr; }
-  .screens .phone { max-width: 240px; }
-  .hero .lede { font-size: var(--t-body); }
+  .screens { margin-inline: calc(var(--s4) * -1); padding-inline: var(--s4); }
+  .facts { grid-template-columns: repeat(2, 1fr); }
+  .facts > div:nth-child(n) { border-inline-start: 0; border-top: 1px solid var(--line-2); }
+  .facts > div:nth-child(-n+2) { border-top: 0; }
+  .facts > div:nth-child(even) { border-inline-start: 1px solid var(--line-2); }
+  .facts > div:nth-child(4) { border-top: 1px solid var(--line-2); }
+  .q-body { grid-template-columns: 84px 1fr; gap: var(--s4); padding: var(--s5) var(--s4) var(--s4); }
+  .q-sign { width: 84px; }
+  .q-text { font-size: 1.06rem; }
+  .vf, .q-reveal { padding-inline: var(--s4); }
+  .q-head { padding-inline: var(--s4); }
+  .gloss, .tried, .fares { grid-template-columns: 1fr; }
+  .fares { gap: var(--s6); }
   .cta-row .btn { width: 100%; }
   .foot-grid { flex-direction: column; align-items: flex-start; }
+  .sheet::before { transform: rotate(-1.6deg) translate(-3px, 8px); }
 }
 </style>
 </head>
@@ -602,43 +512,27 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
 
 <a class="skip-link" href="#main" data-en="Skip to content" data-fa="رفتن به محتوای اصلی">رفتن به محتوای اصلی</a>
 
-<!-- Icon sprite. SVG, 24px grid, 1.75 stroke, round joins — one geometric
-     family. No emoji anywhere on this page: emoji render as a different
-     typeface on every platform, carry no shared stroke weight, and cannot
-     inherit currentColor, so they can never be part of a design system. -->
+<!-- Icon sprite: 24px grid, 1.75 stroke, round joins, currentColor. No emoji. -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
-  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></symbol>
-  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12.5 9.5 18 20 6.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6L6 18"/></symbol>
   <symbol id="i-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
   <symbol id="i-telegram" viewBox="0 0 24 24" fill="currentColor"><path d="M23.07 3.28 19.6 20.1c-.26 1.16-.95 1.44-1.92.9l-5.3-3.9-2.56 2.46c-.28.28-.52.52-1.07.52l.38-5.4 9.83-8.88c.43-.38-.09-.6-.66-.22L6.15 12.24.92 10.6c-1.14-.36-1.16-1.14.24-1.69L21.6 1.6c.95-.35 1.78.22 1.47 1.68Z"/></symbol>
   <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
-  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></symbol>
-  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.6v.4"/></symbol>
   <symbol id="i-lock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.2"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></symbol>
-  <symbol id="i-translate" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5.5h9M7.5 3.5v2M9.7 5.5c0 4-2.9 7.4-6.7 8.4M5.4 9.6c1.1 2.3 3.2 4 5.6 4.6M12.4 21l4.3-10 4.3 10M14 17.6h6"/></symbol>
-  <symbol id="i-eye" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="2.8"/></symbol>
-  <symbol id="i-book" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4.6h5.2A2.8 2.8 0 0 1 12 7.4v12a2.2 2.2 0 0 0-2.2-2.2H4Z"/><path d="M20 4.6h-5.2A2.8 2.8 0 0 0 12 7.4v12a2.2 2.2 0 0 1 2.2-2.2H20Z"/></symbol>
-  <symbol id="i-grammar" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20 10 4l6 16M6.2 14.6h7.6M18 12v8"/></symbol>
-  <symbol id="i-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a7.9 7.9 0 0 1-8.5 7.9L7 21.2l.5-3.1A8 8 0 1 1 21 11.5Z"/><path d="M9 11h6M9 14.4h3.5"/></symbol>
-  <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 11.5A8.5 8.5 0 0 1 18 5.6l2.4 2.3M20.5 12.5A8.5 8.5 0 0 1 6 18.4l-2.4-2.3"/><path d="M20.5 4.2v4.2h-4.2M3.5 19.8v-4.2h4.2"/></symbol>
-  <symbol id="i-signal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.8" width="10" height="14.4" rx="4.6"/><path d="M12 17.2V21M9.4 21h5.2M10.2 7.2h3.6M10.2 10.8h3.6M10.2 14.4h3.6"/></symbol>
-  <symbol id="i-layers" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 8.5 4.6L12 12.2 3.5 7.6 12 3Z"/><path d="m4 12 8 4.4 8-4.4M4 16.4l8 4.4 8-4.4"/></symbol>
-  <symbol id="i-sign" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2.6 21.6 19H2.4L12 2.6Z"/><path d="M12 9.5v4M12 16.2v.3"/></symbol>
-  <symbol id="i-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.6h12v17l-6-4.2-6 4.2Z"/></symbol>
-  <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16M7.5 20V12M12 20V5.5M16.5 20v-5.5"/></symbol>
   <symbol id="i-github" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5A11.5 11.5 0 0 0 .5 12a11.5 11.5 0 0 0 7.86 10.92c.58.1.79-.25.79-.56v-2c-3.2.7-3.88-1.37-3.88-1.37-.53-1.34-1.29-1.7-1.29-1.7-1.05-.72.08-.7.08-.7 1.16.08 1.77 1.2 1.77 1.2 1.03 1.77 2.7 1.26 3.36.96.1-.75.4-1.26.73-1.55-2.55-.29-5.24-1.28-5.24-5.7 0-1.26.45-2.29 1.19-3.1-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.12 3.05.74.81 1.18 1.84 1.18 3.1 0 4.43-2.69 5.4-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.67.8.56A11.5 11.5 0 0 0 23.5 12 11.5 11.5 0 0 0 12 .5Z"/></symbol>
   <symbol id="i-linkedin" viewBox="0 0 24 24" fill="currentColor"><path d="M20.45 20.45h-3.56v-5.57c0-1.33-.02-3.04-1.85-3.04-1.85 0-2.14 1.45-2.14 2.94v5.67H9.35V9h3.41v1.56h.05a3.74 3.74 0 0 1 3.37-1.85c3.6 0 4.27 2.37 4.27 5.46v6.28ZM5.34 7.43a2.07 2.07 0 1 1 0-4.13 2.07 2.07 0 0 1 0 4.13ZM7.12 20.45H3.55V9h3.57v11.45ZM22.22 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.79 24 1.77 24h20.45c.98 0 1.78-.77 1.78-1.72V1.72C24 .77 23.2 0 22.22 0Z"/></symbol>
 </svg>
 
 <!-- ═══ NAV ══════════════════════════════════════════════════════════════ -->
-<nav class="nav" id="nav">
+<nav class="nav" id="nav" aria-label="اصلی / Main">
   <div class="nav-in">
-    <a href="#top" class="brand"><span class="brand-mark" aria-hidden="true">P</span><span data-en="PatenteFa" data-fa="پاتنته‌فا">پاتنته‌فا</span></a>
+    <a href="#top" class="brand"><b data-en="PatenteFa" data-fa="پاتنته‌فا">پاتنته‌فا</b><small>patente B</small></a>
 
     <div class="nav-links">
+      <a href="#problem" data-en="Why it's hard" data-fa="چرا سخت است">چرا سخت است</a>
       <a href="#how" data-en="How it teaches" data-fa="چطور یاد می‌دهد">چطور یاد می‌دهد</a>
-      <a href="#inside" data-en="What's inside" data-fa="امکانات">امکانات</a>
-      <a href="#start" data-en="Getting started" data-fa="شروع کنید">شروع کنید</a>
+      <a href="#inside" data-en="Inside the app" data-fa="داخل اپ">داخل اپ</a>
       <a href="#pricing" data-en="Pricing" data-fa="قیمت">قیمت</a>
     </div>
 
@@ -647,13 +541,15 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
         <button id="btn-fa" type="button" aria-pressed="true" onclick="setLang('fa')" lang="fa">فا</button>
         <button id="btn-en" type="button" aria-pressed="false" onclick="setLang('en')" lang="en">EN</button>
       </div>
+      <a class="btn btn-primary nav-cta" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener" data-en="Request access" data-fa="درخواست دسترسی">درخواست دسترسی</a>
 
       <details class="menu" id="menu">
         <summary aria-label="منو / Menu"><svg aria-hidden="true"><use href="#i-menu"/></svg></summary>
         <div class="menu-panel">
+          <a href="#problem" data-en="Why it's hard" data-fa="چرا سخت است">چرا سخت است</a>
           <a href="#how" data-en="How it teaches" data-fa="چطور یاد می‌دهد">چطور یاد می‌دهد</a>
-          <a href="#inside" data-en="What's inside" data-fa="امکانات">امکانات</a>
-          <a href="#start" data-en="Getting started" data-fa="شروع کنید">شروع کنید</a>
+          <a href="#inside" data-en="Inside the app" data-fa="داخل اپ">داخل اپ</a>
+          <a href="#start" data-en="Getting started" data-fa="شروع">شروع</a>
           <a href="#pricing" data-en="Pricing" data-fa="قیمت">قیمت</a>
         </div>
       </details>
@@ -663,369 +559,331 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
 
 <main id="main">
 
-<!-- ═══ HERO ═════════════════════════════════════════════════════════════ -->
+<!-- ═══ HERO ═════════════════════════════════════════════════════════════
+     The product demonstrates itself: one real bank statement, answerable
+     here, with the same translation the app shows. -->
 <header class="hero wrap" id="top">
   <div class="hero-grid">
     <div>
-      <span class="badge">
-        <span class="dot" aria-hidden="true"></span>
-        <span data-en="Live · 30 active learners in week one" data-fa="فعال · ۳۰ کاربر در هفته‌ی اول">فعال · ۳۰ کاربر در هفته‌ی اول</span>
-      </span>
+      <h1><span data-en="The hard half of this exam isn't driving. It's the " data-fa="نیمه‌ی سختِ این آزمون رانندگی نیست؛ ">نیمه‌ی سختِ این آزمون رانندگی نیست؛ </span><span class="pen" data-en="Italian" data-fa="ایتالیایی">ایتالیایی</span><span data-en="." data-fa=" است."> است.</span></h1>
 
-      <h1>
-        <span data-en="An Italian exam" data-fa="قبولی در آزمون ایتالیایی">قبولی در آزمون ایتالیایی</span>
-        <span class="hl" data-en="shouldn't be an Italian test." data-fa="نباید امتحان زبان باشد.">نباید امتحان زبان باشد.</span>
-      </h1>
-
-      <p class="lede" data-en="PatenteFa teaches the Italian patente B driving theory exam to Persian speakers. 7,139 official-style questions, each translated into Persian and explained — including why the wrong answer is wrong, which is the part a red X never tells you." data-fa="پاتنته‌فا آزمون تئوری گواهینامه‌ی ایتالیا (patente B) را به فارسی‌زبان‌ها آموزش می‌دهد. ۷٬۱۳۹ سوال رسمی، هرکدام ترجمه‌شده به فارسی و توضیح‌داده‌شده — از جمله اینکه چرا جواب غلط، غلط است؛ همان چیزی که یک ضربدر قرمز هیچ‌وقت به شما نمی‌گوید.">پاتنته‌فا آزمون تئوری گواهینامه‌ی ایتالیا (patente B) را به فارسی‌زبان‌ها آموزش می‌دهد. ۷٬۱۳۹ سوال رسمی، هرکدام ترجمه‌شده به فارسی و توضیح‌داده‌شده — از جمله اینکه چرا جواب غلط، غلط است؛ همان چیزی که یک ضربدر قرمز هیچ‌وقت به شما نمی‌گوید.</p>
+      <p class="lede" data-en="PatenteFa teaches the Italian patente B theory exam in Persian. 7,139 questions, each with a careful translation and the reason it is true or false. Try one right here." data-fa="پاتنته‌فا آزمون تئوری گواهینامه‌ی ایتالیا (<span class='lat'>patente B</span>) را به فارسی درس می‌دهد. ۷٬۱۳۹ سوال، هرکدام با ترجمه‌ی دقیق و دلیلِ درست یا غلط بودنش. یکی را همین‌جا امتحان کنید.">پاتنته‌فا آزمون تئوری گواهینامه‌ی ایتالیا (<span class='lat'>patente B</span>) را به فارسی درس می‌دهد. ۷٬۱۳۹ سوال، هرکدام با ترجمه‌ی دقیق و دلیلِ درست یا غلط بودنش. یکی را همین‌جا امتحان کنید.</p>
 
       <div class="cta-row">
         <a class="btn btn-primary" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener">
           <svg aria-hidden="true"><use href="#i-telegram"/></svg>
-          <span data-en="Request access" data-fa="درخواست دسترسی">درخواست دسترسی</span>
+          <span data-en="Request access in Telegram" data-fa="درخواست دسترسی در تلگرام">درخواست دسترسی در تلگرام</span>
         </a>
-        <a class="btn btn-secondary" href="#how" data-en="See how it teaches" data-fa="ببینید چطور یاد می‌دهد">ببینید چطور یاد می‌دهد</a>
+        <a class="link-arrow" href="#how"><span data-en="How it teaches" data-fa="چطور یاد می‌دهد">چطور یاد می‌دهد</span><svg class="flip" aria-hidden="true"><use href="#i-arrow"/></svg></a>
       </div>
-
-      <p class="cta-note">
-        <svg aria-hidden="true"><use href="#i-info"/></svg>
-        <span data-en="The button opens the bot in Telegram. Access is switched on manually after the request is reviewed — no download, no signup form, no password." data-fa="این دکمه بات را در تلگرام باز می‌کند. دسترسی پس از بررسی درخواست به‌صورت دستی فعال می‌شود — بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.">این دکمه بات را در تلگرام باز می‌کند. دسترسی پس از بررسی درخواست به‌صورت دستی فعال می‌شود — بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.</span>
-      </p>
+      <p class="cta-note" data-en="Opens the bot in Telegram. Access is switched on by hand after review: no download, no form, no password." data-fa="بات را در تلگرام باز می‌کند. دسترسی پس از بررسی، دستی فعال می‌شود: بدون دانلود، بدون فرم، بدون رمز عبور.">بات را در تلگرام باز می‌کند. دسترسی پس از بررسی، دستی فعال می‌شود: بدون دانلود، بدون فرم، بدون رمز عبور.</p>
     </div>
 
-    <!-- The product, on the first screen. The previous build filled this column
-         with a stock third-party 3D robot and never showed the app at all. -->
-    <div class="phone">
-      <img src="/img/ai-panel.png" width="780" height="1688" fetchpriority="high"
-           alt="صفحه‌ی یک سوال آزمون: ترجمه‌ی فارسی، پاسخ VERO، توضیح، تابلوی «پیچ خطرناک دوگانه» و جمله‌ی اصلی ایتالیایی."
-           data-alt-en="An exam question screen: the Persian translation, the VERO answer, an explanation, the double-bend road sign, and the original Italian sentence." />
+    <div class="sheet">
+      <article class="q" aria-labelledby="q-title">
+        <div class="q-head">
+          <b data-en="Sample question" data-fa="سوال نمونه">سوال نمونه</b>
+          <span class="lat">Capitolo 1 · Segnali di pericolo</span>
+        </div>
+        <div class="q-body">
+          <img class="q-sign" src="/img/sign-doppia-curva-destra.png" width="400" height="352"
+               alt="تابلوی خطر مثلثی: دو پیچ خطرناک، اولی به راست."
+               data-alt-en="Triangular warning sign: a dangerous double bend, the first to the right." />
+          <p class="q-text" id="q-title" lang="it">Il segnale raffigurato preannuncia una doppia curva pericolosa, la prima a destra</p>
+        </div>
+
+        <fieldset class="vf">
+          <legend data-en="True or false?" data-fa="درست یا غلط؟">درست یا غلط؟</legend>
+          <div class="vf-row">
+            <input type="radio" name="q1" id="q-v" value="vero" />
+            <label for="q-v"><svg class="vf-ico" aria-hidden="true"><use href="#i-check"/></svg><b>VERO</b><span data-en="true" data-fa="درست">درست</span></label>
+            <input type="radio" name="q1" id="q-f" value="falso" />
+            <label for="q-f"><svg class="vf-ico" aria-hidden="true"><use href="#i-x"/></svg><b>FALSO</b><span data-en="false" data-fa="غلط">غلط</span></label>
+          </div>
+        </fieldset>
+
+        <div class="q-reveal" aria-live="polite">
+          <p class="verdict v-yes"><svg aria-hidden="true"><use href="#i-check"/></svg><span><b data-en="Correct." data-fa="درست است.">درست است.</b> <span data-en="The answer is VERO." data-fa="جواب VERO است.">جواب VERO است.</span></span></p>
+          <p class="verdict v-no"><svg aria-hidden="true"><use href="#i-x"/></svg><span><b data-en="Not this time." data-fa="این بار نه.">این بار نه.</b> <span data-en="The answer is VERO." data-fa="جواب VERO است.">جواب VERO است.</span></span></p>
+          <dl class="q-explain">
+            <div>
+              <dt data-en="Persian translation" data-fa="ترجمه">ترجمه</dt>
+              <dd><span class="fa-text" lang="fa">تابلوی نشان‌داده‌شده خبر از یک پیچ خطرناک دوگانه می‌دهد که اولین پیچ به سمت راست است.</span>
+                <span class="gloss-en" data-only="en" style="display:block">“The sign shown announces a dangerous double bend, the first one to the right.”</span></dd>
+            </div>
+            <div>
+              <dt data-en="Why" data-fa="چرا">چرا</dt>
+              <dd data-en="The sign shows two bends in a row, the first to the right: exactly what the sentence claims. Had the first bend gone left, the same sentence would be FALSO." data-fa="تابلو دو پیچ پشت‌سرهم را نشان می‌دهد که اولی به راست است؛ دقیقاً همان چیزی که جمله می‌گوید. اگر پیچ اول به چپ بود، همین جمله FALSO می‌شد.">تابلو دو پیچ پشت‌سرهم را نشان می‌دهد که اولی به راست است؛ دقیقاً همان چیزی که جمله می‌گوید. اگر پیچ اول به چپ بود، همین جمله FALSO می‌شد.</dd>
+            </div>
+          </dl>
+          <a class="link-arrow q-more" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener"><span data-en="7,138 more, explained the same way" data-fa="۷٬۱۳۸ سوال دیگر، با همین توضیح‌ها">۷٬۱۳۸ سوال دیگر، با همین توضیح‌ها</span><svg class="flip" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+        </div>
+      </article>
     </div>
   </div>
 </header>
 
-<!-- ═══ PROOF ════════════════════════════════════════════════════════════ -->
-<section class="wrap ruled" style="padding-block:0">
-  <div class="proof">
-    <div class="proof-item">
-      <span class="n" data-count="7139">۷٬۱۳۹</span>
-      <span class="l" data-en="Official-style questions" data-fa="سوال رسمی">سوال رسمی</span>
-    </div>
-    <div class="proof-item">
-      <span class="n" data-count="27">۲۷</span>
-      <span class="l" data-en="Exam chapters" data-fa="فصل رسمی آزمون">فصل رسمی آزمون</span>
-    </div>
-    <div class="proof-item">
-      <span class="n" data-count="3983">۳٬۹۸۳</span>
-      <span class="l" data-en="Sign &amp; diagram questions" data-fa="سوال تصویری و تابلو">سوال تصویری و تابلو</span>
-    </div>
-    <div class="proof-item">
-      <span class="n" data-count="413">۴۱۳</span>
-      <span class="l" data-en="Road signs, each verified" data-fa="تابلوی راهنمایی، هرکدام بازبینی‌شده">تابلوی راهنمایی، هرکدام بازبینی‌شده</span>
-    </div>
-  </div>
-</section>
-
-<!-- ═══ SEE IT ═══════════════════════════════════════════════════════════ -->
-<section class="wrap ruled" id="see">
-  <div class="section-head" data-reveal>
-    <span class="eyebrow" data-en="Inside the app" data-fa="داخل اپ">داخل اپ</span>
-    <h2 data-en="Study, simulate, and find out why you were wrong" data-fa="مطالعه کنید، آزمون بدهید، و بفهمید چرا اشتباه کردید">مطالعه کنید، آزمون بدهید، و بفهمید چرا اشتباه کردید</h2>
-  </div>
-
-  <div class="screens" data-reveal>
-    <figure>
-      <div class="phone">
-        <img src="/img/chapters.png" width="780" height="1688" loading="lazy"
-             alt="فهرست فصل‌های آموزشی با درصد دقت و تعداد سوال باقی‌مانده برای هر فصل."
-             data-alt-en="The chapter list, showing per-chapter accuracy and how many questions remain." />
-      </div>
-      <figcaption>
-        <b data-en="Study by chapter" data-fa="مطالعه بر اساس فصل">مطالعه بر اساس فصل</b>
-        <span data-en="Every chapter carries your own accuracy and how much of it is left — so you always know which one to open next." data-fa="هر فصل دقت خودتان و مقدار باقی‌مانده‌اش را نشان می‌دهد — پس همیشه می‌دانید بعدی کدام است.">هر فصل دقت خودتان و مقدار باقی‌مانده‌اش را نشان می‌دهد — پس همیشه می‌دانید بعدی کدام است.</span>
-      </figcaption>
-    </figure>
-
-    <figure>
-      <div class="phone">
-        <img src="/img/exam.png" width="780" height="1688" loading="lazy"
-             alt="اجرای آزمون با یک سوال تابلویی، تایمر و شمارنده‌ی سوال."
-             data-alt-en="The exam runner with a road-sign question, a timer, and a question counter." />
-      </div>
-      <figcaption>
-        <b data-en="Simulate the real exam" data-fa="شبیه‌سازی آزمون واقعی">شبیه‌سازی آزمون واقعی</b>
-        <span data-en="30 statements, 20 minutes, a fourth wrong answer ends it — the examiner's rule, enforced identically." data-fa="۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان — دقیقاً همان قانونی که ممتحن اعمال می‌کند.">۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان — دقیقاً همان قانونی که ممتحن اعمال می‌کند.</span>
-      </figcaption>
-    </figure>
-
-    <figure>
-      <div class="phone">
-        <img src="/img/ai-panel.png" width="780" height="1688" loading="lazy"
-             alt="پنل توضیح: ترجمه‌ی فارسی، پاسخ درست، دلیل، و تب‌های تئوری و گرامر."
-             data-alt-en="The explanation panel: Persian translation, the correct answer, the reason, and tabs for theory and grammar." />
-      </div>
-      <figcaption>
-        <b data-en="Understand the answer" data-fa="جواب را بفهمید">جواب را بفهمید</b>
-        <span data-en="Translation, the rule behind the answer, and a word-by-word breakdown of the Italian — in three tabs, not one wall of text." data-fa="ترجمه، قانونی که پشت جواب است، و تجزیه‌ی کلمه‌به‌کلمه‌ی ایتالیایی — در سه تب، نه یک دیوار متن.">ترجمه، قانونی که پشت جواب است، و تجزیه‌ی کلمه‌به‌کلمه‌ی ایتالیایی — در سه تب، نه یک دیوار متن.</span>
-      </figcaption>
-    </figure>
-  </div>
+<!-- ═══ EXAM FACTS ═══════════════════════════════════════════════════════ -->
+<section class="wrap" aria-labelledby="facts-cap">
+  <dl class="facts">
+    <div><dt data-en="Questions in the bank" data-fa="سوال در بانک">سوال در بانک</dt><dd data-count="7139">۷٬۱۳۹</dd></div>
+    <div><dt data-en="Official chapters" data-fa="فصل رسمی">فصل رسمی</dt><dd data-count="27">۲۷</dd></div>
+    <div><dt data-en="Road signs, each checked by hand" data-fa="تابلو، هرکدام دستی بازبینی‌شده">تابلو، هرکدام دستی بازبینی‌شده</dt><dd data-count="413">۴۱۳</dd></div>
+    <div><dt data-en="Statements on exam day" data-fa="جمله در روز آزمون">جمله در روز آزمون</dt><dd data-count="30">۳۰</dd></div>
+    <div><dt data-en="Minutes on the clock" data-fa="دقیقه وقت">دقیقه وقت</dt><dd data-count="20">۲۰</dd></div>
+    <div><dt data-en="Errors you can afford" data-fa="خطای مجاز برای قبولی">خطای مجاز برای قبولی</dt><dd data-count="3">۳</dd></div>
+  </dl>
+  <p class="facts-cap" id="facts-cap"><span data-en="What PatenteFa covers" data-fa="آنچه پاتنته‌فا پوشش می‌دهد">آنچه پاتنته‌فا پوشش می‌دهد</span><span data-en="What the exam asks" data-fa="آنچه آزمون می‌خواهد">آنچه آزمون می‌خواهد</span></p>
 </section>
 
 <!-- ═══ PROBLEM ══════════════════════════════════════════════════════════ -->
-<section class="wrap ruled" id="problem">
-  <div class="grid-2" style="gap:var(--s8);align-items:start">
-    <div data-reveal>
-      <span class="eyebrow" data-en="The problem" data-fa="مسئله">مسئله</span>
-      <h2 data-en="A language test wearing a driving test's clothes" data-fa="یک امتحان زبان که لباس آزمون رانندگی پوشیده">یک امتحان زبان که لباس آزمون رانندگی پوشیده</h2>
-      <p class="lede" style="margin-top:var(--s4)" data-en="The patente B theory exam is 30 true/false statements in 20 minutes; four wrong answers and you fail. They are written in dense legal-administrative Italian — deliberately ambiguous phrasing, double negatives, and terms that never appear in ordinary conversation. If you arrived from Iran or Afghanistan, the road rules are the easy half. Parsing the sentence is the hard half." data-fa="آزمون تئوری patente B سی جمله‌ی درست/غلط در ۲۰ دقیقه است؛ چهار جواب اشتباه یعنی مردود. جمله‌ها به ایتالیاییِ حقوقی-اداریِ سنگین نوشته شده‌اند — عبارت‌های عمداً مبهم، منفی‌های دوگانه، و اصطلاحاتی که هرگز در مکالمه‌ی روزمره شنیده نمی‌شوند. اگر از ایران یا افغانستان آمده‌اید، قوانین راهنمایی و رانندگی نصف آسانِ کار است. فهمیدن خودِ جمله نصف سختِ آن است.">آزمون تئوری patente B سی جمله‌ی درست/غلط در ۲۰ دقیقه است؛ چهار جواب اشتباه یعنی مردود. جمله‌ها به ایتالیاییِ حقوقی-اداریِ سنگین نوشته شده‌اند — عبارت‌های عمداً مبهم، منفی‌های دوگانه، و اصطلاحاتی که هرگز در مکالمه‌ی روزمره شنیده نمی‌شوند. اگر از ایران یا افغانستان آمده‌اید، قوانین راهنمایی و رانندگی نصف آسانِ کار است. فهمیدن خودِ جمله نصف سختِ آن است.</p>
+<section class="sec wrap" id="problem">
+  <div class="head">
+    <h2 data-en="A language test dressed as a driving test" data-fa="یک امتحان زبان، در لباس آزمون رانندگی">یک امتحان زبان، در لباس آزمون رانندگی</h2>
+    <p class="lede" data-en="The theory exam is 30 true/false statements in 20 minutes, and a fourth wrong answer fails you. They are written in legal-administrative Italian: deliberately ambiguous phrasing, double negatives, and words you never hear in conversation. If you came from Iran or Afghanistan, the road rules are the easy half." data-fa="آزمون تئوری سی جمله‌ی درست/غلط در ۲۰ دقیقه است و چهارمین جواب اشتباه یعنی مردود. جمله‌ها به ایتالیاییِ حقوقی-اداری نوشته شده‌اند: عبارت‌های عمداً مبهم، منفی‌های دوگانه، و کلمه‌هایی که در مکالمه‌ی روزمره هرگز نمی‌شنوید. اگر از ایران یا افغانستان آمده‌اید، قوانین رانندگی نیمه‌ی آسانِ کار است.">آزمون تئوری سی جمله‌ی درست/غلط در ۲۰ دقیقه است و چهارمین جواب اشتباه یعنی مردود. جمله‌ها به ایتالیاییِ حقوقی-اداری نوشته شده‌اند: عبارت‌های عمداً مبهم، منفی‌های دوگانه، و کلمه‌هایی که در مکالمه‌ی روزمره هرگز نمی‌شنوید. اگر از ایران یا افغانستان آمده‌اید، قوانین رانندگی نیمه‌ی آسانِ کار است.</p>
+  </div>
 
-      <p class="it" style="margin-top:var(--s5)">Il segnale raffigurato preannuncia una doppia curva pericolosa, la prima a destra</p>
-      <p class="small" style="margin-top:var(--s3)" data-en="One real statement from the bank. VERO or FALSO — and the whole answer turns on <i>la prima a destra</i>." data-fa="یک جمله‌ی واقعی از بانک سوال. VERO یا FALSO — و تمام جواب به <i>la prima a destra</i> بند است.">یک جمله‌ی واقعی از بانک سوال. VERO یا FALSO — و تمام جواب به <i>la prima a destra</i> بند است.</p>
-    </div>
+  <figure class="specimen">
+    <figcaption data-en="The sentence from the top of the page, taken apart:" data-fa="همان جمله‌ی بالای صفحه، زیر ذره‌بین:">همان جمله‌ی بالای صفحه، زیر ذره‌بین:</figcaption>
+    <blockquote class="spec-it" lang="it">Il segnale <span class="m">raffigurato</span><sup data-en="1" data-fa="۱">۱</sup> <span class="m">preannuncia</span><sup data-en="2" data-fa="۲">۲</sup> una <span class="m">doppia curva pericolosa</span><sup data-en="3" data-fa="۳">۳</sup>, <span class="trap">la prima a destra</span><sup data-en="4" data-fa="۴">۴</sup></blockquote>
+    <ol class="gloss">
+      <li><div><span class="lat">raffigurato</span><span data-en="“depicted”. This exact sign in the picture, not signs in general." data-fa="«نشان‌داده‌شده». یعنی همین تابلوی داخل تصویر، نه هر تابلویی.">«نشان‌داده‌شده». یعنی همین تابلوی داخل تصویر، نه هر تابلویی.</span></div></li>
+      <li><div><span class="lat">preannuncia</span><span data-en="“announces in advance”. A warning sign stands before the hazard, not at it." data-fa="«از قبل خبر می‌دهد». تابلوی خطر را پیش از خودِ خطر نصب می‌کنند، نه کنارش.">«از قبل خبر می‌دهد». تابلوی خطر را پیش از خودِ خطر نصب می‌کنند، نه کنارش.</span></div></li>
+      <li><div><span class="lat">doppia curva pericolosa</span><span data-en="“dangerous double bend”: two bends in a row." data-fa="«پیچ خطرناکِ دوگانه»؛ دو پیچ پشت‌سرهم.">«پیچ خطرناکِ دوگانه»؛ دو پیچ پشت‌سرهم.</span></div></li>
+      <li><div><span class="lat">la prima a destra</span><span data-en="“the first to the right”. The whole answer hangs on this phrase: read left for right and the answer flips." data-fa="«اولی به راست». کل جواب به همین عبارت بند است؛ چپ و راست را جابه‌جا بخوانید و جواب برعکس می‌شود.">«اولی به راست». کل جواب به همین عبارت بند است؛ چپ و راست را جابه‌جا بخوانید و جواب برعکس می‌شود.</span></div></li>
+    </ol>
+  </figure>
 
-    <ul class="marks" data-reveal>
-      <li>
-        <span class="mark mark-no" aria-hidden="true"><svg><use href="#i-x"/></svg></span>
-        <div data-en="<b>Generic translation flips meanings.</b> Machine-translating a legal Italian statement often inverts it — and on a true/false exam, an inverted meaning is a wrong answer." data-fa="<b>ترجمه‌ی عمومی معنا را برعکس می‌کند.</b> ترجمه‌ی ماشینی یک جمله‌ی حقوقی ایتالیایی اغلب معنایش را وارونه می‌کند — و در آزمون درست/غلط، معنای وارونه یعنی جواب غلط."><b>ترجمه‌ی عمومی معنا را برعکس می‌کند.</b> ترجمه‌ی ماشینی یک جمله‌ی حقوقی ایتالیایی اغلب معنایش را وارونه می‌کند — و در آزمون درست/غلط، معنای وارونه یعنی جواب غلط.</div>
-      </li>
-      <li>
-        <span class="mark mark-no" aria-hidden="true"><svg><use href="#i-x"/></svg></span>
-        <div data-en="<b>The existing apps are Italian-only.</b> They assume you already read the language well enough to study in it." data-fa="<b>اپلیکیشن‌های موجود فقط ایتالیایی‌اند.</b> فرض می‌کنند شما آنقدر ایتالیایی بلدید که بتوانید با آن درس بخوانید."><b>اپلیکیشن‌های موجود فقط ایتالیایی‌اند.</b> فرض می‌کنند شما آنقدر ایتالیایی بلدید که بتوانید با آن درس بخوانید.</div>
-      </li>
-      <li>
-        <span class="mark mark-no" aria-hidden="true"><svg><use href="#i-x"/></svg></span>
-        <div data-en="<b>Driving schools cost hundreds of euros</b> and teach in Italian, at a fixed pace, on someone else's schedule." data-fa="<b>آموزشگاه‌های رانندگی صدها یورو هزینه دارند</b> و به ایتالیایی، با سرعت ثابت و طبق برنامه‌ی دیگران تدریس می‌کنند."><b>آموزشگاه‌های رانندگی صدها یورو هزینه دارند</b> و به ایتالیایی، با سرعت ثابت و طبق برنامه‌ی دیگران تدریس می‌کنند.</div>
-      </li>
-      <li>
-        <span class="mark mark-no" aria-hidden="true"><svg><use href="#i-x"/></svg></span>
-        <div data-en="<b>A red X teaches nothing.</b> Most quiz apps mark it wrong and move on. The rule behind it is never explained, so the same mistake repeats for weeks." data-fa="<b>ضربدر قرمز چیزی یاد نمی‌دهد.</b> بیشتر اپ‌های تست فقط علامت غلط می‌زنند و رد می‌شوند. قانون پشت آن هرگز توضیح داده نمی‌شود، برای همین همان اشتباه هفته‌ها تکرار می‌شود."><b>ضربدر قرمز چیزی یاد نمی‌دهد.</b> بیشتر اپ‌های تست فقط علامت غلط می‌زنند و رد می‌شوند. قانون پشت آن هرگز توضیح داده نمی‌شود، برای همین همان اشتباه هفته‌ها تکرار می‌شود.</div>
-      </li>
-    </ul>
+  <div class="split">
+    <h3 class="side-h" data-en="And what you've probably tried" data-fa="و چیزهایی که احتمالاً امتحان کرده‌اید">و چیزهایی که احتمالاً امتحان کرده‌اید</h3>
+    <dl class="tried">
+      <div>
+        <dt><svg aria-hidden="true"><use href="#i-x"/></svg><span data-en="Machine translation" data-fa="ترجمه‌ی ماشینی">ترجمه‌ی ماشینی</span></dt>
+        <dd data-en="Often inverts a legal sentence, and on a true/false exam an inverted meaning is a wrong answer." data-fa="جمله‌ی حقوقی را اغلب برعکس ترجمه می‌کند، و در آزمون درست/غلط معنای برعکس یعنی جواب غلط.">جمله‌ی حقوقی را اغلب برعکس ترجمه می‌کند، و در آزمون درست/غلط معنای برعکس یعنی جواب غلط.</dd>
+      </div>
+      <div>
+        <dt><svg aria-hidden="true"><use href="#i-x"/></svg><span data-en="Italian quiz apps" data-fa="اپ‌های تست ایتالیایی">اپ‌های تست ایتالیایی</span></dt>
+        <dd data-en="Assume you already read Italian well enough to study in it." data-fa="فرض می‌کنند آن‌قدر ایتالیایی بلدید که با آن درس بخوانید.">فرض می‌کنند آن‌قدر ایتالیایی بلدید که با آن درس بخوانید.</dd>
+      </div>
+      <div>
+        <dt><svg aria-hidden="true"><use href="#i-x"/></svg><span data-en="A driving school" data-fa="آموزشگاه رانندگی">آموزشگاه رانندگی</span></dt>
+        <dd data-en="Hundreds of euros, taught in Italian, at someone else's pace." data-fa="صدها یورو، به ایتالیایی، با سرعت و برنامه‌ی دیگران.">صدها یورو، به ایتالیایی، با سرعت و برنامه‌ی دیگران.</dd>
+      </div>
+      <div>
+        <dt><svg aria-hidden="true"><use href="#i-x"/></svg><span data-en="A red X" data-fa="ضربدر قرمز">ضربدر قرمز</span></dt>
+        <dd data-en="Says you were wrong, never why, so the same mistake repeats for weeks." data-fa="می‌گوید غلط بود، نمی‌گوید چرا؛ برای همین همان اشتباه هفته‌ها تکرار می‌شود.">می‌گوید غلط بود، نمی‌گوید چرا؛ برای همین همان اشتباه هفته‌ها تکرار می‌شود.</dd>
+      </div>
+    </dl>
   </div>
 </section>
 
 <!-- ═══ HOW IT TEACHES ═══════════════════════════════════════════════════
-     The old build presented this as "a pipeline of narrow agents" — the
-     engineering view. Same six stages, told as what the learner receives, with
-     the technical name kept as a secondary tag so the engineering reader still
-     gets it without the page addressing them instead of the customer. -->
-<section class="wrap ruled" id="how">
-  <div class="section-head" data-reveal>
-    <span class="eyebrow" data-en="How it teaches" data-fa="چطور یاد می‌دهد">چطور یاد می‌دهد</span>
-    <h2 data-en="Six passes over every single question" data-fa="شش مرحله روی تک‌تک سوال‌ها">شش مرحله روی تک‌تک سوال‌ها</h2>
-    <p class="lede" style="margin-top:var(--s4)" data-en="Each question is prepared once by a chain of single-purpose model calls — each with its own prompt and its own model tier — and the result is stored. You are reading a reviewed answer, not a live guess." data-fa="هر سوال یک‌بار توسط زنجیره‌ای از فراخوانی‌های تک‌منظوره‌ی مدل آماده می‌شود — هرکدام با پرامپت و سطح مدل خودش — و نتیجه ذخیره می‌شود. آنچه می‌خوانید یک پاسخ بازبینی‌شده است، نه حدس لحظه‌ای.">هر سوال یک‌بار توسط زنجیره‌ای از فراخوانی‌های تک‌منظوره‌ی مدل آماده می‌شود — هرکدام با پرامپت و سطح مدل خودش — و نتیجه ذخیره می‌شود. آنچه می‌خوانید یک پاسخ بازبینی‌شده است، نه حدس لحظه‌ای.</p>
-  </div>
+     Told as what the learner receives; the technical name stays as a small
+     tag so the engineering reader still gets it. -->
+<section class="sec wrap" id="how">
+  <div class="how-grid">
+    <div class="how-fig">
+      <div class="phone">
+        <img src="/img/ai-panel.png" width="780" height="1688" loading="lazy"
+             alt="پنل توضیح در اپ: ترجمه‌ی فارسی، پاسخ VERO، دلیل، و تب‌های تئوری و گرامر، بالای همان تابلوی پیچ دوگانه."
+             data-alt-en="The explanation panel in the app: Persian translation, the VERO answer, the reason, and theory and grammar tabs, above the same double-bend sign." />
+      </div>
+    </div>
 
-  <ol class="steps">
-    <li class="step">
-      <span class="step-n" aria-hidden="true" data-en="01" data-fa="۰۱">۰۱</span>
-      <div>
-        <h3 data-en="The sentence, in Persian" data-fa="جمله، به فارسی">جمله، به فارسی</h3>
-        <p data-en="The Italian statement rendered into Persian with its legal precision intact. Negations, modal verbs and scope qualifiers are the difference between VERO and FALSO, so they are handled explicitly instead of left to a general translation model." data-fa="جمله‌ی ایتالیایی با حفظ دقت حقوقی‌اش به فارسی برگردانده می‌شود. منفی‌ها، افعال وجهی و قیدهای محدودکننده تفاوت بین VERO و FALSO هستند، بنابراین صریحاً مدیریت می‌شوند نه اینکه به یک مدل ترجمه‌ی عمومی سپرده شوند.">جمله‌ی ایتالیایی با حفظ دقت حقوقی‌اش به فارسی برگردانده می‌شود. منفی‌ها، افعال وجهی و قیدهای محدودکننده تفاوت بین VERO و FALSO هستند، بنابراین صریحاً مدیریت می‌شوند نه اینکه به یک مدل ترجمه‌ی عمومی سپرده شوند.</p>
+    <div>
+      <div class="head">
+        <h2 data-en="Six passes over every single question" data-fa="شش مرحله روی تک‌تک سوال‌ها">شش مرحله روی تک‌تک سوال‌ها</h2>
+        <p class="lede" data-en="Each question is prepared once by a chain of single-purpose model calls, each with its own prompt and model tier, and the result is stored. You read a reviewed answer, not a live guess." data-fa="هر سوال یک‌بار توسط زنجیره‌ای از فراخوانی‌های تک‌منظوره‌ی مدل آماده می‌شود، هرکدام با پرامپت و سطح مدل خودش، و نتیجه ذخیره می‌شود. آنچه می‌خوانید پاسخی بازبینی‌شده است، نه حدسی لحظه‌ای.">هر سوال یک‌بار توسط زنجیره‌ای از فراخوانی‌های تک‌منظوره‌ی مدل آماده می‌شود، هرکدام با پرامپت و سطح مدل خودش، و نتیجه ذخیره می‌شود. آنچه می‌خوانید پاسخی بازبینی‌شده است، نه حدسی لحظه‌ای.</p>
       </div>
-      <span class="tag">cached in D1</span>
-    </li>
-    <li class="step">
-      <span class="step-n" aria-hidden="true" data-en="02" data-fa="۰۲">۰۲</span>
-      <div>
-        <h3 data-en="The sign, actually read" data-fa="تابلو، واقعاً خوانده‌شده">تابلو، واقعاً خوانده‌شده</h3>
-        <p data-en="3,983 questions hinge on a road sign or an intersection diagram. Those escalate to a vision model, and the sign's verified name comes from a reviewed table of all 413 images — because a model asked to identify a sign will confidently mirror left and right, and a mirrored sign teaches the opposite rule." data-fa="۳٬۹۸۳ سوال به یک تابلو یا نمودار تقاطع وابسته‌اند. این‌ها به مدل بینایی ارتقا داده می‌شوند، و نام تاییدشده‌ی تابلو از جدولی بازبینی‌شده شامل هر ۴۱۳ تصویر خوانده می‌شود — چون مدلی که از او بخواهید تابلو را تشخیص دهد با اطمینان کامل چپ و راست را جابه‌جا می‌کند، و تابلوی وارونه قانون برعکس را یاد می‌دهد.">۳٬۹۸۳ سوال به یک تابلو یا نمودار تقاطع وابسته‌اند. این‌ها به مدل بینایی ارتقا داده می‌شوند، و نام تاییدشده‌ی تابلو از جدولی بازبینی‌شده شامل هر ۴۱۳ تصویر خوانده می‌شود — چون مدلی که از او بخواهید تابلو را تشخیص دهد با اطمینان کامل چپ و راست را جابه‌جا می‌کند، و تابلوی وارونه قانون برعکس را یاد می‌دهد.</p>
-      </div>
-      <span class="tag">vision + grounding</span>
-    </li>
-    <li class="step">
-      <span class="step-n" aria-hidden="true" data-en="03" data-fa="۰۳">۰۳</span>
-      <div>
-        <h3 data-en="Why it is true or false" data-fa="چرا درست یا غلط است">چرا درست یا غلط است</h3>
-        <p data-en="The question the red X never answers: which article of the Codice della Strada decides this one, and where the trap in the phrasing was hiding." data-fa="سوالی که ضربدر قرمز هرگز جوابش را نمی‌دهد: کدام ماده از Codice della Strada این یکی را تعیین می‌کند، و تله‌ی عبارت‌بندی کجا پنهان شده بود.">سوالی که ضربدر قرمز هرگز جوابش را نمی‌دهد: کدام ماده از Codice della Strada این یکی را تعیین می‌کند، و تله‌ی عبارت‌بندی کجا پنهان شده بود.</p>
-      </div>
-      <span class="tag">grounded rationale</span>
-    </li>
-    <li class="step">
-      <span class="step-n" aria-hidden="true" data-en="04" data-fa="۰۴">۰۴</span>
-      <div>
-        <h3 data-en="The Italian, word by word" data-fa="ایتالیایی، کلمه به کلمه">ایتالیایی، کلمه به کلمه</h3>
-        <p data-en="The sentence taken apart piece by piece. You stop memorising answers and start reading the language — which is the only thing that transfers to the unseen questions on exam day." data-fa="جمله تکه‌تکه باز می‌شود. از حفظ‌کردن جواب‌ها دست می‌کشید و شروع به خواندن زبان می‌کنید — تنها چیزی که در روز آزمون به سوال‌های ندیده منتقل می‌شود.">جمله تکه‌تکه باز می‌شود. از حفظ‌کردن جواب‌ها دست می‌کشید و شروع به خواندن زبان می‌کنید — تنها چیزی که در روز آزمون به سوال‌های ندیده منتقل می‌شود.</p>
-      </div>
-      <span class="tag">language transfer</span>
-    </li>
-    <li class="step">
-      <span class="step-n" aria-hidden="true" data-en="05" data-fa="۰۵">۰۵</span>
-      <div>
-        <h3 data-en="Ask about this exact question" data-fa="درباره‌ی همین سوال بپرسید">درباره‌ی همین سوال بپرسید</h3>
-        <p data-en="A follow-up chat scoped to the question in front of you, image included. “Why is this one false but the last one true?” is the question no static explanation can anticipate." data-fa="یک گفتگوی تکمیلی محدود به همان سوالی که پیش رو دارید، همراه با تصویر. «چرا این یکی غلط است ولی قبلی درست بود؟» سوالی است که هیچ توضیح ثابتی نمی‌تواند پیش‌بینی‌اش کند.">یک گفتگوی تکمیلی محدود به همان سوالی که پیش رو دارید، همراه با تصویر. «چرا این یکی غلط است ولی قبلی درست بود؟» سوالی است که هیچ توضیح ثابتی نمی‌تواند پیش‌بینی‌اش کند.</p>
-      </div>
-      <span class="tag">context-aware</span>
-    </li>
-    <li class="step">
-      <span class="step-n" aria-hidden="true" data-en="06" data-fa="۰۶">۰۶</span>
-      <div>
-        <h3 data-en="It comes back when you'd forget it" data-fa="درست وقتی یادتان می‌رود، برمی‌گردد">درست وقتی یادتان می‌رود، برمی‌گردد</h3>
-        <p data-en="Every miss re-enters a review queue. Recall it correctly and the interval doubles, up to a 90-day ceiling; miss it and it resets to tomorrow. Day boundaries are computed in Europe/Rome, because that is the clock the exam runs on." data-fa="هر اشتباه دوباره وارد صف مرور می‌شود. اگر درست به‌یاد بیاورید فاصله دوبرابر می‌شود تا سقف ۹۰ روز؛ اگر اشتباه کنید به فردا برمی‌گردد. مرز روزها بر اساس Europe/Rome حساب می‌شود، چون آزمون با همان ساعت برگزار می‌شود.">هر اشتباه دوباره وارد صف مرور می‌شود. اگر درست به‌یاد بیاورید فاصله دوبرابر می‌شود تا سقف ۹۰ روز؛ اگر اشتباه کنید به فردا برمی‌گردد. مرز روزها بر اساس Europe/Rome حساب می‌شود، چون آزمون با همان ساعت برگزار می‌شود.</p>
-      </div>
-      <span class="tag">SRS · Europe/Rome</span>
-    </li>
-  </ol>
+
+      <ol class="steps">
+        <li class="step">
+          <span class="step-n" aria-hidden="true" data-en="1" data-fa="۱">۱</span>
+          <div>
+            <h3 data-en="The sentence, in Persian" data-fa="جمله، به فارسی">جمله، به فارسی</h3>
+            <p data-en="The Italian statement rendered into Persian with its legal precision intact. Negations, modal verbs and scope qualifiers are the difference between VERO and FALSO, so they are handled explicitly instead of left to a general translation model." data-fa="جمله‌ی ایتالیایی با حفظ دقت حقوقی‌اش به فارسی برگردانده می‌شود. منفی‌ها، افعال وجهی و قیدهای محدودکننده تفاوت بین VERO و FALSO هستند، بنابراین صریحاً مدیریت می‌شوند نه اینکه به یک مدل ترجمه‌ی عمومی سپرده شوند.">جمله‌ی ایتالیایی با حفظ دقت حقوقی‌اش به فارسی برگردانده می‌شود. منفی‌ها، افعال وجهی و قیدهای محدودکننده تفاوت بین VERO و FALSO هستند، بنابراین صریحاً مدیریت می‌شوند نه اینکه به یک مدل ترجمه‌ی عمومی سپرده شوند.</p>
+            <span class="tag">cached in D1</span>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-n" aria-hidden="true" data-en="2" data-fa="۲">۲</span>
+          <div>
+            <h3 data-en="The sign, actually read" data-fa="تابلو، واقعاً خوانده‌شده">تابلو، واقعاً خوانده‌شده</h3>
+            <p data-en="3,983 questions hinge on a road sign or an intersection diagram. Those go to a vision model, and the sign's name comes from a hand-checked table of all 413 images, because a model asked to identify a sign will confidently mirror left and right, and a mirrored sign teaches the opposite rule." data-fa="۳٬۹۸۳ سوال به یک تابلو یا نمودار تقاطع وابسته‌اند. این‌ها به مدل بینایی سپرده می‌شوند، و نام تابلو از جدولی دستی‌بازبینی‌شده شامل هر ۴۱۳ تصویر خوانده می‌شود؛ چون مدلی که از او بخواهید تابلو را تشخیص دهد با اطمینان کامل چپ و راست را جابه‌جا می‌کند، و تابلوی وارونه قانون برعکس را یاد می‌دهد.">۳٬۹۸۳ سوال به یک تابلو یا نمودار تقاطع وابسته‌اند. این‌ها به مدل بینایی سپرده می‌شوند، و نام تابلو از جدولی دستی‌بازبینی‌شده شامل هر ۴۱۳ تصویر خوانده می‌شود؛ چون مدلی که از او بخواهید تابلو را تشخیص دهد با اطمینان کامل چپ و راست را جابه‌جا می‌کند، و تابلوی وارونه قانون برعکس را یاد می‌دهد.</p>
+            <span class="tag">vision + grounding</span>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-n" aria-hidden="true" data-en="3" data-fa="۳">۳</span>
+          <div>
+            <h3 data-en="Why it is true or false" data-fa="چرا درست یا غلط است">چرا درست یا غلط است</h3>
+            <p data-en="The question the red X never answers: which article of the Codice della Strada decides this one, and where the trap in the phrasing was hiding." data-fa="سوالی که ضربدر قرمز هرگز جوابش را نمی‌دهد: کدام ماده از <span class='lat'>Codice della Strada</span> این یکی را تعیین می‌کند، و تله‌ی عبارت‌بندی کجا پنهان شده بود.">سوالی که ضربدر قرمز هرگز جوابش را نمی‌دهد: کدام ماده از <span class='lat'>Codice della Strada</span> این یکی را تعیین می‌کند، و تله‌ی عبارت‌بندی کجا پنهان شده بود.</p>
+            <span class="tag">grounded rationale</span>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-n" aria-hidden="true" data-en="4" data-fa="۴">۴</span>
+          <div>
+            <h3 data-en="The Italian, word by word" data-fa="ایتالیایی، کلمه به کلمه">ایتالیایی، کلمه به کلمه</h3>
+            <p data-en="The sentence taken apart, the way it was above. You stop memorising answers and start reading the language, which is the only thing that transfers to the unseen questions on exam day." data-fa="جمله تکه‌تکه باز می‌شود، همان‌طور که بالاتر دیدید. از حفظ‌کردن جواب‌ها دست می‌کشید و شروع به خواندن زبان می‌کنید؛ تنها چیزی که در روز آزمون به سوال‌های ندیده منتقل می‌شود.">جمله تکه‌تکه باز می‌شود، همان‌طور که بالاتر دیدید. از حفظ‌کردن جواب‌ها دست می‌کشید و شروع به خواندن زبان می‌کنید؛ تنها چیزی که در روز آزمون به سوال‌های ندیده منتقل می‌شود.</p>
+            <span class="tag">language transfer</span>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-n" aria-hidden="true" data-en="5" data-fa="۵">۵</span>
+          <div>
+            <h3 data-en="Ask about this exact question" data-fa="درباره‌ی همین سوال بپرسید">درباره‌ی همین سوال بپرسید</h3>
+            <p data-en="A follow-up chat scoped to the question in front of you, image included. “Why is this one false but the last one true?” is the question no static explanation can anticipate." data-fa="گفتگویی تکمیلی محدود به همان سوالی که پیش رو دارید، همراه با تصویر. «چرا این یکی غلط است ولی قبلی درست بود؟» سوالی است که هیچ توضیح ثابتی نمی‌تواند پیش‌بینی‌اش کند.">گفتگویی تکمیلی محدود به همان سوالی که پیش رو دارید، همراه با تصویر. «چرا این یکی غلط است ولی قبلی درست بود؟» سوالی است که هیچ توضیح ثابتی نمی‌تواند پیش‌بینی‌اش کند.</p>
+            <span class="tag">context-aware</span>
+          </div>
+        </li>
+        <li class="step">
+          <span class="step-n" aria-hidden="true" data-en="6" data-fa="۶">۶</span>
+          <div>
+            <h3 data-en="It comes back when you'd forget it" data-fa="درست وقتی یادتان می‌رود، برمی‌گردد">درست وقتی یادتان می‌رود، برمی‌گردد</h3>
+            <p data-en="Every miss re-enters a review queue. Recall it correctly and the interval doubles, up to a 90-day ceiling; miss it and it resets to tomorrow. Days are counted in Europe/Rome, because that is the clock the exam runs on." data-fa="هر اشتباه دوباره وارد صف مرور می‌شود. اگر درست به‌یاد بیاورید فاصله دوبرابر می‌شود تا سقف ۹۰ روز؛ اگر اشتباه کنید به فردا برمی‌گردد. روزها به وقت رم شمرده می‌شوند، چون آزمون با همان ساعت برگزار می‌شود.">هر اشتباه دوباره وارد صف مرور می‌شود. اگر درست به‌یاد بیاورید فاصله دوبرابر می‌شود تا سقف ۹۰ روز؛ اگر اشتباه کنید به فردا برمی‌گردد. روزها به وقت رم شمرده می‌شوند، چون آزمون با همان ساعت برگزار می‌شود.</p>
+            <span class="tag">SRS · Europe/Rome</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+  </div>
 </section>
 
-<!-- ═══ WHAT'S INSIDE ════════════════════════════════════════════════════ -->
-<section class="wrap ruled" id="inside">
-  <div class="section-head" data-reveal>
-    <span class="eyebrow" data-en="What's inside" data-fa="امکانات">امکانات</span>
-    <h2 data-en="Everything the exam asks of you" data-fa="هرچه آزمون از شما می‌خواهد">هرچه آزمون از شما می‌خواهد</h2>
+<!-- ═══ INSIDE THE APP ═══════════════════════════════════════════════════ -->
+<section class="sec wrap" id="inside">
+  <div class="head">
+    <h2 data-en="Study, simulate, and find out why you were wrong" data-fa="مطالعه کنید، آزمون بدهید، و بفهمید چرا اشتباه کردید">مطالعه کنید، آزمون بدهید، و بفهمید چرا اشتباه کردید</h2>
   </div>
 
-  <div class="grid-3" data-reveal>
-    <div class="card">
-      <span class="ico" aria-hidden="true"><svg><use href="#i-signal"/></svg></span>
-      <h3 data-en="Real exam simulation" data-fa="شبیه‌سازی آزمون واقعی">شبیه‌سازی آزمون واقعی</h3>
-      <p data-en="30 statements, 20 minutes, a fourth wrong answer ends it. The same rule the examiner applies — so a practice score actually means something." data-fa="۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان. دقیقاً همان قانونی که ممتحن اعمال می‌کند — پس نمره‌ی تمرینی واقعاً معنا دارد.">۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان. دقیقاً همان قانونی که ممتحن اعمال می‌کند — پس نمره‌ی تمرینی واقعاً معنا دارد.</p>
+  <div class="inside-grid">
+    <div class="screens">
+      <figure>
+        <div class="phone">
+          <img src="/img/chapters.png" width="780" height="1688" loading="lazy"
+               alt="فهرست فصل‌های آموزشی با درصد دقت و تعداد سوال باقی‌مانده برای هر فصل."
+               data-alt-en="The chapter list, showing per-chapter accuracy and how many questions remain." />
+        </div>
+        <figcaption>
+          <b data-en="Study by chapter" data-fa="مطالعه بر اساس فصل">مطالعه بر اساس فصل</b>
+          <span data-en="Each of the 27 chapters carries your own accuracy and how much is left, so you always know which one to open next." data-fa="هر کدام از ۲۷ فصل دقت خودتان و مقدار باقی‌مانده‌اش را نشان می‌دهد؛ پس همیشه می‌دانید بعدی کدام است.">هر کدام از ۲۷ فصل دقت خودتان و مقدار باقی‌مانده‌اش را نشان می‌دهد؛ پس همیشه می‌دانید بعدی کدام است.</span>
+        </figcaption>
+      </figure>
+
+      <figure>
+        <div class="phone">
+          <img src="/img/exam.png" width="780" height="1688" loading="lazy"
+               alt="اجرای آزمون با یک سوال تابلویی، تایمر و دکمه‌های VERO و FALSO."
+               data-alt-en="The exam runner with a road-sign question, a timer, and VERO and FALSO buttons." />
+        </div>
+        <figcaption>
+          <b data-en="Simulate the real exam" data-fa="شبیه‌سازی آزمون واقعی">شبیه‌سازی آزمون واقعی</b>
+          <span data-en="30 statements, 20 minutes, a fourth wrong answer ends it. The examiner's rule, enforced identically, so a practice score means something." data-fa="۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان. دقیقاً قانون ممتحن، پس نمره‌ی تمرینی واقعاً معنا دارد.">۳۰ جمله، ۲۰ دقیقه، چهارمین جواب اشتباه یعنی پایان. دقیقاً قانون ممتحن، پس نمره‌ی تمرینی واقعاً معنا دارد.</span>
+        </figcaption>
+      </figure>
+
     </div>
-    <div class="card">
-      <span class="ico" aria-hidden="true"><svg><use href="#i-layers"/></svg></span>
-      <h3 data-en="27 official chapters" data-fa="۲۷ فصل رسمی">۲۷ فصل رسمی</h3>
-      <p data-en="Study by Capitolo instead of shuffling blindly — right of way, signage, speed limits, documents, insurance, first aid, and the rest of the syllabus." data-fa="به‌جای زدن تست‌های تصادفی، بر اساس Capitolo مطالعه کنید — حق تقدم، تابلوها، محدودیت سرعت، مدارک، بیمه، کمک‌های اولیه و بقیه‌ی سرفصل‌ها.">به‌جای زدن تست‌های تصادفی، بر اساس Capitolo مطالعه کنید — حق تقدم، تابلوها، محدودیت سرعت، مدارک، بیمه، کمک‌های اولیه و بقیه‌ی سرفصل‌ها.</p>
-    </div>
-    <div class="card">
-      <span class="ico" aria-hidden="true"><svg><use href="#i-sign"/></svg></span>
-      <h3 data-en="Road sign trainer" data-fa="تمرین تابلوها">تمرین تابلوها</h3>
-      <p data-en="A dedicated drill for the signage that carries the most weight in the exam, with every image served from the edge." data-fa="یک تمرین اختصاصی برای تابلوهایی که بیشترین وزن را در آزمون دارند، با تصاویری که از نزدیک‌ترین نقطه به شما سرو می‌شوند.">یک تمرین اختصاصی برای تابلوهایی که بیشترین وزن را در آزمون دارند، با تصاویری که از نزدیک‌ترین نقطه به شما سرو می‌شوند.</p>
-    </div>
-    <div class="card">
-      <span class="ico" aria-hidden="true"><svg><use href="#i-repeat"/></svg></span>
-      <h3 data-en="Mistake review queue" data-fa="صف مرور اشتباهات">صف مرور اشتباهات</h3>
-      <p data-en="Wrong answers don't disappear. They come back on a schedule until you get them right twice — the single highest-leverage thing for actually passing." data-fa="جواب‌های غلط ناپدید نمی‌شوند. طبق برنامه برمی‌گردند تا دوبار درست جوابشان بدهید — مؤثرترین کار برای قبول‌شدن واقعی.">جواب‌های غلط ناپدید نمی‌شوند. طبق برنامه برمی‌گردند تا دوبار درست جوابشان بدهید — مؤثرترین کار برای قبول‌شدن واقعی.</p>
-    </div>
-    <div class="card">
-      <span class="ico" aria-hidden="true"><svg><use href="#i-bookmark"/></svg></span>
-      <h3 data-en="Vocabulary builder" data-fa="واژه‌نامه">واژه‌نامه</h3>
-      <p data-en="Save the Italian terms that keep tripping you up. They enter the same spaced-repetition loop as your wrong answers." data-fa="اصطلاحات ایتالیایی که مدام گیرتان می‌اندازند را ذخیره کنید. وارد همان چرخه‌ی تکرار فاصله‌دار جواب‌های غلط می‌شوند.">اصطلاحات ایتالیایی که مدام گیرتان می‌اندازند را ذخیره کنید. وارد همان چرخه‌ی تکرار فاصله‌دار جواب‌های غلط می‌شوند.</p>
-    </div>
-    <div class="card">
-      <span class="ico" aria-hidden="true"><svg><use href="#i-chart"/></svg></span>
-      <h3 data-en="Readiness tracking" data-fa="سنجش آمادگی">سنجش آمادگی</h3>
-      <p data-en="Pass rate, streak, chapter coverage and days until your exam date — so you know whether you are actually ready or just busy." data-fa="درصد قبولی، استریک، پوشش فصل‌ها و روزهای باقی‌مانده تا تاریخ آزمون — تا بدانید واقعاً آماده‌اید یا فقط مشغولید.">درصد قبولی، استریک، پوشش فصل‌ها و روزهای باقی‌مانده تا تاریخ آزمون — تا بدانید واقعاً آماده‌اید یا فقط مشغولید.</p>
+
+    <div class="also">
+      <h3 class="side-h" data-en="And four things that keep you honest" data-fa="و چهار چیز که نمی‌گذارد خودتان را گول بزنید">و چهار چیز که نمی‌گذارد خودتان را گول بزنید</h3>
+      <ul>
+        <li><b data-en="Mistake review queue" data-fa="صف مرور اشتباهات">صف مرور اشتباهات</b><span data-en="Wrong answers come back on a schedule until you get them right. Each morning at 08:00 Rome time, they arrive as a Telegram message." data-fa="جواب‌های غلط طبق برنامه برمی‌گردند تا درستشان کنید. هر صبح ساعت ۸ به وقت رم، به‌شکل یک پیام تلگرام می‌رسند.">جواب‌های غلط طبق برنامه برمی‌گردند تا درستشان کنید. هر صبح ساعت ۸ به وقت رم، به‌شکل یک پیام تلگرام می‌رسند.</span></li>
+        <li><b data-en="Road sign trainer" data-fa="تمرین تابلوها">تمرین تابلوها</b><span data-en="A separate drill for the signs, which carry the most weight in the exam." data-fa="تمرینی جداگانه برای تابلوها، که بیشترین وزن را در آزمون دارند.">تمرینی جداگانه برای تابلوها، که بیشترین وزن را در آزمون دارند.</span></li>
+        <li><b data-en="Vocabulary builder" data-fa="واژه‌نامه">واژه‌نامه</b><span data-en="Save the Italian terms that keep tripping you up. They enter the same review loop as your wrong answers." data-fa="اصطلاحات ایتالیایی که مدام گیرتان می‌اندازند را ذخیره کنید. وارد همان چرخه‌ی مرورِ جواب‌های غلط می‌شوند.">اصطلاحات ایتالیایی که مدام گیرتان می‌اندازند را ذخیره کنید. وارد همان چرخه‌ی مرورِ جواب‌های غلط می‌شوند.</span></li>
+        <li><b data-en="Readiness tracking" data-fa="سنجش آمادگی">سنجش آمادگی</b><span data-en="Pass rate, streak, chapter coverage and days to your exam, so you know whether you are ready or just busy." data-fa="درصد قبولی، استریک، پوشش فصل‌ها و روزهای باقی‌مانده تا آزمون؛ تا بدانید واقعاً آماده‌اید یا فقط مشغولید.">درصد قبولی، استریک، پوشش فصل‌ها و روزهای باقی‌مانده تا آزمون؛ تا بدانید واقعاً آماده‌اید یا فقط مشغولید.</span></li>
+      </ul>
     </div>
   </div>
 </section>
 
 <!-- ═══ GETTING STARTED ══════════════════════════════════════════════════
-     New section. Access here is granted by hand, and the previous page never
-     said what happened between pressing the button and getting in — the single
-     biggest source of doubt in this funnel. -->
-<section class="wrap ruled" id="start">
-  <div class="section-head" data-reveal>
-    <span class="eyebrow" data-en="Getting started" data-fa="شروع کنید">شروع کنید</span>
-    <h2 data-en="Three steps, no signup form" data-fa="سه قدم، بدون فرم ثبت‌نام">سه قدم، بدون فرم ثبت‌نام</h2>
-  </div>
+     Access is granted by hand. The bubbles quote the bot's real messages
+     (src/bot/commands.ts), so the page promises exactly what happens. -->
+<section class="sec wrap" id="start">
+  <div class="split">
+    <div class="head">
+      <h2 data-en="Three steps, no signup form" data-fa="سه قدم، بدون فرم ثبت‌نام">سه قدم، بدون فرم ثبت‌نام</h2>
+      <p class="lede" data-en="Telegram already knows who you are, so there is no email, password or verification code. This is the whole conversation." data-fa="تلگرام از قبل می‌داند شما چه کسی هستید، پس نه ایمیلی لازم است، نه رمزی، نه کد تاییدی. کل گفتگو همین است.">تلگرام از قبل می‌داند شما چه کسی هستید، پس نه ایمیلی لازم است، نه رمزی، نه کد تاییدی. کل گفتگو همین است.</p>
+    </div>
 
-  <div class="howto" data-reveal>
-    <div class="how">
-      <span class="k" aria-hidden="true" data-en="01" data-fa="۰۱">۰۱</span>
-      <h3 data-en="Open the bot in Telegram" data-fa="بات را در تلگرام باز کنید">بات را در تلگرام باز کنید</h3>
-      <p data-en="The button below opens the chat and sends the access request for you. Telegram already knows who you are, so there is no email, password or verification code." data-fa="دکمه‌ی پایین چت را باز می‌کند و درخواست دسترسی را برایتان می‌فرستد. تلگرام از قبل می‌داند شما چه کسی هستید، پس نه ایمیلی لازم است، نه رمزی، نه کد تاییدی.">دکمه‌ی پایین چت را باز می‌کند و درخواست دسترسی را برایتان می‌فرستد. تلگرام از قبل می‌داند شما چه کسی هستید، پس نه ایمیلی لازم است، نه رمزی، نه کد تاییدی.</p>
-    </div>
-    <div class="how">
-      <span class="k" aria-hidden="true" data-en="02" data-fa="۰۲">۰۲</span>
-      <h3 data-en="The request is reviewed by hand" data-fa="درخواست دستی بررسی می‌شود">درخواست دستی بررسی می‌شود</h3>
-      <p data-en="Approval is manual on purpose while the product is small and every AI explanation has a real cost. You get a message in the same chat when your access is switched on." data-fa="تایید عمداً دستی است، تا وقتی محصول کوچک است و هر توضیح هوش مصنوعی هزینه‌ی واقعی دارد. وقتی دسترسی‌تان فعال شود، در همان چت پیام می‌گیرید.">تایید عمداً دستی است، تا وقتی محصول کوچک است و هر توضیح هوش مصنوعی هزینه‌ی واقعی دارد. وقتی دسترسی‌تان فعال شود، در همان چت پیام می‌گیرید.</p>
-    </div>
-    <div class="how">
-      <span class="k" aria-hidden="true" data-en="03" data-fa="۰۳">۰۳</span>
-      <h3 data-en="Start with chapter one" data-fa="از فصل اول شروع کنید">از فصل اول شروع کنید</h3>
-      <p data-en="The app opens inside Telegram, in Persian, with all 7,139 questions unlocked. Each morning at 08:00 Rome time the questions you got wrong come back to you as a message." data-fa="اپ داخل تلگرام باز می‌شود، به فارسی، با هر ۷٬۱۳۹ سوال باز. هر روز صبح ساعت ۸ به وقت رم، سوال‌هایی که اشتباه زده‌اید به‌شکل یک پیام برایتان برمی‌گردند.">اپ داخل تلگرام باز می‌شود، به فارسی، با هر ۷٬۱۳۹ سوال باز. هر روز صبح ساعت ۸ به وقت رم، سوال‌هایی که اشتباه زده‌اید به‌شکل یک پیام برایتان برمی‌گردند.</p>
+    <div class="chat">
+      <div class="turn">
+        <p class="turn-cap"><b><span class="k" data-en="1" data-fa="۱">۱</span><span data-en="You open the bot" data-fa="بات را باز می‌کنید">بات را باز می‌کنید</span></b><span data-en="The button on this page opens the chat and sends the request for you." data-fa="دکمه‌ی همین صفحه چت را باز می‌کند و درخواست را برایتان می‌فرستد.">دکمه‌ی همین صفحه چت را باز می‌کند و درخواست را برایتان می‌فرستد.</span></p>
+        <p class="bubble bubble-out">/start</p>
+      </div>
+      <div class="turn">
+        <p class="turn-cap"><b><span class="k" data-en="2" data-fa="۲">۲</span><span data-en="A person reviews it" data-fa="یک نفر بررسی می‌کند">یک نفر بررسی می‌کند</span></b><span data-en="Approval is manual on purpose while the product is small and every AI explanation has a real cost." data-fa="تایید عمداً دستی است، تا وقتی محصول کوچک است و هر توضیح هوش مصنوعی هزینه‌ی واقعی دارد.">تایید عمداً دستی است، تا وقتی محصول کوچک است و هر توضیح هوش مصنوعی هزینه‌ی واقعی دارد.</span></p>
+        <p class="bubble bubble-in"><span class="who lat">PatenteFa</span><span class="fa-text" lang="fa">درخواست دسترسی شما برای مدیریت ارسال گردید. به محض تایید مدیریت، دسترسی شما فعال می‌شود و پیام تایید برای شما ارسال خواهد شد.</span><span class="en" data-only="en">Your access request has been sent for review. As soon as it is approved, access is switched on and you get a confirmation here.</span></p>
+      </div>
+      <div class="turn">
+        <p class="turn-cap"><b><span class="k" data-en="3" data-fa="۳">۳</span><span data-en="You start with chapter one" data-fa="از فصل اول شروع می‌کنید">از فصل اول شروع می‌کنید</span></b><span data-en="The app opens inside Telegram, in Persian, with every question unlocked." data-fa="اپ داخل تلگرام باز می‌شود، به فارسی، با همه‌ی سوال‌ها باز.">اپ داخل تلگرام باز می‌شود، به فارسی، با همه‌ی سوال‌ها باز.</span></p>
+        <p class="bubble bubble-in"><span class="who lat">PatenteFa</span><span class="fa-text" lang="fa">تبریک! حساب کاربری شما تایید شد. اکنون می‌توانید مینی‌اپ PatenteFa را باز کرده و تمرینات را آغاز کنید.</span><span class="en" data-only="en">Your account has been approved. You can now open the PatenteFa mini app and start practising.</span></p>
+      </div>
     </div>
   </div>
 </section>
 
-<!-- ═══ PRICING ══════════════════════════════════════════════════════════ -->
-<section class="wrap ruled" id="pricing">
-  <div class="section-head" style="text-align:center;margin-inline:auto" data-reveal>
-    <span class="eyebrow" data-en="Pricing" data-fa="قیمت">قیمت</span>
+<!-- ═══ PRICING ══════════════════════════════════════════════════════════
+     Approval is the only gate in the product (src/index.ts): both plans
+     unlock everything. The page used to imply the 3-month plan added the
+     tutor and analytics; it does not, so the page no longer says it does. -->
+<section class="sec wrap" id="pricing">
+  <div class="head">
     <h2 data-en="Less than one hour at a driving school" data-fa="کمتر از یک جلسه در آموزشگاه رانندگی">کمتر از یک جلسه در آموزشگاه رانندگی</h2>
-    <p class="lede" style="margin-inline:auto;margin-top:var(--s4)" data-en="Full access to every question, every explanation, and the review system. One learner, one exam, one price." data-fa="دسترسی کامل به همه‌ی سوال‌ها، همه‌ی توضیح‌ها و سیستم مرور. یک کاربر، یک آزمون، یک قیمت.">دسترسی کامل به همه‌ی سوال‌ها، همه‌ی توضیح‌ها و سیستم مرور. یک کاربر، یک آزمون، یک قیمت.</p>
+    <p class="lede" data-en="Both plans are the same product: every question, every explanation, every tool. Only the length changes." data-fa="هر دو پلن یک محصول‌اند: همه‌ی سوال‌ها، همه‌ی توضیح‌ها، همه‌ی ابزارها. فقط مدت فرق می‌کند.">هر دو پلن یک محصول‌اند: همه‌ی سوال‌ها، همه‌ی توضیح‌ها، همه‌ی ابزارها. فقط مدت فرق می‌کند.</p>
   </div>
 
-  <p class="callout" style="margin-bottom:var(--s7)">
-    <svg aria-hidden="true"><use href="#i-lock"/></svg>
-    <span>
-      <b data-en="Access is activated manually." data-fa="دسترسی به‌صورت دستی فعال می‌شود.">دسترسی به‌صورت دستی فعال می‌شود.</b>
-      <span data-en="Send your request in Telegram; the app unlocks only after admin approval." data-fa="درخواست را در تلگرام ارسال کنید؛ اپ فقط پس از تایید مدیریت باز می‌شود."> درخواست را در تلگرام ارسال کنید؛ اپ فقط پس از تایید مدیریت باز می‌شود.</span>
-    </span>
-  </p>
+  <div class="price-grid">
+    <ul class="included">
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="All 7,139 questions, in 27 chapters" data-fa="هر ۷٬۱۳۹ سوال، در ۲۷ فصل">هر ۷٬۱۳۹ سوال، در ۲۷ فصل</span></li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="A Persian translation and an explanation for every answer" data-fa="ترجمه‌ی فارسی و توضیح برای هر جواب">ترجمه‌ی فارسی و توضیح برای هر جواب</span></li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Grammar breakdown of every sentence" data-fa="تحلیل گرامری هر جمله">تحلیل گرامری هر جمله</span></li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="A tutor chat about the question in front of you" data-fa="گفتگو با مربی درباره‌ی همان سوالی که پیش رو دارید">گفتگو با مربی درباره‌ی همان سوالی که پیش رو دارید</span></li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Full exam simulation" data-fa="شبیه‌سازی کامل آزمون">شبیه‌سازی کامل آزمون</span></li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Mistake review, vocabulary and the morning reminder" data-fa="مرور اشتباهات، واژه‌نامه و یادآور صبحگاهی">مرور اشتباهات، واژه‌نامه و یادآور صبحگاهی</span></li>
+      <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Readiness and progress tracking" data-fa="سنجش آمادگی و پیشرفت">سنجش آمادگی و پیشرفت</span></li>
+    </ul>
 
-  <div class="price-grid" data-reveal>
-    <div class="plan">
-      <span class="name" data-en="Monthly" data-fa="یک ماهه">یک ماهه</span>
-      <div><span class="amount">€20</span></div>
-      <p class="per" data-en="per month" data-fa="در ماه">در ماه</p>
-      <ul>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="All 7,139 questions" data-fa="هر ۷٬۱۳۹ سوال">هر ۷٬۱۳۹ سوال</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Persian translation + explanations" data-fa="ترجمه‌ی فارسی + توضیح‌ها">ترجمه‌ی فارسی + توضیح‌ها</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Full exam simulation" data-fa="شبیه‌سازی کامل آزمون">شبیه‌سازی کامل آزمون</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Mistake review + vocabulary" data-fa="مرور اشتباهات + واژه‌نامه">مرور اشتباهات + واژه‌نامه</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Daily study reminder" data-fa="یادآور روزانه‌ی مطالعه">یادآور روزانه‌ی مطالعه</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Activation after admin approval" data-fa="فعال‌سازی پس از تایید مدیریت">فعال‌سازی پس از تایید مدیریت</span></li>
-      </ul>
-      <a class="btn btn-secondary btn-block" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener" data-en="Request access" data-fa="درخواست دسترسی">درخواست دسترسی</a>
-    </div>
-
-    <div class="plan best">
-      <span class="plan-flag" data-en="Best value" data-fa="به‌صرفه‌ترین">به‌صرفه‌ترین</span>
-      <span class="name" data-en="3 months" data-fa="سه ماهه">سه ماهه</span>
-      <div><span class="amount">€54</span></div>
-      <p class="per">
-        <span data-en="for 3 months —" data-fa="برای سه ماه —">برای سه ماه —</span>
-        <span class="save" data-en="save €6" data-fa="۶ یورو تخفیف">۶ یورو تخفیف</span>
+    <div>
+      <div class="fares">
+        <div class="fare">
+          <span class="name" data-en="1 month" data-fa="یک‌ماهه">یک‌ماهه</span>
+          <span class="amount">€20</span>
+          <p class="per" data-en="per month" data-fa="در ماه">در ماه</p>
+          <a class="btn btn-secondary btn-block" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener" data-en="Request access" data-fa="درخواست دسترسی">درخواست دسترسی</a>
+        </div>
+        <div class="fare best">
+          <span class="fare-flag" data-en="A realistic study period" data-fa="یک دوره‌ی مطالعه‌ی واقع‌بینانه">یک دوره‌ی مطالعه‌ی واقع‌بینانه</span>
+          <span class="name" data-en="3 months" data-fa="سه‌ماهه">سه‌ماهه</span>
+          <span class="amount">€54</span>
+          <p class="per"><span data-en="for 3 months, " data-fa="برای سه ماه، ">برای سه ماه، </span><span class="save" data-en="€6 less" data-fa="۶ یورو کمتر">۶ یورو کمتر</span></p>
+          <a class="btn btn-primary btn-block" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener" data-en="Request 3-month access" data-fa="درخواست دسترسی سه‌ماهه">درخواست دسترسی سه‌ماهه</a>
+        </div>
+      </div>
+      <p class="access">
+        <svg aria-hidden="true"><use href="#i-lock"/></svg>
+        <span><b data-en="Access is activated by hand." data-fa="دسترسی دستی فعال می‌شود.">دسترسی دستی فعال می‌شود.</b> <span data-en="Send the request in Telegram; the app unlocks after approval." data-fa="درخواست را در تلگرام بفرستید؛ اپ پس از تایید باز می‌شود.">درخواست را در تلگرام بفرستید؛ اپ پس از تایید باز می‌شود.</span></span>
       </p>
-      <ul>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Everything in Monthly" data-fa="همه‌ی امکانات پلن ماهانه">همه‌ی امکانات پلن ماهانه</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Covers a realistic study period" data-fa="پوشش یک دوره‌ی مطالعه‌ی واقع‌بینانه">پوشش یک دوره‌ی مطالعه‌ی واقع‌بینانه</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Conversational AI tutor" data-fa="مربی گفتگویی هوش مصنوعی">مربی گفتگویی هوش مصنوعی</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Grammar breakdown per question" data-fa="تحلیل گرامری هر سوال">تحلیل گرامری هر سوال</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Readiness &amp; progress analytics" data-fa="تحلیل آمادگی و پیشرفت">تحلیل آمادگی و پیشرفت</span></li>
-        <li><svg aria-hidden="true"><use href="#i-check"/></svg><span data-en="Activation after admin approval" data-fa="فعال‌سازی پس از تایید مدیریت">فعال‌سازی پس از تایید مدیریت</span></li>
-      </ul>
-      <a class="btn btn-primary btn-block" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener" data-en="Request 3-month access" data-fa="درخواست دسترسی سه‌ماهه">درخواست دسترسی سه‌ماهه</a>
     </div>
   </div>
 
-  <p class="note" data-en="Question bank sourced from the open QuizPatenteB dataset (MIT), last updated 2023. Always spot-check against ilportaledellautomobilista.it before your exam date." data-fa="بانک سوال از مجموعه‌داده‌ی متن‌باز QuizPatenteB (لایسنس MIT) گرفته شده و آخرین بروزرسانی آن ۲۰۲۳ است. همیشه پیش از تاریخ آزمون با سایت رسمی ilportaledellautomobilista.it مطابقت بدهید.">بانک سوال از مجموعه‌داده‌ی متن‌باز QuizPatenteB (لایسنس MIT) گرفته شده و آخرین بروزرسانی آن ۲۰۲۳ است. همیشه پیش از تاریخ آزمون با سایت رسمی ilportaledellautomobilista.it مطابقت بدهید.</p>
+  <p class="source" data-en="Question bank sourced from the open QuizPatenteB dataset (MIT), last updated 2023. Always spot-check against ilportaledellautomobilista.it before your exam date." data-fa="بانک سوال از مجموعه‌داده‌ی متن‌باز QuizPatenteB (لایسنس MIT) گرفته شده و آخرین بروزرسانی آن ۲۰۲۳ است. همیشه پیش از تاریخ آزمون با سایت رسمی ilportaledellautomobilista.it مطابقت بدهید.">بانک سوال از مجموعه‌داده‌ی متن‌باز QuizPatenteB (لایسنس MIT) گرفته شده و آخرین بروزرسانی آن ۲۰۲۳ است. همیشه پیش از تاریخ آزمون با سایت رسمی ilportaledellautomobilista.it مطابقت بدهید.</p>
 </section>
 
-<!-- ═══ ENGINEERING ══════════════════════════════════════════════════════
-     Kept, but demoted below the product story: this page's paying reader is a
-     learner, and the old build opened with the architecture. -->
-<section class="wrap ruled" id="engineering">
-  <div class="grid-2" style="gap:var(--s8);align-items:start">
-    <div data-reveal>
-      <span class="eyebrow" data-en="Engineering" data-fa="مهندسی">مهندسی</span>
+<!-- ═══ COLOPHON ═════════════════════════════════════════════════════════
+     For the engineering reader, set like a book's colophon: after the story,
+     in smaller type, on its own ground. -->
+<section class="sec colophon" id="engineering">
+  <div class="wrap split">
+    <div>
       <h2 data-en="One Worker. No servers." data-fa="یک Worker. بدون سرور.">یک Worker. بدون سرور.</h2>
-      <p class="lede" style="margin-top:var(--s4)" data-en="The entire product — bot webhook, REST API, app shell, image delivery and scheduled jobs — is a single Cloudflare Worker. Nothing to patch, nothing to scale, no region to pick. It runs in the datacenter closest to whoever opened it, which for a user base split between Italy and Iran matters more than it sounds." data-fa="کل محصول — وب‌هوک بات، REST API، پوسته‌ی اپ، تحویل تصاویر و jobهای زمان‌بندی‌شده — یک Cloudflare Worker واحد است. نه چیزی برای وصله‌کردن، نه چیزی برای مقیاس‌دادن، نه منطقه‌ای برای انتخاب. در نزدیک‌ترین دیتاسنتر به کاربر اجرا می‌شود، و برای کاربرانی که بین ایتالیا و ایران پخش‌اند این خیلی مهم‌تر از آن است که به‌نظر می‌رسد.">کل محصول — وب‌هوک بات، REST API، پوسته‌ی اپ، تحویل تصاویر و jobهای زمان‌بندی‌شده — یک Cloudflare Worker واحد است. نه چیزی برای وصله‌کردن، نه چیزی برای مقیاس‌دادن، نه منطقه‌ای برای انتخاب. در نزدیک‌ترین دیتاسنتر به کاربر اجرا می‌شود، و برای کاربرانی که بین ایتالیا و ایران پخش‌اند این خیلی مهم‌تر از آن است که به‌نظر می‌رسد.</p>
-      <div class="chips" style="margin-top:var(--s5)">
-        <span class="chip"><b>Cloudflare</b> Workers</span>
-        <span class="chip"><b>Hono</b> · TypeScript</span>
-        <span class="chip"><b>D1</b> SQLite</span>
-        <span class="chip"><b>R2</b> object storage</span>
-        <span class="chip"><b>KV</b> cache</span>
-        <span class="chip"><b>Cron</b> triggers</span>
-        <span class="chip"><b>OpenAI</b> GPT + vision</span>
-      </div>
+      <p class="stack">Cloudflare Workers · Hono · TypeScript · D1 · R2 · KV · Cron · OpenAI</p>
     </div>
-
-    <div class="grid-2" style="grid-template-columns:1fr;gap:var(--s4)" data-reveal>
-      <div class="card">
-        <h3 data-en="Verified identity, gated access" data-fa="هویت تاییدشده، دسترسی کنترل‌شده">هویت تاییدشده، دسترسی کنترل‌شده</h3>
-        <p data-en="Every API request carries a Telegram-signed payload validated server-side before it touches the database. New accounts land in a pending state and are approved by hand — deliberate, while the product is small and the AI bill is real." data-fa="هر درخواست API یک payload امضاشده توسط تلگرام دارد که پیش از رسیدن به دیتابیس در سمت سرور اعتبارسنجی می‌شود. حساب‌های جدید در وضعیت «در انتظار» قرار می‌گیرند و دستی تایید می‌شوند — عمدی، تا وقتی محصول کوچک است و هزینه‌ی هوش مصنوعی واقعی.">هر درخواست API یک payload امضاشده توسط تلگرام دارد که پیش از رسیدن به دیتابیس در سمت سرور اعتبارسنجی می‌شود. حساب‌های جدید در وضعیت «در انتظار» قرار می‌گیرند و دستی تایید می‌شوند — عمدی، تا وقتی محصول کوچک است و هزینه‌ی هوش مصنوعی واقعی.</p>
-      </div>
-      <div class="card">
-        <h3 data-en="Scheduled without a scheduler" data-fa="زمان‌بندی بدون scheduler">زمان‌بندی بدون scheduler</h3>
-        <p data-en="Two cron triggers run on the edge: the morning review nudge, and a nightly database backup written to object storage. No queue service, no worker dyno, no cron box to forget about." data-fa="دو cron trigger روی لبه اجرا می‌شوند: یادآور مرور صبحگاهی، و پشتیبان‌گیری شبانه‌ی دیتابیس روی object storage. نه سرویس صف، نه worker dyno، نه سرور cronی که فراموشش کنید.">دو cron trigger روی لبه اجرا می‌شوند: یادآور مرور صبحگاهی، و پشتیبان‌گیری شبانه‌ی دیتابیس روی object storage. نه سرویس صف، نه worker dyno، نه سرور cronی که فراموشش کنید.</p>
-      </div>
-      <div class="card">
-        <h3 data-en="Found where the learners already were" data-fa="جایی که کاربرها از قبل بودند">جایی که کاربرها از قبل بودند</h3>
-        <p data-en="30 active users in the first week, with no ads, no launch post and no app store listing — shared into Persian-speaking community groups in Italy, where the people taking this exam already talk to each other." data-fa="۳۰ کاربر فعال در هفته‌ی اول، بدون تبلیغات، بدون پست معرفی و بدون لیست‌شدن در اپ استور — فقط در گروه‌های جامعه‌ی فارسی‌زبان در ایتالیا به اشتراک گذاشته شد، جایی که کسانی که این آزمون را می‌دهند از قبل با هم در ارتباط‌اند.">۳۰ کاربر فعال در هفته‌ی اول، بدون تبلیغات، بدون پست معرفی و بدون لیست‌شدن در اپ استور — فقط در گروه‌های جامعه‌ی فارسی‌زبان در ایتالیا به اشتراک گذاشته شد، جایی که کسانی که این آزمون را می‌دهند از قبل با هم در ارتباط‌اند.</p>
-      </div>
+    <div class="notes">
+      <p data-en="<b>One deployable.</b> The bot webhook, the REST API, the app shell, image delivery and the scheduled jobs are a single Cloudflare Worker. It runs in the datacenter closest to whoever opened it, which matters for users split between Italy and Iran." data-fa="<b>یک واحد قابل استقرار.</b> وب‌هوک بات، REST API، پوسته‌ی اپ، تحویل تصاویر و jobهای زمان‌بندی‌شده یک Cloudflare Worker واحدند. در نزدیک‌ترین دیتاسنتر به کاربر اجرا می‌شود، که برای کاربرانی پخش‌شده بین ایتالیا و ایران مهم است."><b>یک واحد قابل استقرار.</b> وب‌هوک بات، REST API، پوسته‌ی اپ، تحویل تصاویر و jobهای زمان‌بندی‌شده یک Cloudflare Worker واحدند. در نزدیک‌ترین دیتاسنتر به کاربر اجرا می‌شود، که برای کاربرانی پخش‌شده بین ایتالیا و ایران مهم است.</p>
+      <p data-en="<b>Verified identity, gated access.</b> Every API request carries a Telegram-signed payload, validated server-side before it touches the database. New accounts wait in a pending state until approved by hand." data-fa="<b>هویت تاییدشده، دسترسی کنترل‌شده.</b> هر درخواست API یک payload امضاشده توسط تلگرام دارد که پیش از رسیدن به دیتابیس در سمت سرور اعتبارسنجی می‌شود. حساب‌های جدید تا تایید دستی در وضعیت «در انتظار» می‌مانند."><b>هویت تاییدشده، دسترسی کنترل‌شده.</b> هر درخواست API یک payload امضاشده توسط تلگرام دارد که پیش از رسیدن به دیتابیس در سمت سرور اعتبارسنجی می‌شود. حساب‌های جدید تا تایید دستی در وضعیت «در انتظار» می‌مانند.</p>
+      <p data-en="<b>Scheduled without a scheduler.</b> Two cron triggers run on the edge: the morning review nudge and a nightly database backup to object storage." data-fa="<b>زمان‌بندی بدون scheduler.</b> دو cron trigger روی لبه اجرا می‌شوند: یادآور مرور صبحگاهی، و پشتیبان‌گیری شبانه‌ی دیتابیس روی object storage."><b>زمان‌بندی بدون scheduler.</b> دو cron trigger روی لبه اجرا می‌شوند: یادآور مرور صبحگاهی، و پشتیبان‌گیری شبانه‌ی دیتابیس روی object storage.</p>
+      <p data-en="<b>Found where the learners already were.</b> 30 active users in the first week, with no ads and no app store listing: shared into Persian-speaking community groups in Italy." data-fa="<b>جایی که کاربرها از قبل بودند.</b> ۳۰ کاربر فعال در هفته‌ی اول، بدون تبلیغات و بدون اپ استور؛ فقط در گروه‌های جامعه‌ی فارسی‌زبان در ایتالیا به اشتراک گذاشته شد."><b>جایی که کاربرها از قبل بودند.</b> ۳۰ کاربر فعال در هفته‌ی اول، بدون تبلیغات و بدون اپ استور؛ فقط در گروه‌های جامعه‌ی فارسی‌زبان در ایتالیا به اشتراک گذاشته شد.</p>
     </div>
   </div>
 </section>
@@ -1036,8 +894,10 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
 <footer class="foot">
   <div class="wrap">
     <div class="foot-cta">
-      <h2 data-en="Ready when you are." data-fa="هر وقت آماده بودید.">هر وقت آماده بودید.</h2>
-      <p class="lede" data-en="Send the request in Telegram. The app unlocks after approval — no download, no signup form, no password." data-fa="درخواست را در تلگرام بفرستید. اپ پس از تایید باز می‌شود — بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.">درخواست را در تلگرام بفرستید. اپ پس از تایید باز می‌شود — بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.</p>
+      <div>
+        <h2 data-en="Question two is waiting in Telegram." data-fa="سوال دوم در تلگرام منتظر شماست.">سوال دوم در تلگرام منتظر شماست.</h2>
+        <p data-en="No download, no signup form, no password." data-fa="بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.">بدون دانلود، بدون فرم ثبت‌نام، بدون رمز عبور.</p>
+      </div>
       <a class="btn btn-primary" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener">
         <svg aria-hidden="true"><use href="#i-telegram"/></svg>
         <span data-en="Request access" data-fa="درخواست دسترسی">درخواست دسترسی</span>
@@ -1046,31 +906,27 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
 
     <div class="foot-grid">
       <nav class="foot-links" aria-label="پیوندهای پانوشت / Footer">
-        <a href="#problem" data-en="The problem" data-fa="مسئله">مسئله</a>
+        <a href="#problem" data-en="Why it's hard" data-fa="چرا سخت است">چرا سخت است</a>
         <a href="#how" data-en="How it teaches" data-fa="چطور یاد می‌دهد">چطور یاد می‌دهد</a>
-        <a href="#inside" data-en="What's inside" data-fa="امکانات">امکانات</a>
-        <a href="#start" data-en="Getting started" data-fa="شروع کنید">شروع کنید</a>
+        <a href="#inside" data-en="Inside the app" data-fa="داخل اپ">داخل اپ</a>
+        <a href="#start" data-en="Getting started" data-fa="شروع">شروع</a>
         <a href="#pricing" data-en="Pricing" data-fa="قیمت">قیمت</a>
         <a href="#engineering" data-en="Engineering" data-fa="مهندسی">مهندسی</a>
       </nav>
-
       <div class="foot-meta">
         <span data-en="Built by Sina MohammadHosseinzadeh" data-fa="ساخته‌شده توسط سینا محمدحسین‌زاده">ساخته‌شده توسط سینا محمدحسین‌زاده</span>
         <a class="social" href="https://github.com/sinahosseinzadeh97" target="_blank" rel="noopener noreferrer" aria-label="GitHub — Sina MohammadHosseinzadeh"><svg aria-hidden="true"><use href="#i-github"/></svg></a>
         <a class="social" href="https://www.linkedin.com/in/sina-hosseinzade20/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn — Sina MohammadHosseinzadeh"><svg aria-hidden="true"><use href="#i-linkedin"/></svg></a>
       </div>
     </div>
-
-    <p class="small" style="margin-top:var(--s5)" data-en="© 2026 PatenteFa · Running on Cloudflare Workers" data-fa="© ۲۰۲۶ پاتنته‌فا · اجرا روی Cloudflare Workers">© ۲۰۲۶ پاتنته‌فا · اجرا روی Cloudflare Workers</p>
+    <p class="small" style="margin-top:var(--s5);font-size:var(--t-xs)" data-en="© 2026 PatenteFa · Running on Cloudflare Workers" data-fa="© ۲۰۲۶ پاتنته‌فا · اجرا روی Cloudflare Workers">© ۲۰۲۶ پاتنته‌فا · اجرا روی Cloudflare Workers</p>
   </div>
 </footer>
 
 <script>
 /* ── Language ────────────────────────────────────────────────────────────
-   The document ships Persian in its markup, so this only ever runs to switch
-   into English or back. Text is written with textContent unless the string
-   carries authored inline markup (<b>, <i>), which is the only case that needs
-   innerHTML — the old build used innerHTML unconditionally on every node. */
+   The document ships Persian in its markup, so this only runs to switch.
+   textContent unless the string carries authored inline markup. */
 function setLang(l) {
   var h = document.documentElement;
   h.lang = l;
@@ -1082,8 +938,6 @@ function setLang(l) {
     if (/[<&]/.test(v)) el.innerHTML = v; else el.textContent = v;
   });
 
-  // Alt text is content too: an RTL reader on a screen reader should not be
-  // handed an English description of a Persian screenshot.
   document.querySelectorAll('img[data-alt-en]').forEach(function (img) {
     if (l === 'en') {
       if (!img.dataset.altFa) img.dataset.altFa = img.alt;
@@ -1105,8 +959,7 @@ function setLang(l) {
 }
 if (document.documentElement.getAttribute('data-lang-pending') === 'en') setLang('en');
 
-/* Close the mobile menu on outside click / Escape — a disclosure that can only
-   be closed by hitting its own trigger again is a trap on a phone. */
+/* Close the mobile menu on outside click / Escape / choice. */
 (function () {
   var m = document.getElementById('menu');
   if (!m) return;
@@ -1115,60 +968,11 @@ if (document.documentElement.getAttribute('data-lang-pending') === 'en') setLang
   m.querySelectorAll('a').forEach(function (a) { a.addEventListener('click', function () { m.open = false; }); });
 })();
 
-/* ── Motion ──────────────────────────────────────────────────────────────
-   IntersectionObserver + CSS, no animation library. The `js` class is what
-   arms the hidden state, and it is added from here — so a browser that never
-   runs this (or an observer that never fires) shows every section normally
-   instead of holding the page at opacity 0, which is the failure mode the
-   previous build needed a 3-second safety timer to defend against. */
-(function () {
-  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var groups = document.querySelectorAll('[data-reveal]');
-  if (reduce || !('IntersectionObserver' in window) || !groups.length) return;
-
-  document.documentElement.classList.add('js');
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) {
-      if (!e.isIntersecting) return;
-      e.target.setAttribute('data-shown', '');
-      io.unobserve(e.target);          // arrival happens once, not on every scroll-back
-    });
-  }, { threshold: 0.15, rootMargin: '0px 0px -8% 0px' });
-  groups.forEach(function (g) { io.observe(g); });
-})();
-
-/* Count the proof figures up on arrival, in the reader's own numeral system.
-   Targets live in data-count so the markup keeps the correct final value even
-   if this never runs. */
-(function () {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-  if (!('IntersectionObserver' in window)) return;
-
-  var io = new IntersectionObserver(function (entries) {
-    entries.forEach(function (e) {
-      if (!e.isIntersecting) return;
-      var el = e.target, target = Number(el.dataset.count);
-      io.unobserve(el);
-      if (!Number.isFinite(target) || target === 0) return;
-      var loc = document.documentElement.lang === 'fa' ? 'fa-IR' : 'en-US';
-      var t0 = performance.now();
-      (function tick(now) {
-        var p = Math.min((now - t0) / 1100, 1);
-        el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3))).toLocaleString(loc);
-        if (p < 1) requestAnimationFrame(tick);
-      })(t0);
-    });
-  }, { threshold: 0.6 });
-  document.querySelectorAll('[data-count]').forEach(function (el) { io.observe(el); });
-})();
-
-/* Nav gets its rule and lift only once it is actually overlapping content. */
+/* Nav gets its rule only once it overlaps content. */
 (function () {
   var nav = document.getElementById('nav');
   if (!nav) return;
-  var onScroll = function () {
-    if (scrollY > 8) nav.setAttribute('data-stuck', ''); else nav.removeAttribute('data-stuck');
-  };
+  var onScroll = function () { if (scrollY > 8) nav.setAttribute('data-stuck', ''); else nav.removeAttribute('data-stuck'); };
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 })();
