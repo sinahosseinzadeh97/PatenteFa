@@ -649,7 +649,8 @@
           requestGeneration + ':translation:' + q.questionId,
           function() { return api('POST', '/translate/' + q.questionId); }
         );
-        state.translationCache[q.questionId] = data;
+        // An empty answer is not cached, so reopening the panel retries it.
+        if (data.translatedText) state.translationCache[q.questionId] = data;
         if (!App.isAiRequestCurrent(q.questionId, requestGeneration)) return;
         App.showTranslation(data);
       } catch (e) {
@@ -676,7 +677,7 @@
       verdictEl.innerHTML = '<span class="result-verdict-pill ' + (isVero ? 'vero' : 'falso') + '">پاسخ: ' + label + '</span>';
       verdictEl.style.display = 'block';
     }
-    document.getElementById('translate-text').textContent = data.translatedText || 'ترجمه هنوز تأیید نشده است.';
+    document.getElementById('translate-text').textContent = data.translatedText || 'ترجمه فعلاً در دسترس نیست.';
     const quality = document.getElementById('translate-quality');
     if (quality) App.renderContentQuality(quality, data);
     if (explanationEl) {
@@ -693,7 +694,7 @@
     const errorEl = document.getElementById('theory-error');
     const qualityEl = document.getElementById('theory-quality');
     const render = function(data) {
-      App.renderRichText(textEl, data.theoryText || 'توضیح این سؤال هنوز تأیید نشده است.');
+      App.renderRichText(textEl, data.theoryText || 'توضیح این سؤال فعلاً در دسترس نیست.');
       if (qualityEl) App.renderContentQuality(qualityEl, data);
     };
     if (state.theoryCache && state.theoryCache[questionId]) {
@@ -713,7 +714,7 @@
         function() { return api('POST', '/translate/' + questionId + '/theory'); }
       );
       if (!state.theoryCache) state.theoryCache = {};
-      state.theoryCache[questionId] = data;
+      if (data.theoryText) state.theoryCache[questionId] = data;
       if (!App.isAiRequestCurrent(questionId, requestGeneration)) return;
       render(data);
     } catch (e) {

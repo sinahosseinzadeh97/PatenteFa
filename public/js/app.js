@@ -2264,12 +2264,12 @@ App.renderRichText = function(el, text) {
         }
         try {
           const res = await pending;
-          textEl.textContent = res.translatedText || 'ترجمه هنوز تأیید نشده است.';
+          textEl.textContent = res.translatedText || 'ترجمه فعلاً در دسترس نیست.';
           if (explEl) App.renderRichText(explEl, res.explanation || '');
           let quality = box.querySelector('.content-quality');
           if (!quality) { quality = document.createElement('div'); box.appendChild(quality); }
           App.renderContentQuality(quality, res);
-          box.dataset.contentLoaded = 'true';
+          if (res.translatedText) box.dataset.contentLoaded = 'true';
         } catch (e) {
           if (needsTranslation) textEl.textContent = 'خطا در دریافت ترجمه';
         } finally {
@@ -2429,14 +2429,14 @@ App.renderRichText = function(el, text) {
     if (textItEl) textItEl.textContent = q.position + '. ' + q.textIt;
 
     const textFaEl = document.getElementById('tutor-q-text-fa');
-    if (textFaEl) textFaEl.textContent = q.translatedText || 'ترجمه هنوز تأیید نشده است.';
+    if (textFaEl) textFaEl.textContent = q.translatedText || 'ترجمه فعلاً در دسترس نیست.';
 
     // Trap Box (§14.1: simplified — use explanation only)
     const trapBox = document.getElementById('tutor-trap-box');
     if (trapBox) {
       App.renderRichText(
         trapBox,
-        q.explanation || 'توضیح این سؤال هنوز تأیید نشده است.'
+        q.explanation || 'توضیح این سؤال فعلاً در دسترس نیست.'
       );
     }
 
