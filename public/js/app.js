@@ -67,6 +67,18 @@ App.renderRichText = function(el, text) {
     );
   }
 
+  // Light by default; dark when the user's Telegram is dark. Telegram's own
+  // header/background take the app's --bg so there is no seam at the top.
+  function applyTelegramTheme() {
+    if (!tg) return;
+    document.documentElement.dataset.theme = tg.colorScheme === 'dark' ? 'dark' : 'light';
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+    try {
+      tg.setHeaderColor(bg);
+      tg.setBackgroundColor(bg);
+    } catch (e) {}
+  }
+
   if (tg) {
     tg.ready();
     syncTelegramSafeArea();
@@ -81,10 +93,12 @@ App.renderRichText = function(el, text) {
         tg.disableVerticalSwipes();
       } catch (e) {}
     }
-    tg.setHeaderColor('#14151A');
-    tg.setBackgroundColor('#14151A');
+    applyTelegramTheme();
 
     if (typeof tg.onEvent === 'function') {
+      try {
+        tg.onEvent('themeChanged', applyTelegramTheme);
+      } catch (e) {}
       ['safeAreaChanged', 'contentSafeAreaChanged', 'fullscreenChanged', 'fullscreenFailed'].forEach(function(eventName) {
         try {
           tg.onEvent(eventName, syncTelegramSafeArea);
@@ -1623,7 +1637,7 @@ App.renderRichText = function(el, text) {
       } else {
         data.needsMoreWork.forEach(function(item) {
           var wrongPct = Math.round((item.wrongRate || 0) * 100);
-          var cls = wrongPct >= 70 ? 'var(--stop)' : 'var(--amber)';
+          var cls = wrongPct >= 70 ? 'var(--stop)' : 'var(--accent)';
           var row = document.createElement('div');
           row.className = 'nmw-row';
           row.setAttribute('role', 'button');

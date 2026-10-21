@@ -18,6 +18,6 @@ Read all five before making any significant changes.
 - **OpenAI:** translation/explanation only — never used to invent exam questions
 - **Question bank:** ~7,139 questions from `Ed0ardo/QuizPatenteB`, seeded via `scripts/import-question-bank.ts`
 - **Pass rule:** ≤ 3 wrong answers out of 30 = pass (matches real Italian exam)
-- **Dark theme:** green (#16a34a) / white / red (#dc2626) accent palette — both Italian and Iranian flags share these colours
+- **Brand / theme:** from the logo (`public/img/brand/`) — navy `#0B2D52` on white plus a traffic light (red / amber / green). Light is the base; the Mini App switches to a dark navy variant when Telegram's `colorScheme` is dark
 
 ## Imported Claude Cowork project instructions

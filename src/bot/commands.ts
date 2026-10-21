@@ -183,9 +183,9 @@ export async function handleUpdate(
       // Send private notification to approved user
       await sendMessage(ctx.token, {
         chat_id: targetUserId,
-        text: `🎉 <b>تبریک! حساب کاربری شما تایید شد.</b>\n\nاکنون می‌توانید مینی‌اپ PatenteFa را باز کرده و تمرینات را آغاز کنید. 🚗`,
+        text: `🎉 <b>تبریک! حساب کاربری شما تایید شد.</b>\n\nاکنون می‌توانید مینی‌اپ پتنت فارسی را باز کرده و تمرینات را آغاز کنید. 🚗`,
         parse_mode: "HTML",
-        reply_markup: buildMiniAppButton("🚗 باز کردن PatenteFa", ctx.miniAppUrl),
+        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", ctx.miniAppUrl),
       });
       return;
     }
@@ -211,7 +211,7 @@ export async function handleUpdate(
       // Send notification to revoked user
       await sendMessage(ctx.token, {
         chat_id: targetUserId,
-        text: `🚫 <b>دسترسی شما به مینی‌اپ PatenteFa لغو گردید.</b>\n\nدر صورت نیاز می‌توانید مجدداً از طریق مینی‌اپ درخواست تایید ارسال کنید.`,
+        text: `🚫 <b>دسترسی شما به مینی‌اپ پتنت فارسی لغو گردید.</b>\n\nدر صورت نیاز می‌توانید مجدداً از طریق مینی‌اپ درخواست تایید ارسال کنید.`,
         parse_mode: "HTML",
       });
       return;
@@ -251,9 +251,9 @@ export async function handleUpdate(
       });
       await sendMessage(ctx.token, {
         chat_id: targetId,
-        text: `🎉 <b>حساب کاربری شما تایید شد!</b>\nاکنون می‌توانید مینی‌اپ PatenteFa را باز کنید. 🚗`,
+        text: `🎉 <b>حساب کاربری شما تایید شد!</b>\nاکنون می‌توانید مینی‌اپ پتنت فارسی را باز کنید. 🚗`,
         parse_mode: "HTML",
-        reply_markup: buildMiniAppButton("🚗 باز کردن PatenteFa", ctx.miniAppUrl),
+        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", ctx.miniAppUrl),
       });
     }
   } else if (text.startsWith("/revoke") || text.startsWith("/block")) {
@@ -272,7 +272,7 @@ export async function handleUpdate(
       });
       await sendMessage(ctx.token, {
         chat_id: targetId,
-        text: `🚫 <b>دسترسی شما به مینی‌اپ PatenteFa لغو گردید.</b>`,
+        text: `🚫 <b>دسترسی شما به مینی‌اپ پتنت فارسی لغو گردید.</b>`,
         parse_mode: "HTML",
       });
     }
@@ -385,7 +385,7 @@ async function handleListUsers(
     return;
   }
 
-  let text = `👥 <b>پنل مدیریت کاربران PatenteFa</b> (مجموع: ${users.length} نفر)\n\n`;
+  let text = `👥 <b>پنل مدیریت کاربران پتنت فارسی</b> (مجموع: ${users.length} نفر)\n\n`;
   const inlineKeyboard: any[][] = [];
 
   users.forEach((u, i) => {
@@ -477,9 +477,9 @@ async function handleStart(
 
   const greeting =
     `سلام ${firstName}! 👋\n` +
-    `به **PatenteFa** خوش آمدید 🇮🇹🇮🇷\n\n` +
+    `به **پتنت فارسی** خوش آمدید 🇮🇹🇮🇷\n\n` +
     `💎 **راهکار هوشمند قبولی در آزمون تئوری پاتنته B**\n\n` +
-    `با توجه به افزایش قیمت یورو و هزینه‌های سنگین ۱۵۰ تا ۱۶۰ یورویی پکیج‌های آموزشی موجود در بازار، سامانه **PatenteFa** به گونه‌ای طراحی شده است که شما را ظرف مدت ۳ تا ۴ ماه، با بالاترین کیفیت و تنها با یک‌سوم هزینه پکیج‌های مشابه، آماده قبولی در آزمون اصلی تئوری کند.\n\n` +
+    `با توجه به افزایش قیمت یورو و هزینه‌های سنگین ۱۵۰ تا ۱۶۰ یورویی پکیج‌های آموزشی موجود در بازار، سامانه **پتنت فارسی** به گونه‌ای طراحی شده است که شما را ظرف مدت ۳ تا ۴ ماه، با بالاترین کیفیت و تنها با یک‌سوم هزینه پکیج‌های مشابه، آماده قبولی در آزمون اصلی تئوری کند.\n\n` +
     (daysToExam !== null
       ? `📅 ${daysToExam} روز تا تاریخ آزمون شما باقی مانده است.\n\n`
       : "") +
@@ -489,7 +489,7 @@ async function handleStart(
     chat_id: chatId,
     text: greeting,
     parse_mode: "Markdown",
-    reply_markup: buildMiniAppButton("🚗 باز کردن PatenteFa", ctx.miniAppUrl),
+    reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", ctx.miniAppUrl),
   });
 }
 

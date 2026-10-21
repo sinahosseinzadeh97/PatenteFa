@@ -17,7 +17,7 @@ export function renderAdminScreen(): string {
         <button type="button" onclick="App.handleBackNavigation()" class="icon-button" aria-label="بازگشت به خانه"><svg class="ui-icon"><use href="#i-chevron-right"/></svg></button>
         <svg class="ui-icon admin-header-icon"><use href="#i-settings"/></svg>
         <div>
-          <h1 class="admin-title">پنل مدیریت PatenteFa</h1>
+          <h1 class="admin-title">پنل مدیریت پتنت فارسی</h1>
           <div class="admin-title-meta"><span class="admin-private-badge"><svg class="ui-icon"><use href="#i-lock"/></svg> فقط مدیر اصلی</span><span class="admin-kpi-sub" id="admin-kpi-sub">در حال بارگذاری…</span></div>
         </div>
       </div>

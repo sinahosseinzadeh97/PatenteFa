@@ -19,20 +19,21 @@
 
 ## Color tokens
 
-| Role | Token | Value | Use |
-|---|---|---:|---|
-| App background | `--bg` | `#14151A` | Asphalt canvas |
-| Primary surface | `--surface` | `#1D1F25` | Navigation, grouped content |
-| Raised surface | `--surface-2` | `#252831` | Inputs, selected/raised areas |
-| Strong border | `--border` | `#393D49` | Controls and grouped regions |
-| Subtle border | `--border-subtle` | `#2B2E37` | Row separation |
-| Primary text | `--ink` | `#F2F0EB` | Main Persian/Italian content |
-| Secondary text | `--ink-muted` | `#B2B6C3` | Supporting labels; AA on dark surfaces |
-| Correct / VERO | `--go` | `#23824A` | Correct answer and success only |
-| Incorrect / FALSO | `--stop` | `#C83D43` | Wrong answer and destructive only |
-| Focus / selected / premium | `--amber` | `#E8A33D` | Primary action and current state |
+From the logo (2026-10). Light is the base; `:root[data-theme="dark"]` follows Telegram's `colorScheme` (set before first paint in `shell.tsx`, kept in sync by `applyTelegramTheme()` in `app.js`). Tints use channel tokens: `rgb(var(--accent-rgb) / .3)`.
 
-Color never carries meaning alone. Correct/wrong UI must include a check/cross icon and explicit text. Amber is the interaction accent; green and red are reserved for semantic outcomes.
+| Role | Token | Light | Dark |
+|---|---|---:|---:|
+| App background | `--bg` | `#F5F7FA` | `#0B1424` |
+| Primary surface | `--surface` | `#FFFFFF` | `#111C30` |
+| Raised / recessed | `--surface-2` / `--surface-3` | `#EEF2F7` / `#E3E9F1` | `#16233A` / `#1C2B46` |
+| Borders | `--border` / `--border-subtle` | `#CCD5E1` / `#E1E7EF` | `#2C3D5C` / `#1F2E48` |
+| Text | `--ink` / `--ink-muted` | `#0A0F1E` / `#56617A` (5.8:1) | `#EEF2F8` / `#A3AFC4` |
+| Primary action / current / focus | `--accent`, `--on-accent` | `#0B2D52` on white | `#8FB4EA`, ink `#0B1424` |
+| Road paint, bookmark, streak, warnings | `--signal`, `--warn-ink` | `#FFC300`, text `#7A5200` | same fill, text `#F5CF5C` |
+| Correct / VERO | `--go`, `--go-light` (text) | `#13703A`, `#0F6332` | `#23824A`, `#73D79A` |
+| Incorrect / FALSO | `--stop`, `--stop-light` (text) | `#C1272D`, `#A8222A` | `#C83D43`, `#FF9699` |
+
+Color never carries meaning alone. Correct/wrong UI must include a check/cross icon and explicit text. Navy is the interaction accent, amber is road paint and caution, green and red are reserved for semantic outcomes. Road-scene SVGs (`.dg-* .xg-* .sx-* .ov-*`) keep fixed asphalt colors in both themes.
 
 ## Typography
 
@@ -69,7 +70,7 @@ Color never carries meaning alone. Correct/wrong UI must include a check/cross i
 - **App shell:** safe-area aware; no horizontal overflow; bottom-nav clearance built into every root screen.
 - **Top bar:** 52–60px, sticky when progress or navigation must remain visible. RTL back control sits on the right and points right.
 - **Page title:** one `h1`, 24–28px Persian, concise supporting line when needed.
-- **Buttons:** primary amber; secondary neutral outline; semantic green/red only for answer choices/outcomes; destructive red outline.
+- **Buttons:** primary navy (`--accent`); secondary neutral outline; semantic green/red only for answer choices/outcomes; destructive red outline.
 - **Bottom action dock:** sticky, opaque enough for readability, respects bottom safe area, never overlaps content.
 - **Question counter/timer:** tabular Latin numerals, persistent in the exam header.
 - **Answer choices:** at least 56px tall, strong labels, persistent selected state, check/cross plus semantic copy.

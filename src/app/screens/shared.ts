@@ -36,9 +36,18 @@ export function renderIconSprite(): string {
 </svg>`;
 }
 
+/** The logo, light and dark cuts; CSS shows the one matching [data-theme]. */
+export function renderBrandLogo(className: string): string {
+  return `<span class="brand-logo ${className}">
+  <img class="brand-logo-light" src="/img/brand/logo.png" width="544" height="330" alt="پتنت فارسی" />
+  <img class="brand-logo-dark" src="/img/brand/logo-dark.png" width="544" height="330" alt="" aria-hidden="true" />
+</span>`;
+}
+
 export function renderLoading(): string {
   return `
 <div id="loading" role="status" aria-live="polite">
+  ${renderBrandLogo("loading-logo")}
   <div class="spinner" aria-hidden="true"></div>
   <p>در حال آماده‌سازی مسیر مطالعه…</p>
 </div>`;
@@ -114,7 +123,7 @@ export function renderGuideModal(): string {
     <div class="guide-modal-header">
       <div class="guide-modal-heading">
         <svg class="ui-icon"><use href="#i-help"/></svg>
-        <div><h2 id="guide-title" class="guide-modal-title">شروع کار با PatenteFa</h2><p>سه قدم برای یک جلسه مؤثر</p></div>
+        <div><h2 id="guide-title" class="guide-modal-title">شروع کار با پتنت فارسی</h2><p>سه قدم برای یک جلسه مؤثر</p></div>
       </div>
       <button type="button" onclick="App.closeGuideModal()" class="icon-button" aria-label="بستن راهنما"><svg class="ui-icon"><use href="#i-close"/></svg></button>
     </div>

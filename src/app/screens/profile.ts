@@ -58,8 +58,8 @@ export function renderProfileScreen(): string {
         <div class="sparkline-wrap">
           <svg id="profile-sparkline" viewBox="0 0 300 80" preserveAspectRatio="none" role="img" aria-label="نمودار روند نمره در ۱۵ آزمون اخیر">
             <line x1="0" y1="" x2="300" y2="" id="sparkline-pass-line" stroke="rgba(35,130,74,.55)" stroke-width="1" stroke-dasharray="4 4"/>
-            <polyline id="sparkline-line" points="" fill="none" stroke="var(--amber)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
-            <circle id="sparkline-dot" cx="0" cy="0" r="4" fill="var(--amber)"/>
+            <polyline id="sparkline-line" points="" fill="none" stroke="var(--accent)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle id="sparkline-dot" cx="0" cy="0" r="4" fill="var(--accent)"/>
             <text id="sparkline-empty" x="150" y="42" text-anchor="middle" fill="var(--ink-muted)" font-size="11" font-family="Vazirmatn, sans-serif">هنوز آزمونی ثبت نشده</text>
           </svg>
         </div>
