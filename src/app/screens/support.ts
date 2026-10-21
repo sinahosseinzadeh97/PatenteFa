@@ -5,7 +5,7 @@ export function renderSupportScreen(): string {
   <main class="page-container support-content">
     <header class="page-header support-header-bar">
       <button type="button" onclick="App.handleBackNavigation()" class="icon-button" aria-label="بازگشت"><svg class="ui-icon"><use href="#i-chevron-right"/></svg></button>
-      <div><span class="page-kicker">گفتگو با پشتیبانی</span><h1>پشتیبانی PatenteFa</h1><p>پاسخ هم اینجا و هم در چت ربات به تو اطلاع داده می‌شود.</p></div>
+      <div><span class="page-kicker">گفتگو با پشتیبانی</span><h1>پشتیبانی پتنت فارسی</h1><p>پاسخ هم اینجا و هم در چت ربات به تو اطلاع داده می‌شود.</p></div>
     </header>
 
     <div id="support-thread" class="support-thread" role="log" aria-live="polite" aria-label="پیام‌های پشتیبانی"><div class="support-empty">در حال دریافت گفتگو…</div></div>

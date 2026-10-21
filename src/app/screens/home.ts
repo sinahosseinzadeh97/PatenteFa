@@ -1,8 +1,11 @@
+import { renderBrandLogo } from "./shared.js";
+
 /** Home / personalized study dashboard. */
 export function renderHomeScreen(): string {
   return `
 <div id="screen-home" class="screen screen-with-nav">
   <main class="page-container home-content">
+    ${renderBrandLogo("home-logo")}
     <header class="home-header">
       <div class="home-profile-identity">
         <div id="user-avatar-container" class="home-avatar-wrap">

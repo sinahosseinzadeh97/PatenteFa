@@ -2,7 +2,7 @@
 
 > Source of truth for the **public website** (`public/index.html`) at patentefarsi.online.
 > The Telegram Mini App has its own separate system in `design-system/patentefa/MASTER.md`.
-> They share a brand (the amber) and a semantic vocabulary (go / stop), nothing else.
+> They share the logo (navy + traffic light, `public/img/brand/`) and a semantic vocabulary (go / stop), nothing else.
 
 **Surface:** one page, no build step, no framework, no runtime dependency
 **Primary language:** Persian (RTL), served as the document's own markup
@@ -50,17 +50,19 @@ Light is the base; dark redefines tokens only. Contrast measured as text on `--p
 
 | Role | Token | Light | Dark |
 |---|---|---|---|
-| Page ground | `--paper` | `#F6F4EE` | `#121316` |
-| Raised surface | `--surface` | `#FFFFFF` | `#1A1C21` |
-| Recessed | `--sunken` | `#EDEAE2` | `#202329` |
-| Hairline / rule | `--line` / `--line-2` | `#DEDAD0` / `#BDB8AC` | `#2A2D35` / `#3D414C` |
-| Text | `--ink` / `--ink-2` / `--ink-muted` | `#17181C` 16:1 / `#3A3C43` 10:1 / `#5C5E66` 5.9:1 | `#F1EFE9` / `#C9CBD2` / `#9DA1AD` |
-| Brand fill | `--amber` | `#E8A33D` | same |
-| Amber as text | `--amber-ink` | `#7A4E06` 6.9:1 | `#F0BA6B` |
-| Highlighter | `--hl` | `#F6D58E` (behind ink only) | `#5A4310` |
-| Action / focus | `--blue` | `#1B4FA0` 7.2:1 | `#8AB0F2` |
-| Correct | `--go` | `#13703A` 5.5:1 | `#5BD68A` |
-| Wrong / red pen | `--stop` | `#C1272D` 5.2:1 | `#F47C7C` |
+| Page ground | `--paper` | `#F5F7FA` | `#0B1424` |
+| Raised surface | `--surface` | `#FFFFFF` | `#111C30` |
+| Recessed | `--sunken` | `#EAEEF4` | `#16233A` |
+| Hairline / rule | `--line` / `--line-2` | `#DCE2EA` / `#B7C1CF` | `#22314B` / `#34476A` |
+| Text | `--ink` / `--ink-2` / `--ink-muted` | `#0A0F1E` 17.8:1 / `#2E3A52` 10.6:1 / `#56617A` 5.8:1 | `#EEF2F8` / `#C5CEDD` / `#98A4BA` |
+| Brand fill | `--brand` / `--on-brand` | `#0B2D52` / white (13.9:1) | `#8FB4EA` / `#0B1424` |
+| Brand as text | `--brand-ink` | `#0B2D52` 13:1 | `#8FB4EA` |
+| Highlighter | `--hl` | `#FFE27A` (the logo's amber light, behind ink only) | `#5C4A0E` |
+| Action / focus | `--blue` | `#1B4FA0` 7.3:1 | `#8AB0F2` |
+| Correct | `--go` | `#13703A` 5.7:1 | `#5BD68A` |
+| Wrong / red pen | `--stop` | `#C1272D` 5.4:1 | `#F47C7C` |
+
+The nav carries the logo (`<picture>` swaps `logo-dark.png` under dark mode).
 
 The red pen's colour lives inside a `data:` URI, so it is defined twice (light and dark)
 next to `--stop`. Change them together.

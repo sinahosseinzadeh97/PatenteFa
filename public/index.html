@@ -7,21 +7,21 @@
      runs is a frame the Mini App user sees of the wrong page. -->
 <script>if(location.hash.includes('tgWebApp'))location.replace('/app'+location.search+location.hash)</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title data-fa="پاتنته‌فا — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی" data-en="PatenteFa — Italian driving theory, in Persian">پاتنته‌فا — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی</title>
+<title data-fa="پتنت فارسی — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی" data-en="Patente Farsi — Italian driving theory, in Persian">پتنت فارسی — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی</title>
 <meta name="description" content="تمرین آزمون تئوری پاتنته B ایتالیا به زبان فارسی. ۷٬۱۳۹ سوال رسمی، ترجمه و توضیح فارسی، شبیه‌سازی آزمون واقعی و مرور اشتباهات." />
-<meta name="theme-color" content="#F6F4EE" media="(prefers-color-scheme: light)" />
-<meta name="theme-color" content="#121316" media="(prefers-color-scheme: dark)" />
+<meta name="theme-color" content="#F5F7FA" media="(prefers-color-scheme: light)" />
+<meta name="theme-color" content="#0B1424" media="(prefers-color-scheme: dark)" />
 <link rel="canonical" href="https://patentefarsi.online/" />
 <link rel="alternate" hreflang="fa" href="https://patentefarsi.online/" />
 <link rel="alternate" hreflang="en" href="https://patentefarsi.online/?lang=en" />
-<meta property="og:title" content="پاتنته‌فا — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی" />
+<meta property="og:title" content="پتنت فارسی — آزمون تئوری گواهینامه‌ی ایتالیا، به فارسی" />
 <meta property="og:description" content="۷٬۱۳۹ سوال رسمی، ترجمه‌ی فارسی، توضیح اینکه چرا جواب غلط است، و برنامه‌ی مرور اشتباهات." />
 <meta property="og:type" content="website" />
 <meta property="og:locale" content="fa_IR" />
 <meta property="og:url" content="https://patentefarsi.online" />
 <meta property="og:image" content="https://patentefarsi.online/img/ai-panel.png" />
 <meta name="twitter:card" content="summary_large_image" />
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23E8A33D'/%3E%3Cpath d='M11 24V8h6.4a5.1 5.1 0 0 1 0 10.2H14.6V24z' fill='%2316181D'/%3E%3C/svg%3E" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230B2D52'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M8.5 24V8h4.6a4.5 4.5 0 0 1 0 9H8.5'/%3E%3Cpath d='M14.5 24a6 6 0 0 1 12 0'/%3E%3C/g%3E%3C/svg%3E" />
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -55,36 +55,36 @@
    The page is an annotated exam sheet. The visitor answers a real question
    from the bank before reading a single claim, then the page takes that same
    sentence apart the way a teacher would: a red pen for what trips you up,
-   an amber highlighter for the phrase the answer hangs on.
+   a highlighter in the logo's amber light for the phrase the answer hangs on.
 
-   Kept from the previous system: the closed signage palette (amber brand,
-   red stop, green go, blue action), Persian-first bidi, and every contrast
+   Brand (2026-10): the logo's navy line, white ground and traffic light
+   replace the old amber. Kept: red stop, green go, blue action, Persian-first bidi, and every contrast
    floor. Changed: the template rhythm (eyebrow → heading → card grid, seven
    times) is gone; each section has its own form.
    ═══════════════════════════════════════════════════════════════════════════ */
 
 :root {
-  --paper:      #F6F4EE;   /* exam-paper stock */
+  --paper:      #F5F7FA;   /* the logo's white, cooled one step */
   --surface:    #FFFFFF;
-  --sunken:     #EDEAE2;
-  --line:       #DEDAD0;
-  --line-2:     #BDB8AC;
+  --sunken:     #EAEEF4;
+  --line:       #DCE2EA;
+  --line-2:     #B7C1CF;
 
-  --ink:        #17181C;   /* 16.1:1 on paper */
-  --ink-2:      #3A3C43;   /* 10.0:1 */
-  --ink-muted:  #5C5E66;   /* 5.9:1 */
+  --ink:        #0A0F1E;   /* the logo's wordmark, 17.8:1 on paper */
+  --ink-2:      #2E3A52;   /* 10.6:1 */
+  --ink-muted:  #56617A;   /* 5.8:1 */
 
-  --amber:      #E8A33D;   /* brand fill — the app's CTA amber */
-  --amber-ink:  #7A4E06;   /* 6.9:1 */
-  --amber-bg:   #FBEFD9;
-  --hl:         #F6D58E;   /* highlighter swipe, behind ink only */
-  --blue:       #1B4FA0;   /* 7.2:1 */
-  --go:         #13703A;   /* 5.5:1 */
+  --brand:      #0B2D52;   /* the logo's navy line — brand fill */
+  --brand-ink:  #0B2D52;   /* 13:1 */
+  --brand-bg:   #E6EDF7;
+  --hl:         #FFE27A;   /* the logo's amber light as a highlighter, behind ink only */
+  --blue:       #1B4FA0;   /* 7.3:1 */
+  --go:         #13703A;   /* 5.7:1 */
   --go-bg:      #E3F1E7;
-  --stop:       #C1272D;   /* 5.2:1 */
+  --stop:       #C1272D;   /* 5.4:1 */
   --stop-bg:    #F8E5E4;
-  --on-amber:   #17181C;
-  --bezel:      #111216;
+  --on-brand:   #FFFFFF;
+  --bezel:      #0A0F1E;
 
   /* The red pen. A data: URI, so it costs no request and no origin. */
   --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5C25 4.2 52 3.6 78 5.2c14 .9 27 2.4 39 4.6' fill='none' stroke='%23C1272D' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
@@ -106,7 +106,7 @@
 
   --r-sm: 4px; --r-md: 8px; --r-lg: 14px; --r-pill: 999px;
   --lift-1: 0 1px 0 var(--line);
-  --lift-2: 0 22px 44px -22px rgba(23,24,28,.32), 0 2px 6px rgba(23,24,28,.06);
+  --lift-2: 0 22px 44px -22px rgba(10,15,30,.30), 0 2px 6px rgba(10,15,30,.06);
 
   --maxw: 1200px;
   --measure: 64ch;
@@ -117,23 +117,25 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper:     #121316;
-    --surface:   #1A1C21;
-    --sunken:    #202329;
-    --line:      #2A2D35;
-    --line-2:    #3D414C;
-    --ink:       #F1EFE9;
-    --ink-2:     #C9CBD2;
-    --ink-muted: #9DA1AD;
-    --amber-ink: #F0BA6B;
-    --amber-bg:  #2B2214;
-    --hl:        #5A4310;
+    --paper:     #0B1424;
+    --surface:   #111C30;
+    --sunken:    #16233A;
+    --line:      #22314B;
+    --line-2:    #34476A;
+    --ink:       #EEF2F8;
+    --ink-2:     #C5CEDD;
+    --ink-muted: #98A4BA;
+    --brand:     #8FB4EA;
+    --brand-ink: #8FB4EA;
+    --brand-bg:  #16294A;
+    --on-brand:  #0B1424;
+    --hl:        #5C4A0E;
     --blue:      #8AB0F2;
     --go:        #5BD68A;
     --go-bg:     #13261B;
     --stop:      #F47C7C;
     --stop-bg:   #2C1719;
-    --bezel:     #050506;
+    --bezel:     #04070D;
     --pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 12' preserveAspectRatio='none'%3E%3Cpath d='M3 8.5C25 4.2 52 3.6 78 5.2c14 .9 27 2.4 39 4.6' fill='none' stroke='%23F47C7C' stroke-width='3.4' stroke-linecap='round'/%3E%3C/svg%3E");
     --lift-2: 0 22px 44px -22px rgba(0,0,0,.7), 0 2px 6px rgba(0,0,0,.3);
     color-scheme: dark;
@@ -205,7 +207,7 @@ p { text-wrap: pretty; }
 }
 .btn:active { transform: translateY(1px); }
 .btn svg { width: 18px; height: 18px; flex: none; }
-.btn-primary { background: var(--amber); color: var(--on-amber); box-shadow: inset 0 -2px 0 rgba(0,0,0,.14); }
+.btn-primary { background: var(--brand); color: var(--on-brand); box-shadow: inset 0 -2px 0 rgba(0,0,0,.14); }
 .btn-primary:hover { background: #D8912A; }
 .btn-secondary { background: transparent; color: var(--ink); border-color: var(--line-2); }
 .btn-secondary:hover { background: var(--sunken); border-color: var(--ink-muted); }
@@ -225,9 +227,8 @@ p { text-wrap: pretty; }
 .nav { position: sticky; top: 0; z-index: 50; background: var(--paper); border-bottom: 1px solid transparent; transition: border-color .2s; }
 .nav[data-stuck] { border-bottom-color: var(--line); }
 .nav-in { max-width: var(--maxw); margin-inline: auto; padding: var(--s2) var(--s5); min-height: var(--nav-h); display: flex; align-items: center; gap: var(--s6); }
-.brand { display: flex; align-items: baseline; gap: var(--s2); flex: none; }
-.brand b { font-family: var(--font-display); font-weight: 700; font-size: 1.7rem; line-height: 1; }
-.brand small { font-family: var(--font-lat); font-size: var(--t-xs); color: var(--ink-muted); font-weight: 500; direction: ltr; unicode-bidi: isolate; }
+.brand { display: flex; align-items: center; flex: none; }
+.brand img { height: 52px; width: auto; }
 .nav-links { display: flex; gap: var(--s5); align-items: center; }
 .nav-links a { color: var(--ink-muted); font-size: var(--t-sm); font-weight: 500; padding-block: var(--s2); transition: color .18s; }
 .nav-links a:hover { color: var(--ink); }
@@ -280,7 +281,7 @@ p { text-wrap: pretty; }
   padding: var(--s3) var(--s5); border-bottom: 1px dashed var(--line-2);
   font-size: var(--t-xs); color: var(--ink-muted);
 }
-.q-head b { color: var(--amber-ink); font-weight: 700; }
+.q-head b { color: var(--brand-ink); font-weight: 700; }
 .q-body {
   direction: ltr;                     /* the ministerial screen: figure left, statement right */
   display: grid; grid-template-columns: 112px 1fr; gap: var(--s5); align-items: center;
@@ -376,7 +377,7 @@ html[lang="en"] .gloss li::before { content: counter(g); }
 .steps { counter-reset: s; }
 .step { display: grid; grid-template-columns: 3.2rem 1fr; gap: var(--s4); padding-block: var(--s5); border-top: 1px solid var(--line); }
 .step:last-child { border-bottom: 1px solid var(--line); }
-.step-n { font-family: var(--font-display); font-weight: 700; font-size: 2.4rem; line-height: 1; color: var(--amber-ink); font-variant-numeric: tabular-nums; }
+.step-n { font-family: var(--font-display); font-weight: 700; font-size: 2.4rem; line-height: 1; color: var(--brand-ink); font-variant-numeric: tabular-nums; }
 .step h3 { margin-bottom: var(--s2); }
 .step p { color: var(--ink-muted); font-size: var(--t-sm); }
 .tag { display: inline-block; margin-top: var(--s3); font-family: var(--font-lat); direction: ltr; unicode-bidi: isolate; font-size: var(--t-xs); font-weight: 600; color: var(--ink-muted); border: 1px solid var(--line-2); border-radius: var(--r-sm); padding: 0 var(--s2); line-height: 1.8; }
@@ -406,10 +407,10 @@ html[lang="en"] .gloss li::before { content: counter(g); }
 .turn { display: grid; gap: var(--s2); }
 .turn-cap { font-size: var(--t-sm); color: var(--ink-muted); }
 .turn-cap b { color: var(--ink); display: block; font-size: var(--t-body); }
-.turn-cap .k { font-family: var(--font-display); font-weight: 700; color: var(--amber-ink); margin-inline-end: var(--s2); font-size: 1.3em; }
+.turn-cap .k { font-family: var(--font-display); font-weight: 700; color: var(--brand-ink); margin-inline-end: var(--s2); font-size: 1.3em; }
 .bubble { max-width: 86%; padding: var(--s3) var(--s4); border-radius: 16px; font-size: var(--t-sm); line-height: 1.85; box-shadow: 0 1px 0 rgba(0,0,0,.06); }
 .bubble-in  { background: var(--surface); justify-self: start; border-end-start-radius: 4px; }
-.bubble-out { background: var(--amber-bg); justify-self: end; border-end-end-radius: 4px; font-family: var(--font-lat); direction: ltr; }
+.bubble-out { background: var(--brand-bg); justify-self: end; border-end-end-radius: 4px; font-family: var(--font-lat); direction: ltr; }
 .bubble .who { display: block; font-size: var(--t-xs); font-weight: 700; color: var(--blue); }
 .bubble .en { display: block; font-family: var(--font-lat); direction: ltr; text-align: left; color: var(--ink-muted); font-size: var(--t-xs); line-height: 1.5; margin-top: var(--s2); }
 .bubble-btn { display: block; margin-top: var(--s3); text-align: center; border-top: 1px solid var(--line); padding-top: var(--s2); color: var(--blue); font-weight: 700; font-size: var(--t-sm); }
@@ -421,8 +422,8 @@ html[lang="en"] .gloss li::before { content: counter(g); }
 .included svg { width: 16px; height: 16px; color: var(--go); margin-top: 7px; }
 .fares { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s4); }
 .fare { position: relative; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--line-2); border-radius: var(--r-md); padding: var(--s6) var(--s5) var(--s5); }
-.fare.best { border: 2px solid var(--amber); padding: calc(var(--s6) - 1px) calc(var(--s5) - 1px) calc(var(--s5) - 1px); }
-.fare-flag { position: absolute; top: 0; inset-inline-start: var(--s5); transform: translateY(-50%); background: var(--amber); color: var(--on-amber); font-size: var(--t-xs); font-weight: 700; padding: 0 var(--s3); border-radius: var(--r-pill); line-height: 1.9; }
+.fare.best { border: 2px solid var(--brand); padding: calc(var(--s6) - 1px) calc(var(--s5) - 1px) calc(var(--s5) - 1px); }
+.fare-flag { position: absolute; top: 0; inset-inline-start: var(--s5); transform: translateY(-50%); background: var(--brand); color: var(--on-brand); font-size: var(--t-xs); font-weight: 700; padding: 0 var(--s3); border-radius: var(--r-pill); line-height: 1.9; }
 .fare .name { font-size: var(--t-sm); font-weight: 700; color: var(--ink-muted); }
 .fare .amount { font-family: var(--font-display); direction: ltr; unicode-bidi: isolate; font-size: 4rem; font-weight: 700; line-height: 1; margin-block: var(--s3) var(--s2); }
 .fare .per { font-size: var(--t-sm); color: var(--ink-muted); margin-bottom: var(--s5); flex: 1; }
@@ -527,7 +528,7 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
 <!-- ═══ NAV ══════════════════════════════════════════════════════════════ -->
 <nav class="nav" id="nav" aria-label="اصلی / Main">
   <div class="nav-in">
-    <a href="#top" class="brand"><b data-en="PatenteFa" data-fa="پاتنته‌فا">پاتنته‌فا</b><small>patente B</small></a>
+    <a href="#top" class="brand"><picture><source srcset="/img/brand/logo-dark.png" media="(prefers-color-scheme: dark)" /><img src="/img/brand/logo.png" width="544" height="330" alt="پتنت فارسی" data-alt-en="Patente Farsi" /></picture></a>
 
     <div class="nav-links">
       <a href="#problem" data-en="Why it's hard" data-fa="چرا سخت است">چرا سخت است</a>
@@ -567,7 +568,7 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
     <div>
       <h1><span data-en="The hard half of this exam isn't driving. It's the " data-fa="نیمه‌ی سختِ این آزمون رانندگی نیست؛ ">نیمه‌ی سختِ این آزمون رانندگی نیست؛ </span><span class="pen" data-en="Italian" data-fa="ایتالیایی">ایتالیایی</span><span data-en="." data-fa=" است."> است.</span></h1>
 
-      <p class="lede" data-en="PatenteFa teaches the Italian patente B theory exam in Persian. 7,139 questions, each with a careful translation and the reason it is true or false. Try one right here." data-fa="پاتنته‌فا آزمون تئوری گواهینامه‌ی ایتالیا (<span class='lat'>patente B</span>) را به فارسی درس می‌دهد. ۷٬۱۳۹ سوال، هرکدام با ترجمه‌ی دقیق و دلیلِ درست یا غلط بودنش. یکی را همین‌جا امتحان کنید.">پاتنته‌فا آزمون تئوری گواهینامه‌ی ایتالیا (<span class='lat'>patente B</span>) را به فارسی درس می‌دهد. ۷٬۱۳۹ سوال، هرکدام با ترجمه‌ی دقیق و دلیلِ درست یا غلط بودنش. یکی را همین‌جا امتحان کنید.</p>
+      <p class="lede" data-en="Patente Farsi teaches the Italian patente B theory exam in Persian. 7,139 questions, each with a careful translation and the reason it is true or false. Try one right here." data-fa="پتنت فارسی آزمون تئوری گواهینامه‌ی ایتالیا (<span class='lat'>patente B</span>) را به فارسی درس می‌دهد. ۷٬۱۳۹ سوال، هرکدام با ترجمه‌ی دقیق و دلیلِ درست یا غلط بودنش. یکی را همین‌جا امتحان کنید.">پتنت فارسی آزمون تئوری گواهینامه‌ی ایتالیا (<span class='lat'>patente B</span>) را به فارسی درس می‌دهد. ۷٬۱۳۹ سوال، هرکدام با ترجمه‌ی دقیق و دلیلِ درست یا غلط بودنش. یکی را همین‌جا امتحان کنید.</p>
 
       <div class="cta-row">
         <a class="btn btn-primary" href="https://t.me/Govahinamehitalybot?start=web" target="_blank" rel="noopener">
@@ -633,7 +634,7 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
     <div><dt data-en="Minutes on the clock" data-fa="دقیقه وقت">دقیقه وقت</dt><dd data-count="20">۲۰</dd></div>
     <div><dt data-en="Errors you can afford" data-fa="خطای مجاز برای قبولی">خطای مجاز برای قبولی</dt><dd data-count="3">۳</dd></div>
   </dl>
-  <p class="facts-cap" id="facts-cap"><span data-en="What PatenteFa covers" data-fa="آنچه پاتنته‌فا پوشش می‌دهد">آنچه پاتنته‌فا پوشش می‌دهد</span><span data-en="What the exam asks" data-fa="آنچه آزمون می‌خواهد">آنچه آزمون می‌خواهد</span></p>
+  <p class="facts-cap" id="facts-cap"><span data-en="What Patente Farsi covers" data-fa="آنچه پتنت فارسی پوشش می‌دهد">آنچه پتنت فارسی پوشش می‌دهد</span><span data-en="What the exam asks" data-fa="آنچه آزمون می‌خواهد">آنچه آزمون می‌خواهد</span></p>
 </section>
 
 <!-- ═══ PROBLEM ══════════════════════════════════════════════════════════ -->
@@ -813,11 +814,11 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
       </div>
       <div class="turn">
         <p class="turn-cap"><b><span class="k" data-en="2" data-fa="۲">۲</span><span data-en="A person reviews it" data-fa="یک نفر بررسی می‌کند">یک نفر بررسی می‌کند</span></b><span data-en="Approval is manual on purpose while the product is small and every AI explanation has a real cost." data-fa="تایید عمداً دستی است، تا وقتی محصول کوچک است و هر توضیح هوش مصنوعی هزینه‌ی واقعی دارد.">تایید عمداً دستی است، تا وقتی محصول کوچک است و هر توضیح هوش مصنوعی هزینه‌ی واقعی دارد.</span></p>
-        <p class="bubble bubble-in"><span class="who lat">PatenteFa</span><span class="fa-text" lang="fa">درخواست دسترسی شما برای مدیریت ارسال گردید. به محض تایید مدیریت، دسترسی شما فعال می‌شود و پیام تایید برای شما ارسال خواهد شد.</span><span class="en" data-only="en">Your access request has been sent for review. As soon as it is approved, access is switched on and you get a confirmation here.</span></p>
+        <p class="bubble bubble-in"><span class="who">پتنت فارسی</span><span class="fa-text" lang="fa">درخواست دسترسی شما برای مدیریت ارسال گردید. به محض تایید مدیریت، دسترسی شما فعال می‌شود و پیام تایید برای شما ارسال خواهد شد.</span><span class="en" data-only="en">Your access request has been sent for review. As soon as it is approved, access is switched on and you get a confirmation here.</span></p>
       </div>
       <div class="turn">
         <p class="turn-cap"><b><span class="k" data-en="3" data-fa="۳">۳</span><span data-en="You start with chapter one" data-fa="از فصل اول شروع می‌کنید">از فصل اول شروع می‌کنید</span></b><span data-en="The app opens inside Telegram, in Persian, with every question unlocked." data-fa="اپ داخل تلگرام باز می‌شود، به فارسی، با همه‌ی سوال‌ها باز.">اپ داخل تلگرام باز می‌شود، به فارسی، با همه‌ی سوال‌ها باز.</span></p>
-        <p class="bubble bubble-in"><span class="who lat">PatenteFa</span><span class="fa-text" lang="fa">تبریک! حساب کاربری شما تایید شد. اکنون می‌توانید مینی‌اپ PatenteFa را باز کرده و تمرینات را آغاز کنید.</span><span class="en" data-only="en">Your account has been approved. You can now open the PatenteFa mini app and start practising.</span></p>
+        <p class="bubble bubble-in"><span class="who">پتنت فارسی</span><span class="fa-text" lang="fa">تبریک! حساب کاربری شما تایید شد. اکنون می‌توانید مینی‌اپ Patente Farsi را باز کرده و تمرینات را آغاز کنید.</span><span class="en" data-only="en">Your account has been approved. You can now open the Patente Farsi mini app and start practising.</span></p>
       </div>
     </div>
   </div>
@@ -919,7 +920,7 @@ html[lang="en"] [data-only="fa"], html[lang="fa"] [data-only="en"] { display: no
         <a class="social" href="https://www.linkedin.com/in/sina-hosseinzade20/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn — Sina MohammadHosseinzadeh"><svg aria-hidden="true"><use href="#i-linkedin"/></svg></a>
       </div>
     </div>
-    <p class="small" style="margin-top:var(--s5);font-size:var(--t-xs)" data-en="© 2026 PatenteFa · Running on Cloudflare Workers" data-fa="© ۲۰۲۶ پاتنته‌فا · اجرا روی Cloudflare Workers">© ۲۰۲۶ پاتنته‌فا · اجرا روی Cloudflare Workers</p>
+    <p class="small" style="margin-top:var(--s5);font-size:var(--t-xs)" data-en="© 2026 Patente Farsi · Running on Cloudflare Workers" data-fa="© ۲۰۲۶ پتنت فارسی · اجرا روی Cloudflare Workers">© ۲۰۲۶ پتنت فارسی · اجرا روی Cloudflare Workers</p>
   </div>
 </footer>
 

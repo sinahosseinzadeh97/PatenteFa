@@ -131,16 +131,16 @@ admin.post("/users/:id/status", async (c) => {
     c.executionCtx.waitUntil(
       sendMessage(c.env.TELEGRAM_BOT_TOKEN, {
         chat_id: target.telegram_user_id,
-        text: `🎉 <b>تبریک! حساب کاربری شما تایید شد.</b>\n\nاکنون می‌توانید مینی‌اپ PatenteFa را باز کرده و تمرینات را آغاز کنید. 🚗`,
+        text: `🎉 <b>تبریک! حساب کاربری شما تایید شد.</b>\n\nاکنون می‌توانید مینی‌اپ پتنت فارسی را باز کرده و تمرینات را آغاز کنید. 🚗`,
         parse_mode: "HTML",
-        reply_markup: buildMiniAppButton("🚗 باز کردن PatenteFa", c.env.MINI_APP_URL),
+        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", c.env.MINI_APP_URL),
       })
     );
   } else if (body.isApproved === -1) {
     c.executionCtx.waitUntil(
       sendMessage(c.env.TELEGRAM_BOT_TOKEN, {
         chat_id: target.telegram_user_id,
-        text: `🚫 <b>دسترسی شما به مینی‌اپ PatenteFa لغو گردید.</b>`,
+        text: `🚫 <b>دسترسی شما به مینی‌اپ پتنت فارسی لغو گردید.</b>`,
         parse_mode: "HTML",
       })
     );

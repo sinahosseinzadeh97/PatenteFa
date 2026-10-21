@@ -8,14 +8,17 @@ The app is functionally working but doesn't feel good to use yet. This is a deli
 
 ## Palette
 
-- Background (asphalt): `#14151A`
-- Ink / primary text: `#F2F0EB`
-- Go / correct / VERO: `#1B7A3D` (autostrada green)
-- Stop / wrong / FALSO: `#C1272D` (road-sign red)
-- Accent (streaks, highlights, bookmark): `#E8A33D` (reflective road-paint amber)
-- Muted surface (cards, inputs): `#1F2128`
+Since 2026-10 the palette comes from the logo (`public/img/brand/logo.png`, dark cut `logo-dark.png`): a navy line drawing on white, a red / amber / green traffic light, and the Italian flag. Tokens live in `public/css/app.css` (refined `:root`, light) and `:root[data-theme="dark"]`, which follows Telegram's `colorScheme`.
 
-Green-white-red carries double meaning here — it's both flags at once (Italy vertical, Iran horizontal), and it's also literally the palette of Italian road signage (red = danger/prohibition, green = direction/go). Lean into that; don't treat it as a one-time joke to explain and forget.
+- Accent (primary action, current state, focus): navy `#0B2D52` light · `#8FB4EA` dark
+- Signal amber (road paint, bookmark, streak, warnings): `#FFC300` as a fill; `--warn-ink` for text
+- Go / correct / VERO: `#13703A` light · `#23824A` dark
+- Stop / wrong / FALSO: `#C1272D` light · `#C83D43` dark
+- Background / ink: `#F5F7FA` / `#0A0F1E` light · `#0B1424` / `#EEF2F8` dark
+
+Road-scene diagrams (`.dg-* .xg-* .sx-* .ov-*`) stay asphalt in both themes: they are drawings of roads.
+
+The traffic light gives red/amber/green a third meaning on top of the two flags and Italian signage. Lean into that; don't treat it as a one-time joke to explain and forget.
 
 ## Typography
 

@@ -144,7 +144,7 @@ export async function sendSupportReply(
   return sendMessage(token, {
     chat_id: telegramUserId,
     text:
-      `💬 <b>پیام از پشتیبانی PatenteFa</b>\n\n` +
+      `💬 <b>پیام از پشتیبانی پتنت فارسی</b>\n\n` +
       `${esc(text)}\n\n` +
       `<i>برای پاسخ، همین‌جا بنویسید.</i>`,
     parse_mode: "HTML",
@@ -164,7 +164,7 @@ export async function notifyAdminNewUserRequest(
     : "آره خیلی زیاد!";
 
   const text =
-    `🔔 <b>درخواست دسترسی جدید به PatenteFa</b>\n\n` +
+    `🔔 <b>درخواست دسترسی جدید به پتنت فارسی</b>\n\n` +
     `👤 <b>کاربر</b>: ${nameSafe}\n` +
     `🆔 <b>آیدی تلگرام</b>: <code>${user.telegramUserId}</code>\n` +
     `🏷️ <b>نام کاربری</b>: ${usernameSafe}\n\n` +
