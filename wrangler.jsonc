@@ -10,6 +10,10 @@
 	// Keep the old workers.dev host alive: Telegram messages sent before the
 	// domain move still carry patente-fa.<subdomain>.workers.dev buttons.
 	"workers_dev": true,
+	// Keeps console.error from failed translations so production failures can be read after the fact.
+	"observability": {
+		"enabled": true
+	},
 	// Custom domain — Cloudflare provisions DNS + cert automatically.
 	// Requires the patentefarsi.online zone to be active in this account first.
 	"routes": [

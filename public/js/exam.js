@@ -824,7 +824,12 @@
     if (!state.aiPendingRequests) state.aiPendingRequests = {};
     if (state.aiPendingRequests[key]) return state.aiPendingRequests[key];
 
-    const pending = Promise.resolve().then(requestFactory);
+    // iOS fails a fetch with TypeError "Load failed" when the mini app's connection
+    // went stale in the background; one fresh attempt is safe because all AI tabs are idempotent.
+    const pending = Promise.resolve().then(requestFactory).catch(function(e) {
+      if (e instanceof TypeError) return requestFactory();
+      throw e;
+    });
     state.aiPendingRequests[key] = pending;
     const clear = function() {
       if (state.aiPendingRequests[key] === pending) {
