@@ -1,21 +1,28 @@
-# PatenteFa 🇮🇹🇮🇷
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="public/img/brand/logo-dark.png">
+    <img src="public/img/brand/logo.png" alt="پتنت فارسی — Patente Farsi" width="320">
+  </picture>
+</p>
+
+# Patente Farsi · پتنت فارسی
 
 > **Pass the Italian driving theory exam when Italian isn't your first language.**
-> تمرین آزمون تئوری پاتنته ایتالیا — به فارسی
+> آزمون تئوری گواهینامه‌ی ایتالیا — به فارسی
 
 A Telegram bot + Mini App that teaches the Italian *patente B* theory exam to Persian
 speakers. **7,139 official questions**, every one translated and explained in Persian by
 an AI layer that is grounded in the database rather than trusted blind.
 
 Runs entirely on one **Cloudflare Worker** — no servers, no containers, no separate
-frontend host. In production with daily users.
+frontend host. Live in production and used every day by a small group of learners.
 
 **→ [patentefarsi.online](https://patentefarsi.online)**
 
 <p align="center">
-  <img src=".github/assets/chapters.png" alt="Chapter list showing per-user accuracy and progress" width="31%">
-  <img src=".github/assets/ai-panel.png" alt="An exam question with the Persian translation panel open" width="31%">
-  <img src=".github/assets/exam.png" alt="The exam runner with a road-sign question" width="31%">
+  <img src=".github/assets/home.png" alt="Home screen with today's study route: a lesson, a review of past mistakes, and practice" width="31%">
+  <img src=".github/assets/lesson.png" alt="A lesson comparing the give-way and STOP signs, explained in Persian" width="31%">
+  <img src=".github/assets/exam.png" alt="The exam runner: question 1 of 30, a 20-minute timer, and VERO / FALSO answers" width="31%">
 </p>
 
 ---
@@ -48,6 +55,12 @@ so practice doesn't turn into recall of the same 30 questions.
 **Trilingual, RTL-first UI.** Persian interface, Italian exam text, English/Italian
 technical vocabulary — laid out RTL without a UI framework.
 
+**Follows Telegram's theme.** The palette comes from the logo: navy on white, with a
+red / amber / green traffic light. Light is the default; a dark navy variant takes over
+when the user's Telegram is dark, chosen before first paint and kept in sync on
+`themeChanged`. Colours are channel tokens (`rgb(var(--accent-rgb) / .3)`), so one
+override block re-themes every tint in the stylesheet.
+
 ---
 
 ## Architecture
@@ -73,7 +86,7 @@ Cloudflare:
 | **Language** | TypeScript (strict) |
 | **Routing** | Hono |
 | **Data** | D1 (SQLite), R2, KV |
-| **Frontend** | Vanilla JS + CSS, no framework, no build step |
+| **Frontend** | Vanilla JS + CSS, no framework, no build step · light/dark follows Telegram |
 | **AI** | OpenAI — `gpt-4o-mini` for text, `gpt-4o` for sign images |
 | **Scale** | 7,139 questions · 3,983 with images · 25 chapters |
 
@@ -228,6 +241,7 @@ npx wrangler dev --test-scheduled
 ## Tests
 
 ```bash
+npm test                               # full suite (node:test)
 npx tsc --noEmit                       # strict type check
 npx tsx scripts/test-sign-grounding.ts # sign-image URL resolution + AI grounding
 npx tsx scripts/test-srs.ts            # spaced-repetition scheduling
