@@ -304,7 +304,7 @@ test("the chapter is listed third, opens directly, and ships the model's table w
 
   const lesson = await call(8001, "GET", `/learn/lessons/${LESSONS[2].id}`);
   assert.equal(lesson.status, 200);
-  assert.deepEqual(lesson.body.position, { index: 3, total: 4 });
+  assert.deepEqual(lesson.body.position, { index: 3, total: 4, review: false });
   assert.equal(lesson.body.lesson.practice.length, 5);
   assert.equal(lesson.body.stopping.table.length, SPEEDS_KMH.length * REACTION_TIMES_S.length * SURFACES.length);
   assert.equal(lesson.body.stopping.friction, DRY_FRICTION);
@@ -318,9 +318,15 @@ test("the chapter is listed third, opens directly, and ships the model's table w
 test("'next lesson' skips lessons the learner already completed", async () => {
   const { call, raw } = setup();
   raw.prepare(`INSERT INTO lesson_progress (user_id, lesson_id, step, completed_at) VALUES (1, ?, 10, datetime('now'))`).run(LESSONS[0].id);
-  const lastIncroci = INCROCI_CHAPTER.lessons[3];
+  // Official order: chapter 5 (segnali di precedenza) is followed by chapters 11–12.
+  const lastIncroci = PILOT_CHAPTER.lessons[2];
   const opened = await call(8001, "GET", `/learn/lessons/${lastIncroci.id}`);
-  assert.deepEqual(opened.body.next, { lessonId: LESSONS[1].id, titleFa: LESSONS[1].titleFa, chapterTitleFa: VELOCITA_CHAPTER.titleFa });
+  assert.deepEqual(opened.body.next, {
+    lessonId: LESSONS[1].id,
+    titleFa: LESSONS[1].titleFa,
+    chapterTitleFa: VELOCITA_CHAPTER.titleFa,
+    chapterNumbers: VELOCITA_CHAPTER.numbers,
+  });
 
   // Finishing it the real way gives the same answer.
   for (const q of opened.body.lesson.practice) await call(8001, "POST", `/learn/lessons/${lastIncroci.id}/answer`, { questionId: q.questionId, answer: q.correctAnswer });

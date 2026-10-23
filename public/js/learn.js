@@ -23,6 +23,7 @@
   state.lessonCompletion = null;
   state.lessonBackToPractice = null;
   state.lessonTheoryCache = {};
+  state.classifyUi = {};      // per lesson step: { itemIndex: pickedOption }
 
   var FOCUS_LABELS = {
     negation: 'نفی',
@@ -41,6 +42,18 @@
   }
   function icon(id) { return '<svg class="ui-icon" aria-hidden="true"><use href="#' + id + '"/></svg>'; }
   function minutesLabel(n) { return 'حدود ' + fa(n) + ' دقیقه'; }
+  /** Official chapter number(s): "فصل ۱", "فصل ۱۱ و ۱۲". Never a position in the list. */
+  function chapterName(numbers) { return 'فصل ' + (numbers || []).map(fa).join(' و '); }
+  /** Lessons are numbered within their chapter; the chapter review is named, not numbered. */
+  function lessonLabel(position) {
+    return position.review ? 'مرور فصل' : 'درس ' + fa(position.index) + ' از ' + fa(position.total);
+  }
+  function isLatin(text) { return /^[\x20-\x7E·]+$/.test(text); }
+  /** The /api/learn summary of a lesson, or null when the path is not loaded (e.g. a lesson opened from an exam link). */
+  function findLessonSummary(id) {
+    if (!state.learn) return null;
+    return allLessons().find(function(l) { return l.id === id; }) || null;
+  }
 
   // ── Loading /api/learn ──────────────────────────────────────────────────────
   App.loadLearn = function() {
@@ -99,6 +112,16 @@
   function todayCopy(item) {
     if (item.kind === 'lesson') {
       var resume = item.mode === 'continue';
+      var summary = findLessonSummary(item.lessonId);
+      if (summary && summary.review) {
+        return {
+          icon: 'i-review',
+          tag: 'مرور فصل',
+          title: item.titleFa,
+          detail: 'یک سؤال واقعی از هر درس این فصل',
+          action: resume ? 'ادامه‌ی مرور فصل' : 'شروع مرور فصل',
+        };
+      }
       return {
         icon: 'i-book',
         tag: 'درس',
@@ -196,14 +219,16 @@
 
   function chapterCardHtml(chapter, ci, recommendedId) {
     var lessons = chapter.lessons;
+    var numbered = lessons.filter(function(l) { return !l.review; });
+    var review = lessons.find(function(l) { return l.review; });
     var current = lessons.find(function(l) { return l.state === 'in_progress'; }) ||
       lessons.find(function(l) { return l.id === recommendedId; }) ||
       lessons.find(function(l) { return l.state === 'not_started'; });
-    var doneCount = lessons.filter(function(l) { return l.state === 'completed'; }).length;
+    var doneCount = numbered.filter(function(l) { return l.state === 'completed'; }).length;
 
-    var stops = lessons.map(function(lesson, i) {
+    var stops = lessons.map(function(lesson) {
       var st = stopState(lesson, recommendedId);
-      var marker = lesson.state === 'completed' ? icon('i-check') : fa(i + 1);
+      var marker = lesson.state === 'completed' ? icon('i-check') : lesson.review ? icon('i-review') : fa(numbered.indexOf(lesson) + 1);
       var meta = [st.label, fa(lesson.minutes) + ' دقیقه'];
       if (lesson.practice.answered > 0) {
         meta.push('تمرین: ' + fa(lesson.practice.correct) + ' از ' + fa(lesson.practice.total) + ' درست در اولین تلاش');
@@ -212,10 +237,11 @@
         ? '<button type="button" class="route-due" onclick="App.startLessonPractice(\'' + esc(lesson.id) + '\')">' +
             icon('i-review') + '<span>مرور امروز: ' + fa(lesson.dueReview) + ' سؤال</span></button>'
         : '';
-      return '<li class="route-stop ' + st.cls + (lesson.dueReview > 0 ? ' has-due' : '') + '">' +
+      return '<li class="route-stop ' + st.cls + (lesson.review ? ' is-review' : '') + (lesson.dueReview > 0 ? ' has-due' : '') + '">' +
         '<span class="route-marker" aria-hidden="true">' + marker + '</span>' +
         '<div class="route-stop-main">' +
           '<button type="button" class="route-stop-body" onclick="App.openLesson(\'' + esc(lesson.id) + '\', undefined, \'topics\')">' +
+            (lesson.review ? '<span class="route-stop-tag">مرور فصل، بعد از همه‌ی درس‌ها</span>' : '<span class="route-stop-tag">درس ' + fa(numbered.indexOf(lesson) + 1) + '</span>') +
             '<span class="route-stop-title">' + esc(lesson.titleFa) + '</span>' +
             itSpan(lesson.titleIt, 'route-stop-it') +
             '<span class="route-stop-meta">' + esc(meta.join('، ')) + '</span>' +
@@ -227,7 +253,13 @@
     var primary = current
       ? '<button type="button" class="btn ' + (current.id === recommendedId || current.state === 'in_progress' ? 'btn-primary' : 'btn-secondary') +
           ' btn-full" onclick="App.openLesson(\'' + esc(current.id) + '\', undefined, \'topics\')">' +
-          '<span>' + (current.state === 'in_progress' ? 'ادامه‌ی درس ' : 'شروع درس ') + fa(lessons.indexOf(current) + 1) + '</span>' + icon('i-chevron-left') + '</button>'
+          '<span>' + (current.review
+            ? (current.state === 'in_progress' ? 'ادامه‌ی مرور فصل' : 'شروع مرور فصل')
+            : (current.state === 'in_progress' ? 'ادامه‌ی درس ' : 'شروع درس ') + fa(numbered.indexOf(current) + 1)) +
+          '</span>' + icon('i-chevron-left') + '</button>'
+      : '';
+    var complete = chapter.completed
+      ? '<p class="chapter-complete" role="status">' + icon('i-check') + '<span>' + chapterName(chapter.numbers) + ' کامل شد: همه‌ی درس‌ها و مرور فصل.</span></p>'
       : '';
     var practice = doneCount > 0
       ? '<button type="button" class="btn btn-secondary btn-full" onclick="App.startLessonPractice(null)">' +
@@ -237,13 +269,13 @@
     return '<article class="chapter-card">' +
         '<header class="chapter-head">' +
           '<div class="chapter-head-copy">' +
-            '<span class="chapter-kicker">فصل ' + fa(ci + 1) + ' از ' + fa(state.learn.chapters.length) + '، ' + fa(lessons.length) + ' درس کوتاه</span>' +
+            '<span class="chapter-kicker">' + chapterName(chapter.numbers) + '، ' + fa(numbered.length) + ' درس کوتاه' + (review ? ' + مرور فصل' : '') + '</span>' +
             '<h3 class="chapter-title">' + esc(chapter.titleFa) + '</h3>' +
             itSpan(chapter.nameIt, 'chapter-it') +
             '<p class="chapter-summary">' + esc(chapter.summaryFa) + '</p>' +
           '</div>' +
-          '<div class="chapter-count"><strong>' + fa(doneCount) + ' از ' + fa(lessons.length) + '</strong><small>خوانده شده</small></div>' +
-        '</header>' +
+          '<div class="chapter-count"><strong>' + fa(doneCount) + ' از ' + fa(numbered.length) + '</strong><small>درس خوانده شده</small></div>' +
+        '</header>' + complete +
         '<ol class="route" aria-label="مسیر درس‌های ' + esc(chapter.titleFa) + '">' + stops + '</ol>' +
         '<div class="chapter-actions">' + primary + practice + '</div>' +
       '</article>';
@@ -299,6 +331,7 @@
     state.lessonSaveFailed = false;
     state.lessonAnswerPending = false;
     state.lessonFinishPending = false;
+    state.classifyUi = {};
     App.showScreen('lesson');
     setSaveStatus(null);
     document.getElementById('lesson-topbar-title').textContent = '';
@@ -415,7 +448,7 @@
     var body = document.getElementById('lesson-body');
 
     document.getElementById('lesson-kicker').textContent =
-      'درس ' + fa(data.position.index) + ' از ' + fa(data.position.total) + '، ' + data.chapter.titleFa;
+      chapterName(data.chapter.numbers) + '، ' + lessonLabel(data.position) + ' · ' + data.chapter.titleFa;
     document.getElementById('lesson-topbar-title').textContent = data.lesson.titleFa;
     document.getElementById('lesson-step-count').textContent = 'قدم ' + fa(state.lessonStep + 1) + ' از ' + fa(steps.length);
     var pct = Math.round(((state.lessonStep + 1) / steps.length) * 100);
@@ -470,10 +503,12 @@
     } else if (orderPending(step)) {
       next.disabled = true;
       label.textContent = step.content.kind === 'stopping' ? 'اول پیش‌بینی کن'
-        : step.content.kind === 'assess' ? 'اول صحنه‌ها را بسنج' : 'اول ترتیب را بررسی کن';
+        : step.content.kind === 'assess' ? 'اول صحنه‌ها را بسنج'
+        : step.content.kind === 'classify' ? 'اول همه را دسته‌بندی کن' : 'اول ترتیب را بررسی کن';
     } else {
       next.disabled = state.lessonFinishPending;
-      label.textContent = state.lessonFinishPending ? 'در حال ثبت…' : nextIsDone ? 'پایان درس' : 'بعدی';
+      label.textContent = state.lessonFinishPending ? 'در حال ثبت…'
+        : nextIsDone ? (state.lesson.position.review ? 'پایان مرور فصل' : 'پایان درس') : 'بعدی';
     }
   }
 
@@ -483,6 +518,7 @@
     if (step.content.kind === 'order') return !App.crossingDone(step.index);
     if (step.content.kind === 'stopping') return !App.stoppingDone(step.index);
     if (step.content.kind === 'assess') return !App.assessDone(step.index);
+    if (step.content.kind === 'classify') return !classifyDone(step.content, step.index);
     return false;
   }
 
@@ -520,8 +556,124 @@
     if (content.kind === 'markings') return App.markingsStepHtml(content, index);
     if (content.kind === 'assess') return App.assessStepHtml(content, index);
     if (content.kind === 'manoeuvre') return App.manoeuvreStepHtml(content, index);
+    if (content.kind === 'anatomy') return anatomyHtml(content, index);
+    if (content.kind === 'table') return tableHtml(content);
+    if (content.kind === 'classify') return classifyHtml(content, index);
     return '';
   }
+
+  // ── Road drawing with tappable parts (public/js/road.js draws it) ──────────
+  function anatomyHtml(content, index) {
+    var chips = content.parts.map(function(p) {
+      return '<button type="button" class="anatomy-chip" data-part="' + esc(p.id) + '" aria-pressed="false" onclick="App.selectRoadPart(this)">' +
+        itSpan(p.nameIt, 'anatomy-chip-it') + '<span class="anatomy-chip-fa">' + esc(p.nameFa) + '</span></button>';
+    }).join('');
+    return stepHeading(content.title) +
+      '<p class="lesson-text">' + esc(content.body) + '</p>' +
+      '<div class="anatomy" data-step="' + index + '">' +
+        '<figure class="anatomy-figure">' + App.roadSceneSvg(content.scene) +
+          '<figcaption class="visually-hidden">نقشه‌ی ساده‌ی جاده؛ بخش‌ها در دکمه‌های زیر هم آمده‌اند.</figcaption></figure>' +
+        '<div class="anatomy-chips" role="group" aria-label="بخش‌های تصویر">' + chips + '</div>' +
+        '<div class="anatomy-detail" aria-live="polite"><p class="anatomy-hint">روی تصویر یا یکی از دکمه‌ها بزن.</p></div>' +
+      '</div>' +
+      '<p class="lesson-takeaway">' + icon('i-sparkles') + '<span>' + esc(content.takeaway) + '</span></p>' +
+      ruleLine(content.rule);
+  }
+
+  App.selectRoadPart = function(el) {
+    var root = el && el.closest('.anatomy');
+    var content = root && state.lesson && state.lesson.lesson.steps[Number(root.getAttribute('data-step'))];
+    var id = el.getAttribute('data-part');
+    var part = content && content.parts && content.parts.find(function(p) { return p.id === id; });
+    if (!part) return;
+    root.querySelectorAll('[data-part]').forEach(function(node) {
+      var on = node.getAttribute('data-part') === id;
+      node.classList.toggle('is-on', on);
+      if (node.tagName === 'BUTTON') node.setAttribute('aria-pressed', on ? 'true' : 'false');
+    });
+    root.querySelector('.rd-scene').classList.add('has-on');
+    var badge = part.inCarreggiata === undefined ? ''
+      : '<span class="anatomy-badge ' + (part.inCarreggiata ? 'is-in' : 'is-out') + '">' + icon(part.inCarreggiata ? 'i-check' : 'i-x') +
+        '<span>' + (part.inCarreggiata ? 'جزو ' : 'بیرون از ') + '<bdi dir="ltr" lang="it">carreggiata</bdi></span></span>';
+    root.querySelector('.anatomy-detail').innerHTML =
+      '<h3 class="anatomy-name">' + itSpan(part.nameIt, 'anatomy-name-it') + '<span class="anatomy-name-fa">' + esc(part.nameFa) + '</span></h3>' +
+      badge + '<p>' + esc(part.text) + '</p>';
+  };
+
+  // ── Comparison table: one card per row on a phone, columns on wider screens ─
+  function tableHtml(content) {
+    var single = content.columns.length === 1;
+    var head = single ? '' : '<div class="ltable-head" aria-hidden="true"><span></span>' + content.columns.map(function(c) {
+      return '<span>' + (isLatin(c) ? itSpan(c) : esc(c)) + '</span>';
+    }).join('') + '</div>';
+    var rows = content.rows.map(function(row) {
+      var cells = row.values.map(function(value, i) {
+        var col = content.columns[i];
+        return '<div class="ltable-cell">' + (single ? '' : '<dt>' + (isLatin(col) ? itSpan(col) : esc(col)) + '</dt>') + '<dd>' + esc(value) + '</dd></div>';
+      }).join('');
+      return '<div class="ltable-row' + (single ? ' is-single' : '') + '" style="--cols:' + content.columns.length + '">' +
+        '<div class="ltable-label">' +
+          (row.sign ? '<span class="sign-tile sign-tile-sm"><img src="' + signUrl(row.sign) + '" alt="تصویر ' + esc(row.label) + '" loading="lazy" /></span>' : '') +
+          '<span><strong>' + esc(row.label) + '</strong>' + (row.it ? itSpan(row.it, 'ltable-it') : '') + '</span>' +
+        '</div><dl class="ltable-cells">' + cells + '</dl></div>';
+    }).join('');
+    return stepHeading(content.title) +
+      '<p class="lesson-text">' + esc(content.body) + '</p>' +
+      '<div class="ltable' + (single ? ' is-single' : '') + '" style="--cols:' + content.columns.length + '">' + head + rows + '</div>' +
+      '<p class="lesson-takeaway">' + icon('i-sparkles') + '<span>' + esc(content.takeaway) + '</span></p>' +
+      ruleLine(content.rule);
+  }
+
+  // ── Classify: original examples, checked here; a self-check, nothing stored ─
+  function classifyDone(content, index) {
+    var picks = state.classifyUi[index] || {};
+    return content.items.every(function(_, i) { return picks[i] !== undefined; });
+  }
+
+  function classifyItemHtml(content, index, i) {
+    var item = content.items[i];
+    var picked = (state.classifyUi[index] || {})[i];
+    var answered = picked !== undefined;
+    var options = content.options.map(function(o, oi) {
+      var cls = !answered ? '' : oi === item.answer ? ' is-right' : oi === picked ? ' is-wrong' : '';
+      return '<button type="button" class="classify-option' + cls + '"' + (answered ? ' disabled' : '') +
+        ' onclick="App.classifyPick(' + index + ',' + i + ',' + oi + ')">' +
+        (answered && oi === item.answer ? icon('i-check') : answered && oi === picked ? icon('i-x') : '') +
+        '<span>' + esc(o.fa) + '</span>' + (o.fa !== o.it ? itSpan(o.it, 'classify-option-it') : '') + '</button>';
+    }).join('');
+    var verdict = answered
+      ? '<p class="classify-verdict ' + (picked === item.answer ? 'is-right' : 'is-wrong') + '" role="status">' +
+          '<strong>' + (picked === item.answer ? 'درست است.' : 'جواب: ' + esc(content.options[item.answer].fa) + '.') + '</strong> ' + esc(item.explain) + '</p>'
+      : '';
+    return '<li class="classify-item" id="cls-' + index + '-' + i + '">' +
+      (item.figure ? '<figure class="practice-sign is-figure"><img src="' + signUrl(item.figure) + '" alt="شکل ' + esc(fa(item.figure)) + ' از بانک سؤال" loading="lazy" /></figure>' : '') +
+      '<p class="classify-prompt">' + esc(item.prompt) + '</p>' +
+      '<div class="classify-options" role="group" aria-label="دسته را انتخاب کن">' + options + '</div>' + verdict + '</li>';
+  }
+
+  function classifyHtml(content, index) {
+    var items = content.items.map(function(_, i) { return classifyItemHtml(content, index, i); }).join('');
+    return stepHeading(content.title) +
+      '<p class="lesson-text">' + esc(content.body) + '</p>' +
+      '<ol class="classify">' + items + '</ol>' +
+      '<p class="lesson-takeaway">' + icon('i-sparkles') + '<span>' + esc(content.takeaway) + '</span></p>' +
+      ruleLine(content.rule);
+  }
+
+  App.classifyPick = function(index, i, option) {
+    var content = state.lesson && state.lesson.lesson.steps[index];
+    if (!content || content.kind !== 'classify') return;
+    var picks = state.classifyUi[index] = state.classifyUi[index] || {};
+    if (picks[i] !== undefined) return;
+    picks[i] = option;
+    var node = document.getElementById('cls-' + index + '-' + i);
+    if (node) {
+      node.outerHTML = classifyItemHtml(content, index, i);
+      var verdict = document.querySelector('#cls-' + index + '-' + i + ' .classify-verdict');
+      if (verdict) verdict.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+    }
+    App.refreshLessonDock();
+  };
 
   /** What the bank says matters (VERO) next to what it says does not (FALSO); labelled, never colour alone. */
   function factorsHtml(content) {
@@ -545,7 +697,8 @@
     var signs = lesson.signs.map(function(n) {
       return '<span class="sign-tile sign-tile-sm"><img src="' + signUrl(n) + '" alt="" loading="lazy" /></span>';
     }).join('');
-    return '<p class="lesson-meta">' + minutesLabel(lesson.minutes) + '، ' + fa(lesson.stepCount) + ' قدم کوتاه</p>' +
+    return '<p class="lesson-meta">' + chapterName(state.lesson.chapter.numbers) + '، ' + lessonLabel(state.lesson.position) + ' · ' +
+        minutesLabel(lesson.minutes) + '، ' + fa(lesson.stepCount) + ' قدم کوتاه</p>' +
       '<h2 class="lesson-step-title lesson-hero-title" tabindex="-1" data-step-heading>' + esc(lesson.titleFa) + '</h2>' +
       itSpan(lesson.titleIt, 'lesson-hero-it') +
       (signs ? '<div class="lesson-sign-strip" aria-hidden="true">' + signs + '</div>' : '') +
@@ -923,17 +1076,29 @@
       return '<li><a href="' + esc(source.url) + '" target="_blank" rel="noopener noreferrer" onclick="return App.openExternalLink(this.href)" dir="ltr">' + esc(source.label) + '</a></li>';
     }).join('');
     var reviewed = new Date(data.chapter.reviewedOn + 'T12:00:00Z').toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
+    var isReview = data.position.review;
+    var nextSummary = c.next && findLessonSummary(c.next.lessonId);
+    var nextLabel = !c.next ? ''
+      : c.next.chapterNumbers ? chapterName(c.next.chapterNumbers) + '، «' + esc(c.next.chapterTitleFa) + '»: ' + esc(c.next.titleFa)
+      : nextSummary && nextSummary.review ? 'بعدی: مرور فصل'
+      : 'درس بعدی: ' + esc(c.next.titleFa);
     var primary = c.next
       ? '<button type="button" class="btn btn-primary btn-full" onclick="App.openLesson(\'' + esc(c.next.lessonId) + '\', undefined, \'' + esc(state.lessonReturnScreen) + '\')">' +
-          '<span>' + (c.next.chapterTitleFa ? 'فصل بعد، «' + esc(c.next.chapterTitleFa) + '»: ' : 'درس بعدی: ') + esc(c.next.titleFa) + '</span>' + icon('i-chevron-left') + '</button>'
+          '<span>' + nextLabel + '</span>' + icon('i-chevron-left') + '</button>'
       : '<button type="button" class="btn btn-primary btn-full" onclick="App.startLessonPractice(null)">' + icon('i-target') +
           '<span>تمرین ۱۰ سؤال واقعی از همه‌ی درس‌ها</span></button>';
+    var chapterDone = isReview && c.chapterCompleted
+      ? '<p class="chapter-complete" role="status">' + icon('i-check') + '<span>' + chapterName(data.chapter.numbers) + ' کامل شد: همه‌ی درس‌ها و مرور فصل.</span></p>'
+      : isReview && state.lessonCompletion
+        ? '<p class="done-honest">مرور فصل تمام شد. هر درسی از این فصل که هنوز تمام نشده، در مسیر درس‌ها منتظر است.</p>'
+        : '';
 
     return '<div class="lesson-done">' +
       '<div class="done-route" aria-hidden="true"><span class="done-road"></span><span class="done-marker">' + icon('i-check') + '</span></div>' +
-      '<p class="lesson-meta">درس ' + fa(data.position.index) + ' از ' + fa(data.position.total) + '</p>' +
-      '<h2 class="lesson-step-title lesson-hero-title" tabindex="-1" data-step-heading>درس تمام شد</h2>' +
-      '<p class="done-title">' + esc(data.lesson.titleFa) + '</p>' +
+      '<p class="lesson-meta">' + chapterName(data.chapter.numbers) + '، ' + lessonLabel(data.position) + '</p>' +
+      '<h2 class="lesson-step-title lesson-hero-title" tabindex="-1" data-step-heading>' +
+        (isReview ? (c.chapterCompleted ? chapterName(data.chapter.numbers) + ' تمام شد' : 'مرور فصل تمام شد') : 'درس تمام شد') + '</h2>' +
+      '<p class="done-title">' + esc(data.lesson.titleFa) + '</p>' + chapterDone +
       '<ul class="done-stats">' +
         '<li>' + icon('i-check') + '<span>تمرین: ' + fa(c.practice.correct) + ' از ' + fa(c.practice.total) + ' درست در اولین تلاش</span></li>' +
         (c.practice.queuedForReview > 0
@@ -943,8 +1108,8 @@
       '<p class="done-honest">خواندن درس قدم اول است. تسلط وقتی معلوم می‌شود که چند روز بعد هم درست جواب بدهی؛ برای همین سؤال‌های مرتبط در مرور و تمرین دوباره می‌آیند.</p>' +
       '<div class="done-actions">' + primary +
         '<button type="button" class="btn btn-secondary btn-full" onclick="App.startLessonPractice(\'' + esc(data.lesson.id) + '\')">' + icon('i-target') +
-          '<span>۱۰ سؤال واقعی درباره‌ی همین درس</span></button>' +
-        '<button type="button" class="btn btn-quiet btn-full" onclick="App.lessonGoTo(0, \'back\')">مرور دوباره‌ی درس از اول</button>' +
+          '<span>' + (isReview ? '۱۰ سؤال واقعی از کل ' + chapterName(data.chapter.numbers) : '۱۰ سؤال واقعی درباره‌ی همین درس') + '</span></button>' +
+        '<button type="button" class="btn btn-quiet btn-full" onclick="App.lessonGoTo(0, \'back\')">' + (isReview ? 'مرور دوباره از اول' : 'مرور دوباره‌ی درس از اول') + '</button>' +
       '</div>' +
       '<details class="lesson-sources"><summary>' + icon('i-book') + '<span>منابع این درس</span></summary>' +
         '<ul>' + sources + '</ul>' +

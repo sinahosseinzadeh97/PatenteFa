@@ -1289,7 +1289,7 @@ App.renderRichText = function(el, text) {
       html += '<div class="topic-card">';
       html += '  <div class="topic-card-row">';
       html += '    <div>';
-      html += '      <span class="topic-chapter-badge">فصل ' + t.sort_order + '</span>';
+      html += '      <span class="topic-chapter-badge">موضوع ' + Number(t.sort_order).toLocaleString('fa-IR') + '</span>';
       html += '      <div class="topic-name-it">' + App.escapeHtml(t.name_it) + '</div>';
       html += '      <div class="topic-name-fa">' + App.escapeHtml(t.name_fa || '') + '</div>';
       html += '      <div class="topic-progress">';
@@ -1310,7 +1310,7 @@ App.renderRichText = function(el, text) {
         : 0;
       html += '  <div class="topic-card-actions' + (lessonCount ? ' has-lessons' : '') + '">';
       if (lessonCount) {
-        html += '    <button type="button" class="btn btn-quiet btn-full" onclick="App.focusLearnSection()"><svg class="ui-icon"><use href="#i-route"/></svg>' + lessonCount.toLocaleString('fa-IR') + ' درس برای این فصل</button>';
+        html += '    <button type="button" class="btn btn-quiet btn-full" onclick="App.focusLearnSection()"><svg class="ui-icon"><use href="#i-route"/></svg>' + lessonCount.toLocaleString('fa-IR') + ' درس برای این موضوع</button>';
       }
       html += '    <button type="button" class="btn btn-secondary btn-full" onclick="App.startTopicExam(' + t.id + ')">شروع تمرین ۱۵ سؤالی</button>';
       html += '  </div>';
@@ -1341,7 +1341,7 @@ App.renderRichText = function(el, text) {
     state.examStartPending = true;
     const returnScreen = state.currentScreen || 'topics';
     try {
-      App.toast('در حال آماده‌سازی تمرین فصل…');
+      App.toast('در حال آماده‌سازی تمرین موضوعی…');
       const data = await api('POST', '/topics/' + topicId + '/exam');
       App.initializeExamState(data, {
         secondsLeft: 600,
@@ -1357,7 +1357,7 @@ App.renderRichText = function(el, text) {
       App.renderQuestion();
       App.startTimer();
     } catch(e) {
-      App.toast(e.message || 'خطا در شروع آزمون فصل');
+      App.toast(e.message || 'خطا در شروع تمرین موضوعی');
     } finally {
       state.examStartPending = false;
     }
