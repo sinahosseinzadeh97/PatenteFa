@@ -525,6 +525,11 @@ App.renderRichText = function(el, text) {
       if (el('admin-pending-users')) el('admin-pending-users').textContent = pending > 0 ? pending + ' در انتظار تایید' : '';
       if (el('admin-pending-alert')) el('admin-pending-alert').style.display = pending > 0 ? 'block' : 'none';
       if (el('admin-pending-count')) el('admin-pending-count').textContent = String(pending);
+      if (el('admin-tab-pending')) {
+        el('admin-tab-pending').textContent = pending > 0 ? pending.toLocaleString('fa-IR') : '';
+        el('admin-tab-pending').setAttribute('aria-label', pending + ' در انتظار تایید');
+        el('admin-tab-pending').hidden = !(pending > 0);
+      }
 
       // §18.4: cost breakdown
       state.costBreakdown = costRes.breakdown || [];
@@ -538,12 +543,45 @@ App.renderRichText = function(el, text) {
     }
   };
 
+  App.switchAdminTab = function(tab) {
+    ['users', 'messages', 'reports', 'stats'].forEach(function(t) {
+      var btn = document.getElementById('admin-tab-' + t);
+      var panel = document.getElementById('admin-panel-' + t);
+      if (btn) { btn.classList.toggle('active', t === tab); btn.setAttribute('aria-selected', String(t === tab)); }
+      if (panel) panel.hidden = t !== tab;
+    });
+  };
+
+  // ── Broadcast: one announcement to every user in the chosen audience ───────
+  App.sendAdminBroadcast = async function(e) {
+    e.preventDefault();
+    var input = document.getElementById('admin-broadcast-input');
+    var btn = document.getElementById('admin-broadcast-send-btn');
+    var audience = (document.getElementById('admin-broadcast-audience') || {}).value || 'active';
+    var pin = !!(document.getElementById('admin-broadcast-pin') || {}).checked;
+    var text = input ? input.value.trim() : '';
+    if (!text) return;
+    var who = audience === 'all' ? 'همه کاربران (به‌جز مسدودها)' : 'همه کاربران با دسترسی فعال';
+    if (!window.confirm('این پیام برای ' + who + ' ارسال شود؟')) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'در حال ارسال…'; }
+    try {
+      var res = await api('POST', '/admin/broadcast', { text: text, audience: audience, pin: pin });
+      input.value = '';
+      App.toast('ارسال شد به ' + res.sent + ' از ' + res.total + ' کاربر' + (res.failed ? ' · ' + res.failed + ' ناموفق' : ''));
+    } catch (err) {
+      App.toast('ارسال پیام همگانی ناموفق بود.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'ارسال همگانی'; }
+    }
+  };
+
   // ── Support inbox (admin side) ──────────────────────────────────────────────
   App.renderAdminSupport = function(threads, unreadTotal) {
     var box = document.getElementById('admin-support-threads');
     var pill = document.getElementById('admin-support-unread');
     if (pill) {
-      pill.textContent = unreadTotal > 0 ? unreadTotal + ' پیام خوانده‌نشده' : '';
+      pill.textContent = unreadTotal > 0 ? unreadTotal.toLocaleString('fa-IR') : '';
+      pill.setAttribute('aria-label', unreadTotal + ' پیام خوانده‌نشده');
       pill.hidden = !(unreadTotal > 0);
     }
     if (!box) return;

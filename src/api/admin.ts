@@ -21,11 +21,12 @@ import {
   countUnreadSupportTotal,
   setUserAccessExpiration,
   getQuestionById,
+  getAllUsers,
 } from "../db/queries.js";
 import { getQuestionSource, sourceKey, type SourceQuestion } from '../lib/question-sources.js';
 import { saveReviewedContent } from '../lib/content-quality.js';
-import { checkPrimaryAdmin } from "../lib/auth.js";
-import { sendMessage, sendSupportReply, buildMiniAppButton } from "../lib/telegram.js";
+import { checkPrimaryAdmin, isAccessExpired } from "../lib/auth.js";
+import { sendMessage, sendSupportReply, sendAnnouncement, buildMiniAppButton } from "../lib/telegram.js";
 import { normalizeSupportText } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
 import {
@@ -261,6 +262,31 @@ admin.post("/support/:id/reply", async (c) => {
     userId: target.id,
     telegramUserId: target.telegram_user_id,
   });
+});
+
+// POST /api/admin/broadcast — one announcement to every user in the audience.
+// "active" = approved and not expired; "all" = everyone except blocked users.
+admin.post("/broadcast", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { text?: unknown; audience?: unknown; pin?: unknown };
+  const text = normalizeSupportText(body.text);
+  if (!text) return c.json({ error: "متن پیام خالی است." }, 400);
+  if (body.audience !== "active" && body.audience !== "all") {
+    return c.json({ error: "Invalid audience (must be active or all)" }, 400);
+  }
+
+  const users = (await getAllUsers(c.env.DB)).filter((u) =>
+    body.audience === "all"
+      ? u.is_approved !== -1
+      : u.is_approved === 1 && !isAccessExpired(u.access_expires_at)
+  );
+
+  // shortcut: sequential sends inside the request — fine for a few hundred users;
+  // move to a Queue once the base outgrows Telegram's ~30 msg/s and the Worker time limit.
+  let sent = 0;
+  for (const u of users) {
+    if (await sendAnnouncement(c.env.TELEGRAM_BOT_TOKEN, u.telegram_user_id, text, c.env.MINI_APP_URL, body.pin === true)) sent++;
+  }
+  return c.json({ ok: true, total: users.length, sent, failed: users.length - sent });
 });
 
 // GET /api/admin/users/:id/activity

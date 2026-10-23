@@ -151,6 +151,50 @@ export async function sendSupportReply(
   });
 }
 
+/**
+ * Admin announcement. Pinning keeps it as a banner at the top of the user's
+ * bot chat, which is what makes it hard to miss. sendMessage() only returns a
+ * boolean, so this call reads message_id itself for the pin.
+ */
+export async function sendAnnouncement(
+  token: string,
+  telegramUserId: number,
+  text: string,
+  miniAppUrl: string,
+  pin: boolean
+): Promise<boolean> {
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: telegramUserId,
+        text: `📢 <b>اطلاعیه پتنت فارسی</b>\n\n${esc(text)}`,
+        parse_mode: "HTML",
+        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", miniAppUrl),
+      }),
+    });
+    const payload = (await res.json().catch(() => null)) as { ok?: boolean; result?: { message_id?: number } } | null;
+    if (!res.ok || !payload?.ok) {
+      console.error("Telegram announcement failed:", res.status, telegramUserId);
+      return false;
+    }
+    const messageId = payload.result?.message_id;
+    if (pin && messageId) {
+      // A failed pin still leaves a delivered message, so it doesn't flip the result.
+      await fetch(`https://api.telegram.org/bot${token}/pinChatMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ chat_id: telegramUserId, message_id: messageId }),
+      }).catch((e) => console.error("Telegram pin failed:", e));
+    }
+    return true;
+  } catch (error) {
+    console.error("Telegram announcement transport failed:", error);
+    return false;
+  }
+}
+
 export async function notifyAdminNewUserRequest(
   token: string,
   logChannelId: string,
