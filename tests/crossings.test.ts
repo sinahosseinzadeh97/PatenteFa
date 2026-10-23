@@ -205,13 +205,14 @@ const orderStep = (lesson: typeof LESSON_2) => lesson.steps.findIndex((step) => 
 test("the intersections chapter is listed, opens directly, and points mistakes back to its lessons", async () => {
   const call = setup();
   const home = await call(7001, "GET", "/learn");
-  assert.equal(home.body.chapters[1].id, INCROCI_CHAPTER.id);
-  assert.equal(home.body.chapters[1].lessons.length, 4);
+  const incroci = home.body.chapters.find((c: { id: string }) => c.id === INCROCI_CHAPTER.id);
+  assert.deepEqual(incroci.numbers, [14]);
+  assert.equal(incroci.lessons.length, 4);
 
   const lesson = await call(7001, "GET", `/learn/lessons/${LESSON_2.id}`);
   assert.equal(lesson.status, 200);
   assert.equal(lesson.body.chapter.id, INCROCI_CHAPTER.id);
-  assert.deepEqual(lesson.body.position, { index: 2, total: 4 });
+  assert.deepEqual(lesson.body.position, { index: 2, total: 4, review: false });
   assert.equal(lesson.body.lesson.practice.length, LESSON_2.practice.length);
   assert.ok(lesson.body.lesson.practice.every((q: { isFigure: boolean }) => q.isFigure));
   assert.equal(lesson.body.lesson.steps[orderStep(LESSON_2)].crossing.figure, 614);
@@ -219,12 +220,14 @@ test("the intersections chapter is listed, opens directly, and points mistakes b
   assert.equal(lessonLinkForSourceId("4910")?.lessonId, INCROCI_CHAPTER.lessons[3].id, "655 order statement → lesson 4");
   assert.equal(lessonLinkForSourceId("4840"), null, "circular figure 638 stays unmapped");
 
-  // The pilot's last lesson now hands over to the new chapter.
-  const pilotLast = await call(7001, "GET", `/learn/lessons/${PILOT_CHAPTER.lessons[2].id}`);
-  assert.deepEqual(pilotLast.body.next, {
+  // Official order: the chapter before 14 in the course (11–12) hands over to it.
+  const before = CHAPTERS[CHAPTERS.indexOf(INCROCI_CHAPTER) - 1];
+  const beforeLast = await call(7001, "GET", `/learn/lessons/${before.lessons.at(-1)!.id}`);
+  assert.deepEqual(beforeLast.body.next, {
     lessonId: INCROCI_CHAPTER.lessons[0].id,
     titleFa: INCROCI_CHAPTER.lessons[0].titleFa,
     chapterTitleFa: INCROCI_CHAPTER.titleFa,
+    chapterNumbers: [14],
   });
 });
 

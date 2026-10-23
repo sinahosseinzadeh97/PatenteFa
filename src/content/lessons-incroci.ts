@@ -831,6 +831,7 @@ const lessonSegnali: Lesson = {
 
 export const INCROCI_CHAPTER: Chapter = {
   id: "precedenza-incroci",
+  numbers: [14],
   topicIds: [4],
   nameIt: "Precedenza negli incroci",
   titleFa: "حق تقدم و تقاطع‌ها",

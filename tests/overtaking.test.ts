@@ -196,8 +196,9 @@ test("the manoeuvre runs check → signal and move left → pass → mirror and 
 
 // ── Chapter integration ──────────────────────────────────────────────────────
 
-test("the chapter is fourth, offered on the overtaking and road-marking topics, with four lessons", () => {
-  assert.equal(CHAPTERS[3], SORPASSO_CHAPTER);
+test("the chapter is last (official chapter 15), offered on the overtaking and road-marking topics, with four lessons", () => {
+  assert.equal(CHAPTERS.at(-1), SORPASSO_CHAPTER);
+  assert.deepEqual(SORPASSO_CHAPTER.numbers, [15]);
   assert.deepEqual(SORPASSO_CHAPTER.topicIds, [12, 5]);
   assert.equal(LESSONS.length, 4);
   assert.deepEqual(
@@ -304,18 +305,18 @@ test("the assess endpoint judges right, wrong and 'not enough information' answe
   assert.equal((await call(null, "POST", path, { step, scene: 0, variant: "base", legal: "forbidden", safety: "clear" })).status, 401);
 });
 
-test("the chapter is listed, opens directly, and the last speed lesson hands over to it", async () => {
+test("the chapter is listed, opens directly, and the last intersections lesson (chapter 14) hands over to it", async () => {
   const { call } = setup();
   const home = await call(9401, "GET", "/learn");
-  assert.equal(home.body.chapters[3].id, SORPASSO_CHAPTER.id);
-  assert.equal(home.body.chapters[3].lessons.length, 4);
+  assert.equal(home.body.chapters.at(-1).id, SORPASSO_CHAPTER.id);
+  assert.equal(home.body.chapters.at(-1).lessons.length, 4);
   const lesson = await call(9401, "GET", `/learn/lessons/${L3.id}`);
   assert.equal(lesson.status, 200);
-  assert.deepEqual(lesson.body.position, { index: 3, total: 4 });
+  assert.deepEqual(lesson.body.position, { index: 3, total: 4, review: false });
   assert.equal(lesson.body.lesson.practice.length, L3.practice.length);
   assert.equal(lesson.body.stopping, null);
-  const lastSpeed = await call(9401, "GET", `/learn/lessons/${VELOCITA_CHAPTER.lessons[3].id}`);
-  assert.deepEqual(lastSpeed.body.next, { lessonId: L1.id, titleFa: L1.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa });
+  const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS.at(-2)!.lessons.at(-1)!.id}`);
+  assert.deepEqual(lastIncroci.body.next, { lessonId: L1.id, titleFa: L1.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa, chapterNumbers: [15] });
 });
 
 test("progress and answers in this chapter are per learner, resume never moves back, and a wrong answer is queued once", async () => {

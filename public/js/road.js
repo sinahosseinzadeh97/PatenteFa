@@ -1,0 +1,167 @@
+/**
+ * public/js/road.js
+ * Original top-down road drawings for the lesson step kind "anatomy"
+ * (src/content/lessons.ts → RoadScene). Each tappable part is a <g data-part>;
+ * the step's names and explanations come from the lesson content, so this file
+ * only draws. Classic script loaded before learn.js; exposes App.roadSceneSvg.
+ *
+ * The drawing is aria-hidden: learn.js renders every part as a real button too,
+ * so keyboard and screen-reader users get the same content without the SVG.
+ * Road scenes stay asphalt in both themes (design.md): they are drawings of roads.
+ */
+(function() {
+  'use strict';
+
+  function rect(x, y, w, h, cls, extra) {
+    return '<rect class="' + cls + '" x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '"' + (extra || '') + '/>';
+  }
+  function line(x1, y1, x2, y2, cls) {
+    return '<line class="' + cls + '" x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '"/>';
+  }
+  function label(x, y, text, cls) {
+    return '<text class="rd-label' + (cls ? ' ' + cls : '') + '" x="' + x + '" y="' + y + '">' + text + '</text>';
+  }
+  function car(x, y, w, h, cls, dir) {
+    var nose = dir === 'left'
+      ? 'M' + (x + 7) + ' ' + (y + 3) + ' L' + (x + 2) + ' ' + (y + h / 2) + ' L' + (x + 7) + ' ' + (y + h - 3) + 'Z'
+      : dir === 'up'
+        ? 'M' + (x + 3) + ' ' + (y + 7) + ' L' + (x + w / 2) + ' ' + (y + 2) + ' L' + (x + w - 3) + ' ' + (y + 7) + 'Z'
+        : 'M' + (x + w - 7) + ' ' + (y + 3) + ' L' + (x + w - 2) + ' ' + (y + h / 2) + ' L' + (x + w - 7) + ' ' + (y + h - 3) + 'Z';
+    return '<g class="rd-car ' + (cls || '') + '">' + rect(x, y, w, h, 'rd-car-body', ' rx="4"') + '<path class="rd-car-nose" d="' + nose + '"/></g>';
+  }
+  function person(x, y, cls) {
+    return '<g class="rd-person ' + (cls || '') + '"><circle cx="' + x + '" cy="' + y + '" r="4.2"/><rect x="' + (x - 3.4) + '" y="' + (y + 4) + '" width="6.8" height="9" rx="3"/></g>';
+  }
+  function zebra(x, y, w, h) {
+    var out = '';
+    for (var i = 0; i * 9 < h; i++) out += rect(x, y + i * 9 + 2, w, 5, 'rd-zebra');
+    return out;
+  }
+  function hatch(points, x0, y0, x1, y1) {
+    var id = 'h' + Math.round(x0) + Math.round(y0);
+    var stripes = '';
+    for (var s = x0 - (y1 - y0); s < x1; s += 8) stripes += line(s, y1, s + (y1 - y0), y0, 'rd-hatch');
+    return '<clipPath id="' + id + '"><polygon points="' + points + '"/></clipPath>' +
+      '<g clip-path="url(#' + id + ')">' + stripes + '</g><polygon class="rd-solid-edge" points="' + points + '"/>';
+  }
+  /** A tappable part: its shapes, then a transparent hit area and a ring (shown when selected) per box. */
+  function part(id, inner, box) {
+    var boxes = Array.isArray(box[0]) ? box : [box];
+    return '<g class="rd-part" data-part="' + id + '" onclick="App.selectRoadPart(this)">' + inner +
+      boxes.map(function(b) {
+        return rect(b[0], b[1], b[2], b[3], 'rd-hit') + rect(b[0] - 2, b[1] - 2, b[2] + 4, b[3] + 4, 'rd-ring', ' rx="6"');
+      }).join('') + '</g>';
+  }
+
+  var SCENES = {
+    street: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        part('strada', rect(6, 192, 328, 22, 'rd-brace', ' rx="11"') + label(170, 207, '← strada →', 'rd-label-center'), [6, 192, 328, 22]) +
+        part('marciapiede', rect(0, 0, 340, 32, 'rd-walk') + line(0, 32, 340, 32, 'rd-curb') + person(60, 10) + label(250, 20, 'marciapiede', 'rd-label-dark'), [0, 0, 340, 32]) +
+        part('banchina', rect(0, 32, 340, 14, 'rd-gravel') + rect(0, 140, 340, 14, 'rd-gravel'), [[0, 33, 340, 12], [0, 141, 340, 12]]) +
+        part('carreggiata', rect(0, 48, 340, 92, 'rd-asphalt') + line(0, 94, 340, 94, 'rd-dash') +
+          car(206, 112, 40, 18, 'rd-car-other', 'left') + label(8, 134, 'carreggiata'), [0, 48, 340, 92]) +
+        part('corsia', rect(0, 48, 340, 46, 'rd-clear') + car(60, 62, 40, 18, 'rd-car-you', 'right') + label(8, 60, 'corsia'), [0, 48, 340, 46]) +
+        part('margine', line(0, 47, 340, 47, 'rd-line') + line(0, 141, 340, 141, 'rd-line') +
+          rect(0, 43, 340, 8, 'rd-clear') + rect(0, 137, 340, 8, 'rd-clear'), [[0, 44, 340, 6], [0, 138, 340, 6]]) +
+        part('ciclabile', rect(0, 154, 340, 28, 'rd-bike') + line(0, 154, 340, 154, 'rd-line') +
+          '<g class="rd-bike-mark"><circle cx="150" cy="168" r="5"/><circle cx="166" cy="168" r="5"/><path d="M150 168 L157 161 L166 168 M157 161 L160 161"/></g>' +
+          label(250, 172, 'pista ciclabile'), [0, 154, 340, 28]);
+    } },
+
+    lanes: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 14, 340, 46, 'rd-asphalt rd-faded') + line(0, 37, 340, 37, 'rd-dash') +
+        rect(0, 60, 340, 12, 'rd-median') +
+        part('sorpasso', rect(0, 72, 340, 38, 'rd-asphalt') + car(240, 82, 40, 18, 'rd-car-other', 'right') + label(8, 86, 'sorpasso'), [0, 72, 340, 38]) +
+        part('marcia', rect(0, 110, 340, 38, 'rd-asphalt') + line(0, 110, 340, 110, 'rd-dash') + car(150, 120, 40, 18, 'rd-car-you', 'right') + label(8, 124, 'marcia'), [0, 110, 340, 38]) +
+        part('accelerazione', '<path class="rd-band" d="M14 222 C16 192 30 160 64 160 L150 160"/><polygon class="rd-asphalt" points="150,150 178,150 150,170"/>' +
+          line(40, 150, 150, 150, 'rd-dash') + car(70, 152, 34, 16, 'rd-car-other', 'right') + label(16, 190, 'accelerazione'), [[40, 150, 138, 20], [6, 170, 40, 50]]) +
+        part('emergenza', rect(178, 150, 48, 20, 'rd-asphalt') + line(178, 150, 226, 150, 'rd-line') + label(180, 182, 'emergenza'), [178, 150, 48, 20]) +
+        part('decelerazione', '<polygon class="rd-asphalt" points="226,150 254,150 254,170"/><path class="rd-band" d="M254 160 L276 160 C310 160 324 192 326 222"/>' +
+          line(226, 150, 300, 150, 'rd-dash') + label(232, 196, 'decelerazione'), [[226, 150, 80, 20], [300, 170, 34, 50]]) +
+        line(0, 72, 340, 72, 'rd-line');
+    } },
+
+    elements: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 0, 340, 28, 'rd-building') +
+        rect(0, 28, 340, 26, 'rd-walk') + line(0, 54, 340, 54, 'rd-curb') +
+        rect(0, 54, 340, 112, 'rd-asphalt') + line(0, 110, 40, 110, 'rd-dash') + line(120, 110, 150, 110, 'rd-dash') + line(240, 110, 340, 110, 'rd-dash') +
+        rect(0, 166, 340, 26, 'rd-walk') + line(0, 166, 340, 166, 'rd-curb') +
+        part('attraversamento', zebra(52, 56, 56, 108), [52, 56, 56, 108]) +
+        part('salvagente', rect(46, 102, 68, 16, 'rd-refuge', ' rx="5"') + '<circle class="rd-beacon" cx="50" cy="110" r="3.4"/><circle class="rd-beacon" cx="110" cy="110" r="3.4"/>', [46, 102, 68, 16]) +
+        part('isola', hatch('150,110 240,100 240,120', 150, 100, 240, 120), [150, 98, 90, 24]) +
+        part('carrabile', rect(270, 28, 40, 26, 'rd-driveway') + rect(270, 0, 40, 28, 'rd-garage') +
+          '<g class="rd-sign"><rect x="312" y="4" width="22" height="14" rx="2"/><path d="M316 11 H330"/></g>', [270, 0, 64, 54]) +
+        car(150, 128, 40, 18, 'rd-car-other', 'right') + car(270, 72, 40, 18, 'rd-car-other', 'left') +
+        label(178, 96, 'isola') + label(4, 100, 'salvagente');
+    } },
+
+    queue: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 70, 340, 74, 'rd-asphalt') + line(0, 107, 340, 107, 'rd-dash') +
+        line(0, 70, 340, 70, 'rd-line') + line(0, 144, 340, 144, 'rd-line') +
+        part('sbocco', rect(26, 144, 40, 76, 'rd-asphalt') + label(24, 214, 'strada laterale'), [26, 112, 40, 108]) +
+        part('incrocio', rect(112, 0, 50, 70, 'rd-asphalt') + rect(112, 144, 50, 76, 'rd-asphalt') + rect(112, 70, 50, 74, 'rd-free'), [112, 0, 50, 220]) +
+        part('attraversamento', zebra(196, 72, 22, 70), [196, 72, 22, 70]) +
+        part('binari', line(272, 70, 272, 144, 'rd-rail') + line(284, 70, 284, 144, 'rd-rail') +
+          line(272, 0, 272, 70, 'rd-rail rd-rail-out') + line(284, 0, 284, 70, 'rd-rail rd-rail-out') +
+          line(272, 144, 272, 220, 'rd-rail rd-rail-out') + line(284, 144, 284, 220, 'rd-rail rd-rail-out'), [266, 70, 24, 74]) +
+        car(72, 116, 34, 18, 'rd-car-you', 'left') + car(168, 116, 24, 18, 'rd-car-other', 'left') +
+        car(224, 116, 34, 18, 'rd-car-other', 'left') + car(294, 116, 34, 18, 'rd-car-other', 'left') +
+        part('distanza', car(4, 80, 30, 18, 'rd-car-other', 'right') + car(76, 80, 30, 18, 'rd-car-other', 'right') +
+          line(38, 89, 72, 89, 'rd-arrow') + '<path class="rd-arrow-head" d="M38 89 l6 -4 v8z M72 89 l-6 -4 v8z"/>', [2, 78, 106, 22]) +
+        label(122, 14, 'incrocio') + label(232, 66, 'strisce') + label(258, 14, 'tram');
+    } },
+
+    cyclist: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 30, 340, 122, 'rd-asphalt') + line(0, 30, 340, 30, 'rd-line') + line(0, 91, 340, 91, 'rd-dash') +
+        rect(0, 152, 340, 30, 'rd-asphalt rd-faded') + line(0, 152, 340, 152, 'rd-line') +
+        rect(0, 182, 340, 38, 'rd-walk') +
+        part('specchietto', '<polygon class="rd-cone" points="200,104 40,70 40,140"/>' +
+          '<g class="rd-person rd-cyclist"><circle cx="82" cy="108" r="4"/><rect x="74" y="112" width="16" height="4" rx="2"/></g>', [40, 70, 160, 70]) +
+        part('montante', '<polygon class="rd-cone rd-cone-blind" points="250,98 336,36 300,36"/>' +
+          '<g class="rd-person rd-cyclist"><circle cx="314" cy="48" r="4"/><rect x="306" y="52" width="16" height="4" rx="2"/></g>', [250, 34, 88, 66]) +
+        car(200, 98, 50, 22, 'rd-car-you', 'right') +
+        part('distanza', '<g class="rd-person rd-cyclist"><circle cx="226" cy="138" r="4"/><rect x="218" y="142" width="16" height="4" rx="2"/></g>' +
+          line(225, 122, 225, 132, 'rd-arrow') + label(232, 130, '1,5 m'), [212, 120, 50, 30]) +
+        part('sportello', car(60, 158, 50, 20, 'rd-car-parked', 'right') + '<rect class="rd-door" x="96" y="144" width="4" height="16" transform="rotate(-35 98 158)"/>', [56, 140, 58, 40]);
+    } },
+
+    crossing: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 18, 340, 36, 'rd-walk') + line(0, 54, 340, 54, 'rd-curb') +
+        rect(0, 54, 340, 120, 'rd-asphalt') + line(0, 114, 140, 114, 'rd-dash') + line(206, 114, 340, 114, 'rd-dash') +
+        rect(0, 174, 340, 30, 'rd-walk') + line(0, 174, 340, 174, 'rd-curb') +
+        zebra(146, 56, 56, 116) +
+        part('scivolo', rect(150, 40, 48, 14, 'rd-ramp') + '<path class="rd-ramp-mark" d="M160 47 h28"/>', [150, 38, 48, 16]) +
+        part('parcheggiate', car(70, 150, 44, 20, 'rd-car-parked', 'right') + car(232, 150, 44, 20, 'rd-car-parked', 'right') + person(124, 152, 'rd-child'), [66, 146, 64, 28]) +
+        part('fermo', person(174, 102), [164, 94, 20, 26]) +
+        part('indietro', person(160, 70) + '<path class="rd-arrow" d="M168 66 q10 -6 14 4"/><path class="rd-arrow-head" d="M182 70 l-5 -1 l3 -4z"/>', [150, 58, 36, 26]) +
+        part('anziano', person(188, 132, 'rd-elder') + line(194, 138, 197, 148, 'rd-cane'), [178, 122, 24, 30]) +
+        car(20, 120, 40, 18, 'rd-car-you', 'right') + car(276, 76, 40, 18, 'rd-car-other', 'left');
+    } },
+
+    school: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 0, 340, 40, 'rd-walk') + line(0, 40, 340, 40, 'rd-curb') +
+        rect(0, 40, 340, 120, 'rd-asphalt') + line(0, 100, 340, 100, 'rd-dash') +
+        rect(140, 160, 140, 24, 'rd-asphalt') + rect(0, 184, 340, 36, 'rd-walk') + line(0, 160, 140, 160, 'rd-curb') + line(280, 160, 340, 160, 'rd-curb') +
+        part('semaforo', '<g class="rd-light"><rect x="34" y="4" width="12" height="30" rx="3"/><circle cx="40" cy="11" r="3.2" class="rd-red"/><circle cx="40" cy="19" r="3.2"/><circle cx="40" cy="27" r="3.2"/></g>' +
+          person(58, 22, 'rd-child') + person(70, 24, 'rd-child') + person(64, 30, 'rd-child'), [30, 2, 50, 38]) +
+        part('scuolabus', '<g class="rd-bus"><rect x="150" y="146" width="110" height="30" rx="5"/><path d="M160 152 h80" /></g>', [148, 144, 114, 34]) +
+        part('nascosti', person(268, 150, 'rd-child') + person(278, 156, 'rd-child'), [262, 140, 26, 30]) +
+        part('corsa', person(120, 98, 'rd-child') + '<path class="rd-arrow" d="M124 112 q8 14 20 26"/><path class="rd-arrow-head" d="M144 138 l-6 -1 l3 -5z"/>', [110, 88, 40, 54]) +
+        car(20, 112, 40, 18, 'rd-car-you', 'right') + label(176, 140, 'SCUOLABUS', 'rd-label-bus');
+    } },
+  };
+
+  /** SVG markup for a scene, or '' for an unknown scene name. */
+  App.roadSceneSvg = function(scene) {
+    var s = SCENES[scene];
+    if (!s) return '';
+    return '<svg class="rd-scene" viewBox="0 0 340 ' + s.h + '" direction="ltr" aria-hidden="true" focusable="false">' + s.draw() + '</svg>';
+  };
+})();

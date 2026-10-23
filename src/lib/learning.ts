@@ -34,6 +34,8 @@ export interface LessonSummary {
   titleIt: string;
   minutes: number;
   signs: number[];
+  /** The chapter review (not numbered as a lesson). */
+  review: boolean;
   state: LessonState;
   step: number;
   stepCount: number;
@@ -66,6 +68,7 @@ export function summarizeLessons(
       titleIt: lesson.titleIt,
       minutes: lesson.minutes,
       signs: lesson.signs,
+      review: lesson.review === true,
       state,
       step: row?.step ?? 0,
       stepCount: lessonStepCount(lesson),

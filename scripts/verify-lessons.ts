@@ -3,8 +3,8 @@
  * scripts/verify-lessons.ts
  *
  * Read-only check that every curated lesson chapter (src/content/lessons.ts,
- * lessons-incroci.ts, crossings.ts, lessons-velocita.ts, lessons-sorpasso.ts,
- * overtaking.ts) still agrees with the
+ * lessons-definizioni.ts + ch1-*.ts, lessons-incroci.ts, crossings.ts,
+ * lessons-velocita.ts, lessons-sorpasso.ts, overtaking.ts) still agrees with the
  * question bank in D1. Run after editing lesson content and before deploying:
  *
  *   npm run verify:lessons            # local D1
