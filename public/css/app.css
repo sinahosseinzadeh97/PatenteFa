@@ -1297,11 +1297,11 @@ html, body {
 
 @media (max-width: 520px) {
   .admin-kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .admin-header-left { flex: 1 1 100%; }
-  .admin-refresh-btn { width: 100%; }
-  .admin-access-control { grid-template-columns: 1fr 1fr; }
+  .admin-header-row { flex-wrap: nowrap; }
+  .admin-header-left { flex: 1 1 0; }
+  .admin-header-row .admin-title { font-size: 1.05rem; }
+  .admin-access-control { grid-template-columns: 1fr auto; }
   .admin-access-control label { grid-column: 1 / -1; }
-  .admin-access-control .btn { grid-column: 1 / -1; }
   .admin-events-title-row { align-items: flex-start; flex-direction: column; }
   .admin-modal-summary-box { grid-template-columns: 1fr; }
   .admin-modal-row { align-items: flex-start; flex-direction: column; }
@@ -1422,10 +1422,29 @@ html, body {
 .pending-support-btn { max-width: 280px; margin-top: 10px; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 
 /* Admin inbox */
-.admin-support-unread-pill {
-  background: var(--stop-dim); color: var(--stop-light); border: 1px solid rgb(var(--stop-rgb) / 0.4);
-  border-radius: 999px; padding: 3px 10px; font-size: 0.7rem; font-weight: 700;
+/* Admin tabs: sticky so switching view never needs a scroll back up. */
+.admin-tabs {
+  position: sticky; top: 0; z-index: 5; display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+  margin-bottom: 14px; padding: 4px; background: var(--surface-2); border: 1px solid var(--border-subtle); border-radius: 12px;
 }
+.admin-tab {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 0 6px;
+  border: 0; border-radius: 9px; background: transparent; color: var(--ink-muted); cursor: pointer;
+  font-family: 'Vazirmatn', system-ui, sans-serif; font-size: 0.8rem; font-weight: 700;
+}
+.admin-tab.active { background: var(--surface); color: var(--ink); box-shadow: 0 1px 3px rgb(0 0 0 / 0.12); }
+.admin-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.admin-tab-badge {
+  min-width: 20px; padding: 1px 6px; border-radius: 999px; background: var(--stop); color: #fff;
+  font-size: 0.66rem; line-height: 1.5; text-align: center;
+}
+.admin-tab-badge[hidden] { display: none; }
+.admin-broadcast-form { display: flex; flex-direction: column; gap: 10px; }
+.admin-broadcast-form .support-input { width: 100%; }
+.admin-broadcast-options { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.admin-broadcast-pin { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; font-size: 0.8rem; color: var(--ink); cursor: pointer; }
+.admin-broadcast-pin input { width: 18px; height: 18px; accent-color: var(--go); }
+.admin-broadcast-hint { margin: 10px 0 0; color: var(--ink-muted); font-size: 0.72rem; line-height: 1.7; }
 .admin-support-threads { display: flex; flex-direction: column; gap: 6px; }
 .admin-support-row {
   display: flex; flex-direction: column; gap: 4px; width: 100%; text-align: right;
@@ -2710,3 +2729,4 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 :root[data-theme="dark"] .brand-logo .brand-logo-dark { display: block; }
 .home-logo { height: 48px; margin: 0 auto 14px; width: max-content; }
 .loading-logo { height: 96px; }
+.admin-tab-panel .admin-content-reports { margin-top: 0; }
