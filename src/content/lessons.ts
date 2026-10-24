@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, the pilot chapter (Segnali di precedenza), and the
  * chapter registry. Later chapters live in their own files
- * (src/content/lessons-incroci.ts, -velocita.ts, -sorpasso.ts) and are
+ * (src/content/lessons-incroci.ts, -velocita.ts, -sorpasso.ts, -pericolo.ts) and are
  * registered in CHAPTERS below.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -28,6 +28,7 @@
 // The chapter files (and overtaking.ts) only import *types* from this file
 // (erased at build), so this is not a runtime import cycle.
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
+import { PERICOLO_CHAPTER } from "./lessons-pericolo.js";
 import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
 import type { StoppingSetting } from "../lib/stopping.js";
@@ -175,6 +176,8 @@ export interface FactorItem {
   sourceId: string;
   textIt: string;
   answer: BankAnswer;
+  /** Bank sign image, when the statement is about the sign it shows. */
+  sign?: number;
 }
 
 // ── Chapter 4: overtaking (src/content/overtaking.ts, lessons-sorpasso.ts) ──
@@ -1086,7 +1089,7 @@ export function lessonStepCount(lesson: Lesson): number {
 }
 
 /** Every chapter, in the order learners are guided through them. */
-export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER, VELOCITA_CHAPTER, SORPASSO_CHAPTER];
+export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER, VELOCITA_CHAPTER, SORPASSO_CHAPTER, PERICOLO_CHAPTER];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {

@@ -3,7 +3,7 @@
  * scripts/verify-lessons.ts
  *
  * Read-only check that every curated lesson chapter (src/content/lessons.ts,
- * lessons-incroci.ts, crossings.ts, lessons-velocita.ts, lessons-sorpasso.ts,
+ * lessons-incroci.ts, crossings.ts, lessons-velocita.ts, lessons-sorpasso.ts, lessons-pericolo.ts,
  * overtaking.ts) still agrees with the
  * question bank in D1. Run after editing lesson content and before deploying:
  *
@@ -81,7 +81,7 @@ function snapshots(chapter: Chapter): Snapshot[] {
   return [
     ...statements.map((s) => ({ sourceId: s.sourceId, textIt: s.textIt, answer: s.answer, image: s.sign ?? s.figure ?? null })),
     ...evidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image })),
-    ...factors.map((f) => ({ sourceId: f.sourceId, textIt: f.textIt, answer: f.answer, image: null })),
+    ...factors.map((f) => ({ sourceId: f.sourceId, textIt: f.textIt, answer: f.answer, image: f.sign ?? null })),
     ...ruleEvidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image ?? null })),
   ];
 }

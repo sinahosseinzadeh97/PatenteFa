@@ -395,3 +395,19 @@ Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/20
 - Keep old content and review metadata in `content_revisions`. Never replace a human-reviewed entry with a late automatic response. Content the review does not approve (flagged, inconclusive, or no bank evidence) is still shown, labelled as AI-written (`QUALITY_LABELS.needs_review`) and reportable — never a blank panel. An unavailable reviewer is an inconclusive review, not an error. Since 2026-10-16: withholding it hid content for 7 of the first 12 questions reviewed in production, mostly on inconclusive reviews, and users saw nothing.
 - `/api/content/:id/report` records authenticated, bounded reports; only the primary admin can review them. Translation edits cannot repair or automatically close answer/source reports. Include report/revision tables in backups.
 - Migration 0017 must precede deployment of this code. See `CONTENT-QUALITY.md` for audit commands, source provenance and validation limits.
+
+## 27. Round 15 — chapter 5: Segnali di pericolo (warning signs)
+
+### 27.1 What exists
+- Chapter `segnali-pericolo` in `src/content/lessons-pericolo.ts`, fifth in `CHAPTERS`; `topicIds: [1]` (Segnali di pericolo). Four lessons built only from existing step kinds (compare, sequence, factors, terms, trap): (1) what every warning triangle says, then DOSSO / CUNETTA / STRADA DEFORMATA as the road's profile (signs 1–3); (2) one bend or two, behaviour at bends, descent or climb (4–7, 17–18); (3) level crossings with or without barriers, the order of distance panels → triangle → Saint Andrew's cross, train or tram (8–11, 13–14); (4) pedestrian and cycle crossings, children, domestic and wild animals (15–16, 25–27).
+- Factor items may now carry `sign` (the bank image the statement is about). The lesson client shows it beside the item, and `verify:lessons` checks it, so "il segnale raffigurato" never refers to a sign the learner cannot see.
+- Mistakes route back through explicit `related` lists (340 questions: 63 / 108 / 87 / 82 per lesson).
+
+### 27.2 Rules future changes must keep
+- **One lesson per question.** Overtaking at crests and bends stays with chapter 4 (`sorpasso-valutare`), braking distance on slopes with chapter 3 (`frenatura-e-arresto`); they are not remapped here.
+- **Sign meanings come from the bank.** Every claim about a sign's meaning or behaviour is backed by VERO/FALSO statements cited by id; tests check each statement's sign belongs to its lesson and that no taxonomy question ("è un segnale di …") is used.
+- **Italian inside Persian text is isolated** (`lat()` / `q()` in the content file, U+2068 … U+2069) so right-to-left layout never reorders it.
+- Scope left out on purpose (unmapped): the other 18 warning signs (narrowings, mobile bridge, slippery road, chippings, falling rocks, soft verge, quay, two-way traffic, roundabout, traffic-light warnings, aircraft, side wind, fire, general danger), the composite (A)/(B) figures 901–923, tram overtaking (art. 148 c.7–9), a breakdown on the tracks, and the "cavalletti" questions. They are the natural next chapter.
+
+### 27.3 Sources (reviewed 2026-10-24) — needs a human read before deploy
+Normattiva was not reachable from the build environment, so the law text was **not** re-read article by article for this round. Article numbers were confirmed from secondary sources only: DPR 495/1992 art. 81 c.7 (150 m), art. 84 (warning signs in general), art. 85 (strada deformata, dosso, cunetta), art. 86 (curves), art. 87 (level crossings), art. 88 (tram, pedestrian and cycle crossings). Where a sign's article could not be confirmed, `rule` cites "artt. 84–103 (segnali di pericolo)". Behaviour rules cite Codice della Strada artt. 141, 143, 147, 148, 154, 158, 191. Bank statements are cited by id; the 2023-bank caveat still applies.

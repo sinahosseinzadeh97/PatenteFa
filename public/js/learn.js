@@ -527,7 +527,8 @@
   function factorsHtml(content) {
     var columns = content.columns.map(function(column, i) {
       var items = column.items.map(function(item) {
-        return '<li class="factor-item"><span class="factor-fa">' + esc(item.fa) + '</span>' + itSpan(item.it, 'factor-it') + '</li>';
+        var sign = item.sign ? '<span class="sign-tile sign-tile-sm factor-sign"><img src="' + signUrl(item.sign) + '" alt="تصویر تابلوی همین جمله" loading="lazy" /></span>' : '';
+        return '<li class="factor-item' + (sign ? ' has-sign' : '') + '">' + sign + '<span class="factor-fa">' + esc(item.fa) + '</span>' + itSpan(item.it, 'factor-it') + '</li>';
       }).join('');
       return '<section class="factor-col ' + (i === 0 ? 'is-yes' : 'is-no') + '">' +
         '<h3 class="factor-title">' + icon(i === 0 ? 'i-check' : 'i-x') + '<span>' + esc(column.title) + '</span></h3>' +
