@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, the pilot chapter (Segnali di precedenza), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -29,6 +29,7 @@
 // (erased at build), so this is not a runtime import cycle.
 import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
+import { PERICOLO_CHAPTER } from "./lessons-pericolo.js";
 import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
 import type { StoppingSetting } from "../lib/stopping.js";
@@ -283,7 +284,7 @@ export interface RoadPart {
 }
 
 /** An original drawing (public/js/road.js), never a bank figure. */
-export type RoadScene = "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school";
+export type RoadScene = "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway";
 
 interface StepBase {
   title: string;
@@ -340,6 +341,8 @@ export type LessonStep =
       /** Two columns: what the bank says matters (VERO), and what it says does not (FALSO). */
       kind: "factors";
       body: string;
+      /** The sign every item is about ("Il segnale raffigurato …"), shown above the lists. */
+      sign?: SignRef;
       columns: [{ title: string; items: FactorItem[] }, { title: string; items: FactorItem[] }];
       takeaway: string;
     })
@@ -385,7 +388,8 @@ export type LessonStep =
       kind: "classify";
       body: string;
       options: { it: string; fa: string }[];
-      items: { prompt: string; figure?: number; answer: number; explain: string }[];
+      /** `sign` shows a road sign as a tile; `figure` a wide bank drawing. */
+      items: { prompt: string; figure?: number; sign?: number; answer: number; explain: string }[];
       takeaway: string;
     })
   | (StepBase & { kind: "terms"; terms: Term[] })
@@ -397,7 +401,7 @@ export interface Lesson {
   titleIt: string;
   minutes: number;
   signs: number[];
-  /** Bank intersection figures this lesson's questions may show. */
+  /** Bank figures (intersection drawings, sign + panel composites) this lesson's questions may show. */
   figures?: number[];
   steps: LessonStep[];
   practice: PracticeQuestion[];
@@ -1128,7 +1132,7 @@ export function lessonStepCount(lesson: Lesson): number {
 }
 
 /** Every chapter in official chapter order (question-bank order), which is the order learners are guided through. */
-export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
+export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PERICOLO_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {

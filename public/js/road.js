@@ -156,6 +156,56 @@
         part('corsa', person(120, 98, 'rd-child') + '<path class="rd-arrow" d="M124 112 q8 14 20 26"/><path class="rd-arrow-head" d="M144 138 l-6 -1 l3 -5z"/>', [110, 88, 40, 54]) +
         car(20, 112, 40, 18, 'rd-car-you', 'right') + label(176, 140, 'SCUOLABUS', 'rd-label-bus');
     } },
+
+    // Chapter 2: a side view (crest and dip), a curve from above, and the approach to an unguarded level crossing.
+    profile: { h: 220, draw: function() {
+      var road = 'M0 160 L30 160 C60 160 70 100 90 100 C110 100 120 160 150 160 L190 160 C220 160 230 200 250 200 C270 200 280 160 310 160 L340 160';
+      return rect(0, 0, 340, 220, 'rd-sky') +
+        '<path class="rd-ground" d="' + road + ' L340 220 L0 220Z"/>' +
+        part('dosso', '<path class="rd-profile" d="M30 160 C60 160 70 100 90 100 C110 100 120 160 150 160"/>' + label(78, 92, 'dosso'), [32, 94, 116, 66]) +
+        part('nascosto', '<g transform="rotate(38 132 134)">' + rect(118, 124, 28, 12, 'rd-side-car', ' rx="4"') +
+          '<circle class="rd-wheel" cx="124" cy="137" r="3.4"/><circle class="rd-wheel" cx="140" cy="137" r="3.4"/></g>', [114, 116, 36, 34]) +
+        part('visuale', line(26, 147, 150, 53, 'rd-sight') + label(118, 56, 'visuale'), [24, 50, 128, 20]) +
+        '<path class="rd-profile" d="M0 160 L30 160 M150 160 L190 160 M310 160 L340 160"/>' +
+        part('cunetta', '<path class="rd-profile" d="M190 160 C220 160 230 200 250 200 C270 200 280 160 310 160"/>' + label(226, 150, 'cunetta'), [190, 142, 120, 62]) +
+        part('acqua', '<ellipse class="rd-water" cx="250" cy="197" rx="26" ry="4.5"/>', [222, 190, 56, 14]) +
+        rect(4, 140, 28, 12, 'rd-side-car rd-side-you', ' rx="4"') + '<circle class="rd-wheel" cx="10" cy="155" r="3.4"/><circle class="rd-wheel" cx="26" cy="155" r="3.4"/>';
+    } },
+
+    curve: { h: 220, draw: function() {
+      var centre = 'M-10 176 C110 176 196 168 244 118 C282 78 294 44 294 -10';
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        '<path class="rd-road-edge" d="' + centre + '"/><path class="rd-road" d="' + centre + '"/>' +
+        '<path class="rd-centre" d="' + centre + '"/>' +
+        // The rock sits on the line from your eyes to the oncoming car, so the sight line stops at it.
+        part('visuale', '<circle class="rd-rock" cx="170" cy="100" r="22"/><circle class="rd-rock" cx="205" cy="72" r="16"/>' +
+          line(62, 186, 152, 112, 'rd-sight') + label(118, 84, 'visuale'), [112, 54, 112, 70]) +
+        part('margine', car(30, 184, 40, 16, 'rd-car-you', 'right') + line(30, 206, 110, 206, 'rd-arrow'), [26, 180, 90, 30]) +
+        part('sorpasso', '<g transform="rotate(-24 150 160)">' + car(132, 150, 40, 16, 'rd-car-other', 'right') + '</g>' +
+          '<path class="rd-x" d="M140 140 l20 20 M160 140 l-20 20"/>', [128, 134, 50, 42]) +
+        part('fermata', '<g transform="rotate(-58 276 104)">' + car(258, 96, 36, 16, 'rd-car-parked', 'right') + '</g>' +
+          '<path class="rd-x" d="M300 92 l16 16 M316 92 l-16 16"/>', [258, 82, 64, 44]) +
+        '<g transform="rotate(180 276 24)">' + car(268, 6, 16, 36, 'rd-car-other', 'up') + '</g>';
+    } },
+
+    railway: { h: 210, draw: function() {
+      // Road on top, every sign beside it on your right; you drive left to right in the lower lane.
+      function bars(x, n) {
+        var out = rect(x, 148, 12, 34, 'rd-panel', ' rx="1.5"');
+        for (var i = 0; i < n; i++) out += line(x + 1, 162 + i * 8, x + 11, 154 + i * 8, 'rd-bar');
+        return out;
+      }
+      return rect(0, 0, 340, 210, 'rd-ground') +
+        rect(0, 40, 340, 70, 'rd-asphalt') + line(0, 75, 340, 75, 'rd-dash') +
+        line(0, 40, 340, 40, 'rd-line') + line(0, 110, 340, 110, 'rd-line') +
+        part('binari', line(300, 0, 300, 210, 'rd-rail') + line(312, 0, 312, 210, 'rd-rail') + label(256, 24, 'binari'), [294, 0, 24, 210]) +
+        part('arresto', rect(282, 77, 5, 31, 'rd-zebra') + label(236, 98, 'arresto'), [276, 76, 16, 34]) +
+        part('preavviso', '<polygon class="rd-tri" points="28,142 40,120 52,142"/>' + rect(36, 132, 8, 6, 'rd-tri-sym') + bars(34, 3) + label(24, 200, '150 m'), [22, 116, 36, 70]) +
+        part('pannello2', bars(124, 2) + label(114, 200, '100 m'), [118, 144, 24, 42]) +
+        part('pannello1', bars(204, 1) + label(196, 200, '50 m'), [198, 144, 24, 42]) +
+        part('croce', '<g class="rd-cross"><path d="M262 122 l24 16 M286 122 l-24 16"/></g>' + label(256, 158, 'croce'), [258, 116, 32, 28]) +
+        car(4, 84, 40, 18, 'rd-car-you', 'right');
+    } },
   };
 
   /** SVG markup for a scene, or '' for an unknown scene name. */

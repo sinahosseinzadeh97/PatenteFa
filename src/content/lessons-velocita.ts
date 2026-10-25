@@ -907,8 +907,9 @@ const lessonFrenatura: Lesson = {
         ...range(4300, 4303), ...range(4308, 4311), "4313", "5705",
         // coefficiente di aderenza, ABS
         "6868", "6870", "6874", "6877", "6910",
-        // DISCESA PERICOLOSA (17), SALITA RIPIDA (18), STRADA SDRUCCIOLEVOLE (24): braking and grip
-        "871", "896", "958", "966", "967", "971",
+        // DISCESA PERICOLOSA (17), SALITA RIPIDA (18): practised above. Other danger-sign
+        // statements (#958, 966, 967, 971) belong to chapter 2 (lessons-pericolo.ts).
+        "871", "896",
       ],
     },
   ],
@@ -1221,8 +1222,8 @@ const lessonDistanza: Lesson = {
         ...range(4314, 4331), "4337", "4338",
         // #363 (distance in a queue) is a Chapter 1 question: mapped in lessons-definizioni.ts.
         "4454", "5693", "5694", "5703", "6375", "6394", "6402", "6463",
-        // STRADA SDRUCCIOLEVOLE (24), DISCESA PERICOLOSA (17), rain panel (139)
-        "890", "963", "968", "972", "3871",
+        // STRADA SDRUCCIOLEVOLE (24): practised above; #890, 968, 972 are mapped in chapter 2. Rain panel (139)
+        "963", "3871",
       ],
     },
   ],

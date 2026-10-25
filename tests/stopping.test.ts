@@ -294,13 +294,14 @@ function setup() {
   return { call, raw };
 }
 
-test("the chapter is listed third, opens directly, and ships the model's table with its explorer", async () => {
+test("the chapter is listed in official order, opens directly, and ships the model's table with its explorer", async () => {
   const { call } = setup();
   const home = await call(8001, "GET", "/learn");
   assert.equal(home.body.chapters.length, CHAPTERS.length);
-  assert.equal(home.body.chapters[2].id, VELOCITA_CHAPTER.id);
-  assert.deepEqual(home.body.chapters[2].topicIds, [10, 11]);
-  assert.equal(home.body.chapters[2].lessons.length, 4);
+  const listed = home.body.chapters[CHAPTERS.indexOf(VELOCITA_CHAPTER)];
+  assert.equal(listed.id, VELOCITA_CHAPTER.id);
+  assert.deepEqual(listed.topicIds, [10, 11]);
+  assert.equal(listed.lessons.length, 4);
 
   const lesson = await call(8001, "GET", `/learn/lessons/${LESSONS[2].id}`);
   assert.equal(lesson.status, 200);
