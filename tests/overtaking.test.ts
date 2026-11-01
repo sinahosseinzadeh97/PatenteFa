@@ -220,7 +220,9 @@ test("mistakes route to the section that teaches them; out-of-scope questions st
   assert.equal(route("5174"), `${L3.id}#2`, "crests → where it is forbidden");
   assert.equal(route("5918"), `${L4.id}#1`, "signal at the end too → the stages");
   assert.equal(route("5153"), `${L4.id}#2`, "the overtaken driver → their duties");
-  for (const id of ["5163", "5165", "5214", "1310", "5162", "5223"]) assert.equal(route(id), null, `${id} is out of scope on purpose`);
+  for (const id of ["5163", "5165", "5214", "5162", "5223"]) assert.equal(route(id), null, `${id} is out of scope on purpose`);
+  // The heavy-vehicle overtaking ban is out of this chapter's scope but taught by chapter 3.
+  assert.equal(lessonLinkForSourceId("1310")?.lessonId, "divieti-sorpasso-veicoli-pesanti");
 });
 
 test("after the speed chapter, today's path and 'next lesson' lead into this chapter", () => {

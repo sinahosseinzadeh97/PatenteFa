@@ -404,3 +404,12 @@ Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/20
 - Chapter-wide facts live in lesson 1 (family by shape, 150 m, distance vs length panel, yellow background, ALTRI PERICOLI). A sign's own lesson teaches its placement only for the cross/panels and the pedestrian/cycle signs.
 - Sources: CdS and DPR 495/1992 articles listed in the chapter's `sources`, read 2026-10-25 in the consolidated text on leggeinchiaro.it (updated 23/10/2026). The bank's 2023 caveat still applies.
 
+## 28. Chapter 3: Segnali di divieto (2026-11-01)
+
+- Chapter `segnali-divieto`, `numbers: [3]`, third in `CHAPTERS`, `topicIds: [2]`. Bank group `segnali-divieto`, source ids 1194–1714 (521 questions, 39 sign groups). 13 lessons + `ripasso-capitolo-3` in `src/content/ch3-*.ts` and `lessons-divieto.ts`.
+- Every chapter-3 question maps to one chapter-3 section except the 30 sign-56/82 questions Chapter 15's `sorpasso-segnali` already teaches (`CHAPTER_3_MAPPED_ELSEWHERE`, pinned in `tests/chapter3.test.ts`). The heavy-vehicle overtaking ban (signs 60, 83), left out of Chapter 15 on purpose (§24.2), is chapter 3 lesson 5. Readable map and source flags: `docs/chapter-3-coverage.md`.
+- No new step kinds or drawings: tables, compares, classify with sign tiles (incl. composites 940, 946–950, 955), one factors step, terms, traps.
+- Chapter-wide facts live in lesson 1: family by shape, valid from the sign to the next junction, 24 h unless a panel says otherwise, end-of-prescription signs. The only "8–20" rule is DIVIETO DI SOSTA in towns (lesson 12).
+- Two weights, never mixed: the truck signs (60, 68, 69, 83) use the full-load mass on the carta di circolazione and spare passenger vehicles; the mass and axle signs (78, 79) use the actual mass at the moment of transit, for every vehicle (art. 118 c.3).
+- Today's path: when the learner's last active chapter has no unstarted lesson, it now continues with the next chapter in course order, not the first unstarted lesson of the course (`buildTodayPath`).
+- Sources: DPR 495/1992 artt. 81, 104, 116–120 on leggeinchiaro.it (updated 26–30/10/2026); CdS artt. 50, 56, 157, 158 on aci.gov.it (updated 01/11/2026); CdS art. 156 via secondary sites only. The bank's 2023 caveat still applies.
