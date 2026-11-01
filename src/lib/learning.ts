@@ -175,8 +175,11 @@ export function buildTodayPath(
     (b.updatedAt ?? "").localeCompare(a.updatedAt ?? "");
   const inProgress = lessons.filter((l) => l.state === "in_progress").sort(mostRecentFirst)[0];
   const lastChapter = lessons.filter((l) => l.updatedAt).sort(mostRecentFirst)[0]?.chapterId;
+  // A finished chapter hands over to the next chapter in course order, not back to the first open lesson.
+  const afterLastChapter = lessons.findLastIndex((l) => l.chapterId === lastChapter) + 1;
   const nextLesson =
     lessons.find((l) => l.state === "not_started" && l.chapterId === lastChapter) ??
+    lessons.slice(afterLastChapter).find((l) => l.state === "not_started") ??
     lessons.find((l) => l.state === "not_started");
   const completed = lessons.filter((l) => l.state === "completed");
 
