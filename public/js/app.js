@@ -770,7 +770,8 @@ App.renderRichText = function(el, text) {
           '<button type="button" class="btn btn-ghost btn-sm" onclick="App.openAdminThread(' + u.id + ')">پیام</button>' +
           (u.is_approved === -1
             ? ''
-            : '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)">مسدودکردن</button>') +
+            : '<button type="button" class="btn btn-ghost btn-sm" onclick="App.sendAdminWelcome(' + u.id + ')">راهنما</button>' +
+              '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)">مسدودکردن</button>') +
         '</div>' +
       '</div>';
     });
@@ -836,6 +837,17 @@ App.renderRichText = function(el, text) {
       App.loadAdminData();
     } catch (err) {
       App.toast('خطا در تغییر وضعیت کاربر');
+    }
+  };
+
+  App.sendAdminWelcome = async function(userId) {
+    try {
+      var res = await api('POST', '/admin/users/' + userId + '/welcome');
+      App.toast(res.delivered
+        ? 'راهنمای شروع برای کاربر فرستاده شد.'
+        : 'پیام نرسید؛ احتمالاً کاربر ربات را بسته است. از «پیام» بخواه ربات را دوباره استارت کند.');
+    } catch (err) {
+      App.toast('ارسال راهنما انجام نشد: ' + (err.message || err));
     }
   };
 
