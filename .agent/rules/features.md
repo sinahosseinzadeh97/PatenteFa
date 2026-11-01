@@ -395,3 +395,12 @@ Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/20
 - Keep old content and review metadata in `content_revisions`. Never replace a human-reviewed entry with a late automatic response. Content the review does not approve (flagged, inconclusive, or no bank evidence) is still shown, labelled as AI-written (`QUALITY_LABELS.needs_review`) and reportable — never a blank panel. An unavailable reviewer is an inconclusive review, not an error. Since 2026-10-16: withholding it hid content for 7 of the first 12 questions reviewed in production, mostly on inconclusive reviews, and users saw nothing.
 - `/api/content/:id/report` records authenticated, bounded reports; only the primary admin can review them. Translation edits cannot repair or automatically close answer/source reports. Include report/revision tables in backups.
 - Migration 0017 must precede deployment of this code. See `CONTENT-QUALITY.md` for audit commands, source provenance and validation limits.
+
+## 27. Chapter 2: Segnali di pericolo (2026-10-25)
+
+- Chapter `segnali-pericolo`, `numbers: [2]`, second in `CHAPTERS`, `topicIds: [1]`. Bank group `segnali-pericolo`, source ids 532–1193 (662 questions). 14 lessons + `ripasso-capitolo-2` in `src/content/ch2-*.ts` and `lessons-pericolo.ts`.
+- Every chapter-2 question maps to one chapter-2 section except #871, #896, #963 (Velocità practises them). `tests/chapter2.test.ts` pins that list. Readable map and source conflicts: `docs/chapter-2-coverage.md`.
+- Step-kind additions, all optional: `factors.sign` (the sign every item is about, shown above the lists; each item's bank image must equal it), classify item `sign` (a sign tile; `figure` stays for wide drawings), `Lesson.figures` also lists sign + panel composites (901–923) so `verify:lessons` accepts them. New drawings: `profile`, `curve`, `railway` in `public/js/road.js`.
+- Chapter-wide facts live in lesson 1 (family by shape, 150 m, distance vs length panel, yellow background, ALTRI PERICOLI). A sign's own lesson teaches its placement only for the cross/panels and the pedestrian/cycle signs.
+- Sources: CdS and DPR 495/1992 articles listed in the chapter's `sources`, read 2026-10-25 in the consolidated text on leggeinchiaro.it (updated 23/10/2026). The bank's 2023 caveat still applies.
+

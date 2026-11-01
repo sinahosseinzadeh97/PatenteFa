@@ -3,7 +3,7 @@
  * scripts/verify-lessons.ts
  *
  * Read-only check that every curated lesson chapter (src/content/lessons.ts,
- * lessons-definizioni.ts + ch1-*.ts, lessons-incroci.ts, crossings.ts,
+ * lessons-definizioni.ts + ch1-*.ts, lessons-pericolo.ts + ch2-*.ts, lessons-incroci.ts, crossings.ts,
  * lessons-velocita.ts, lessons-sorpasso.ts, overtaking.ts) still agrees with the
  * question bank in D1. Run after editing lesson content and before deploying:
  *
@@ -65,8 +65,11 @@ function snapshots(chapter: Chapter): Snapshot[] {
         : []
     )
   );
+  // A factor list about one sign (chapter 2) quotes statements that show that sign.
   const factors = chapter.lessons.flatMap((lesson) =>
-    lesson.steps.flatMap((step) => (step.kind === "factors" ? step.columns.flatMap((column) => column.items) : []))
+    lesson.steps.flatMap((step) =>
+      step.kind === "factors" ? step.columns.flatMap((column) => column.items.map((item) => ({ ...item, image: step.sign?.sign ?? null }))) : []
+    )
   );
   // Overtaking chapter: the bank statements behind each scene rule and each centre line.
   const ruleEvidence = chapter.lessons.flatMap((lesson) =>
@@ -81,7 +84,7 @@ function snapshots(chapter: Chapter): Snapshot[] {
   return [
     ...statements.map((s) => ({ sourceId: s.sourceId, textIt: s.textIt, answer: s.answer, image: s.sign ?? s.figure ?? null })),
     ...evidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image })),
-    ...factors.map((f) => ({ sourceId: f.sourceId, textIt: f.textIt, answer: f.answer, image: null })),
+    ...factors.map((f) => ({ sourceId: f.sourceId, textIt: f.textIt, answer: f.answer, image: f.image })),
     ...ruleEvidence.map((e) => ({ sourceId: e.sourceId, textIt: e.textIt, answer: e.answer, image: e.image ?? null })),
   ];
 }

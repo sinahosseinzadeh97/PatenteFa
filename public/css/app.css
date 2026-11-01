@@ -2205,6 +2205,8 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .sign-figure { margin: 0; padding: 14px 10px 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
 .sign-figure .sign-tile { width: min(96px, 100%); height: 96px; }
 .sign-figure figcaption { display: flex; flex-direction: column; gap: 2px; }
+.classify-sign { width: 112px; height: 120px; margin-bottom: 8px; }
+.factors-sign { margin-bottom: 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); }
 .sign-name-it { font-family: 'Barlow Condensed', 'Public Sans', sans-serif; font-size: .88rem; font-weight: 700; letter-spacing: .03em; line-height: 1.25; overflow-wrap: anywhere; }
 .sign-name-fa { color: var(--ink-muted); font-size: .74rem; }
 .compare-row + .compare-row { border-top: 1px solid var(--border-subtle); }
@@ -2793,6 +2795,23 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-label-dark { fill: #14151a; }
 .rd-label-center { text-anchor: middle; }
 .rd-label-bus { fill: #14151a; font-weight: 800; letter-spacing: .06em; }
+.rd-sky { fill: #22324a; }
+.rd-profile { fill: none; stroke: #8a8f9c; stroke-width: 6; stroke-linecap: round; }
+.rd-side-car { fill: #9aa0af; }
+.rd-side-you { fill: #4c8df6; }
+.rd-wheel { fill: #14151a; }
+.rd-sight { stroke: #ffc300; stroke-width: 1.6; stroke-dasharray: 5 4; }
+.rd-water { fill: #5aa9e6; }
+.rd-road { fill: none; stroke: #2f323c; stroke-width: 60; }
+.rd-road-edge { fill: none; stroke: #f2f0eb; stroke-width: 64; }
+.rd-centre { fill: none; stroke: #f2f0eb; stroke-width: 2.2; }
+.rd-rock { fill: #556b4a; }
+.rd-x { fill: none; stroke: #ff6b70; stroke-width: 3; stroke-linecap: round; }
+.rd-panel { fill: #f7f7f4; stroke: #14151a; stroke-width: .8; }
+.rd-bar { stroke: #c1272d; stroke-width: 2.6; }
+.rd-tri { fill: #f7f7f4; stroke: #c1272d; stroke-width: 3; stroke-linejoin: round; }
+.rd-tri-sym { fill: #14151a; }
+.rd-cross path { stroke: #c1272d; stroke-width: 5; stroke-linecap: square; }
 .rd-part { cursor: pointer; }
 .rd-hit { fill: transparent; }
 .rd-clear { fill: transparent; }
