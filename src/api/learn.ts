@@ -70,7 +70,7 @@ const STOPPING_MODEL = {
 function nextLessonAfter(
   lesson: Lesson,
   completed: Set<string>
-): { lessonId: string; titleFa: string; chapterTitleFa: string | null } | null {
+): { lessonId: string; titleFa: string; chapterTitleFa: string | null; chapterNumbers: number[] | null } | null {
   const lessons = CHAPTERS.flatMap((chapter) => chapter.lessons.map((l) => ({ chapter, lesson: l })));
   const index = lessons.findIndex((entry) => entry.lesson.id === lesson.id);
   const open = (entry: (typeof lessons)[number]) => entry.lesson.id !== lesson.id && !completed.has(entry.lesson.id);
@@ -81,7 +81,19 @@ function nextLessonAfter(
     lessonId: next.lesson.id,
     titleFa: next.lesson.titleFa,
     chapterTitleFa: sameChapter ? null : next.chapter.titleFa,
+    chapterNumbers: sameChapter ? null : next.chapter.numbers,
   };
+}
+
+/** Lesson numbers count lessons only; the chapter review is labelled as the review, not "lesson N". */
+function lessonPosition(chapter: Chapter, lesson: Lesson) {
+  const lessons = chapter.lessons.filter((l) => !l.review);
+  return { index: lesson.review ? null : lessons.indexOf(lesson) + 1, total: lessons.length, review: lesson.review === true };
+}
+
+/** A chapter is complete once every lesson in it, the review included, is completed. */
+function chapterCompleted(chapter: Chapter, completed: Set<string>): boolean {
+  return chapter.lessons.every((l) => completed.has(l.id));
 }
 
 /** Both the lesson and its chapter; every lesson id belongs to exactly one chapter. */
@@ -112,8 +124,11 @@ learn.get("/", async (c) => {
   ]);
   // Every bank question carries a source_id, so this is the full due count.
   const reviewDue = dueSourceIds.length;
+  const completed = new Set(progress.filter((row) => row.completed_at).map((row) => row.lesson_id));
   const chapters = CHAPTERS.map((chapter) => ({
     id: chapter.id,
+    numbers: chapter.numbers,
+    completed: chapterCompleted(chapter, completed),
     topicIds: chapter.topicIds,
     nameIt: chapter.nameIt,
     titleFa: chapter.titleFa,
@@ -148,15 +163,13 @@ learn.get("/lessons/:lessonId", async (c) => {
   return c.json({
     chapter: {
       id: chapter.id,
+      numbers: chapter.numbers,
       titleFa: chapter.titleFa,
       nameIt: chapter.nameIt,
       reviewedOn: chapter.reviewedOn,
       sources: chapter.sources,
     },
-    position: {
-      index: chapter.lessons.findIndex((l) => l.id === lesson.id) + 1,
-      total: chapter.lessons.length,
-    },
+    position: lessonPosition(chapter, lesson),
     lesson: {
       id: lesson.id,
       titleFa: lesson.titleFa,
@@ -317,6 +330,8 @@ learn.post("/lessons/:lessonId/complete", async (c) => {
   const row = await completeLesson(c.env.DB, userId, lesson.id, stepCount - 1);
   const practiceIds = new Set(practice.questions.map(({ row: q }) => q.id));
   const practiceAnswers = answers.filter((a) => practiceIds.has(a.question_id));
+  const completed = new Set([...progressRows.filter((r) => r.completed_at).map((r) => r.lesson_id), lesson.id]);
+  const chapter = chapterOfLesson(lesson.id);
 
   return c.json({
     completedAt: row.completed_at,
@@ -325,7 +340,8 @@ learn.post("/lessons/:lessonId/complete", async (c) => {
       correct: practiceAnswers.filter((a) => a.is_correct === 1).length,
       queuedForReview: practiceAnswers.filter((a) => a.is_correct !== 1).length,
     },
-    next: nextLessonAfter(lesson, new Set([...progressRows.filter((r) => r.completed_at).map((r) => r.lesson_id), lesson.id])),
+    chapterCompleted: chapter ? chapterCompleted(chapter, completed) : false,
+    next: nextLessonAfter(lesson, completed),
   });
 });
 
@@ -340,7 +356,8 @@ learn.post("/practice", async (c) => {
   if (body.lessonId !== undefined) {
     const lesson = typeof body.lessonId === "string" ? findLesson(body.lessonId) : null;
     if (!lesson) return c.json({ error: "درس پیدا نشد." }, 404);
-    lessonIds = [lesson.id];
+    // The chapter review practises the whole chapter.
+    lessonIds = lesson.review ? (chapterOfLesson(lesson.id)?.lessons ?? [lesson]).map((l) => l.id) : [lesson.id];
   } else {
     const progress = await getLessonProgressRows(c.env.DB, userId);
     lessonIds = progress.filter((row) => row.completed_at).map((row) => row.lesson_id);

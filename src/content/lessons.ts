@@ -1,9 +1,9 @@
 /**
  * src/content/lessons.ts
  * Lesson content model, the pilot chapter (Segnali di precedenza), and the
- * chapter registry. Later chapters live in their own files
- * (src/content/lessons-incroci.ts, -velocita.ts, -sorpasso.ts) and are
- * registered in CHAPTERS below.
+ * chapter registry. Other chapters live in their own files
+ * (src/content/lessons-definizioni.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
  * reviewed by hand, versioned with the code that renders it, and never
@@ -27,6 +27,7 @@
 
 // The chapter files (and overtaking.ts) only import *types* from this file
 // (erased at build), so this is not a runtime import cycle.
+import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
 import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
@@ -271,6 +272,19 @@ export interface ManoeuvreStage {
   marks: ("mirror" | "view" | "gap")[];
 }
 
+/** A tappable part of a road drawing; `id` names a shape in public/js/road.js. */
+export interface RoadPart {
+  id: string;
+  nameIt: string;
+  nameFa: string;
+  text: string;
+  /** Shown as a badge when the scene is about what belongs to the carreggiata. */
+  inCarreggiata?: boolean;
+}
+
+/** An original drawing (public/js/road.js), never a bank figure. */
+export type RoadScene = "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school";
+
 interface StepBase {
   title: string;
   /** Legal basis for the facts in this step. */
@@ -350,6 +364,30 @@ export type LessonStep =
       stages: ManoeuvreStage[];
       takeaway: string;
     })
+  | (StepBase & {
+      /** A road drawing whose parts the learner taps to read their name and role. */
+      kind: "anatomy";
+      scene: RoadScene;
+      body: string;
+      parts: RoadPart[];
+      takeaway: string;
+    })
+  | (StepBase & {
+      /** A comparison table; each row renders as its own card on a phone. */
+      kind: "table";
+      body: string;
+      columns: string[];
+      rows: { label: string; it?: string; sign?: number; values: string[] }[];
+      takeaway: string;
+    })
+  | (StepBase & {
+      /** Self-check: put each original example in a category. Not a bank question, nothing stored. */
+      kind: "classify";
+      body: string;
+      options: { it: string; fa: string }[];
+      items: { prompt: string; figure?: number; answer: number; explain: string }[];
+      takeaway: string;
+    })
   | (StepBase & { kind: "terms"; terms: Term[] })
   | (StepBase & { kind: "trap"; body: string; examples: Statement[]; takeaway: string });
 
@@ -365,6 +403,8 @@ export interface Lesson {
   practice: PracticeQuestion[];
   /** Explicit question → section mapping used to route mistakes back here. */
   related: { step: number; sourceIds: string[] }[];
+  /** The chapter review: last in its chapter, not numbered as a lesson, maps no questions of its own. */
+  review?: true;
 }
 
 export interface Source {
@@ -374,6 +414,8 @@ export interface Source {
 
 export interface Chapter {
   id: string;
+  /** Official chapter number(s) in the ministerial program, as ordered in the question bank. */
+  numbers: number[];
   /** topics.id of the matching bank chapters (broad practice lives there). */
   topicIds: number[];
   nameIt: string;
@@ -840,8 +882,7 @@ const lessonDiritto: Lesson = {
         "2347", "2351", "2353", "2356", "2357", "2358", "2361", "2364", "2367",
         // The other side of the same junction: DARE PRECEDENZA / STOP placement
         "2161", "2177",
-        // Prudence at junctions, no image
-        "409",
+        // #409 (prudence at junctions) is a Chapter 1 question: mapped in lessons-definizioni.ts.
       ],
     },
     {
@@ -1058,6 +1099,7 @@ const lessonSensiUnici: Lesson = {
 
 export const PILOT_CHAPTER: Chapter = {
   id: "segnali-precedenza",
+  numbers: [5],
   topicIds: [4],
   nameIt: "Segnali di precedenza",
   titleFa: "تابلوهای حق تقدم",
@@ -1085,8 +1127,8 @@ export function lessonStepCount(lesson: Lesson): number {
   return lesson.steps.length + lesson.practice.length + 1;
 }
 
-/** Every chapter, in the order learners are guided through them. */
-export const CHAPTERS: Chapter[] = [PILOT_CHAPTER, INCROCI_CHAPTER, VELOCITA_CHAPTER, SORPASSO_CHAPTER];
+/** Every chapter in official chapter order (question-bank order), which is the order learners are guided through. */
+export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {

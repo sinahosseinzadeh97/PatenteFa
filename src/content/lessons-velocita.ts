@@ -1219,7 +1219,8 @@ const lessonDistanza: Lesson = {
         ...range(4208, 4226), "4228", "4229", "4230", "4231", "4234", "4235", "4236",
         "4238", "4239", "4240", "4243", "4244", "4245", "4247", "4248", "4249",
         ...range(4314, 4331), "4337", "4338",
-        "363", "4454", "5693", "5694", "5703", "6375", "6394", "6402", "6463",
+        // #363 (distance in a queue) is a Chapter 1 question: mapped in lessons-definizioni.ts.
+        "4454", "5693", "5694", "5703", "6375", "6394", "6402", "6463",
         // STRADA SDRUCCIOLEVOLE (24), DISCESA PERICOLOSA (17), rain panel (139)
         "890", "963", "968", "972", "3871",
       ],
@@ -1229,6 +1230,7 @@ const lessonDistanza: Lesson = {
 
 export const VELOCITA_CHAPTER: Chapter = {
   id: "velocita-distanza-arresto",
+  numbers: [11, 12],
   topicIds: [10, 11],
   nameIt: "Velocità, distanza di sicurezza e arresto",
   titleFa: "سرعت، فاصله‌ی ایمنی و توقف",
