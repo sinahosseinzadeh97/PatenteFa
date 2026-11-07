@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, the pilot chapter (Segnali di precedenza), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -30,6 +30,7 @@
 import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { DIVIETO_CHAPTER } from "./lessons-divieto.js";
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
+import { OBBLIGO_CHAPTER } from "./lessons-obbligo.js";
 import { PERICOLO_CHAPTER } from "./lessons-pericolo.js";
 import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
@@ -1133,7 +1134,7 @@ export function lessonStepCount(lesson: Lesson): number {
 }
 
 /** Every chapter in official chapter order (question-bank order), which is the order learners are guided through. */
-export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PERICOLO_CHAPTER, DIVIETO_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
+export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PERICOLO_CHAPTER, DIVIETO_CHAPTER, OBBLIGO_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {

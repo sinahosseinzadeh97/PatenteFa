@@ -413,3 +413,14 @@ Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/20
 - Two weights, never mixed: the truck signs (60, 68, 69, 83) use the full-load mass on the carta di circolazione and spare passenger vehicles; the mass and axle signs (78, 79) use the actual mass at the moment of transit, for every vehicle (art. 118 c.3).
 - Today's path: when the learner's last active chapter has no unstarted lesson, it now continues with the next chapter in course order, not the first unstarted lesson of the course (`buildTodayPath`).
 - Sources: DPR 495/1992 artt. 81, 104, 116–120 on leggeinchiaro.it (updated 26–30/10/2026); CdS artt. 50, 56, 157, 158 on aci.gov.it (updated 01/11/2026); CdS art. 156 via secondary sites only. The bank's 2023 caveat still applies.
+
+## 29. Chapter 4: Segnali di obbligo (2026-11-07)
+
+- Chapter `segnali-obbligo`, `numbers: [4]`, fourth in `CHAPTERS` (right after `segnali-divieto`), `topicIds: [3]`. Bank group `segnali-obbligo`, source ids 1715–2147 (433 questions, 29 sign groups). 11 lessons + `ripasso-capitolo-4` in `src/content/ch4-*.ts` and `lessons-obbligo.ts`. Not the same as Chapter 15 (`sorpasso-segnaletica`), which was the fourth module built.
+- Every chapter-4 question maps to exactly one chapter-4 section; no other chapter maps one (`tests/chapter4.test.ts`). Readable map, reuse notes and source flags: `docs/chapter-4-coverage.md`.
+- No new step kinds or drawings. The core move of the chapter is "blue = only this": every blue sign is taught beside the red or triangular sign with the same symbol (rotatoria 29/104, speed 58/105, pedestrians 62/108, bicycles 63/110, animals 26/116).
+- Chapter-wide facts live in lesson 1: blue circle = obbligo = a prescrizione (never divieto, pericolo or indicazione); the end of an obligation is a red bar on the blue sign (unlike chapter 3's black bar on white); the ALT signs are the only red-bordered obligations (art. 123).
+- Placement is per sign and must not be generalised: straight arrows stand where the obligation starts; curved arrows (preavviso) and the two-arrow signs stand before it; ROTATORIA at the threshold of the area, never on the central island; chains from the sign itself.
+- "Pass on the left" = "leave the obstacle on your right" (lesson 5): keep both wordings in feedback; the bank uses both.
+- The truck-only turn sign (image 150) has no figure in the current artt. 122–123; it is taught as the bank reads it and flagged in the coverage doc. Do not invent an article for it.
+- Sources: DPR 495/1992 artt. 122–123 on leggeinchiaro.it (updated 28/10/2026), read 2026-11-07. The bank's 2023 caveat still applies.
