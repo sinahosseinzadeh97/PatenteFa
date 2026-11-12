@@ -2854,6 +2854,10 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 
 /* ── Comparison table: stacked cards on a phone, columns from 560px ─────── */
 .ltable { display: grid; gap: 8px; }
+.ltable-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 0 0 12px; }
+.ltable-figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
+.ltable-figure img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: #f7f7f4; }
+.ltable-figure figcaption { color: var(--ink-muted); font-size: .74rem; font-weight: 700; }
 .ltable-head { display: none; }
 .ltable-row { padding: 11px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); }
 .ltable-label { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }

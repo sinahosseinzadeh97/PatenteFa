@@ -386,6 +386,8 @@ export type LessonStep =
       kind: "table";
       body: string;
       columns: string[];
+      /** Bank figure for each column, drawn above the table; needed whenever a column names a figure. */
+      figures?: number[];
       rows: { label: string; it?: string; sign?: number; values: string[] }[];
       takeaway: string;
     })

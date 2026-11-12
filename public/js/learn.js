@@ -639,8 +639,12 @@
           '<span><strong>' + esc(row.label) + '</strong>' + (row.it ? itSpan(row.it, 'ltable-it') : '') + '</span>' +
         '</div><dl class="ltable-cells">' + cells + '</dl></div>';
     }).join('');
+    var figures = content.figures ? '<div class="ltable-figures">' + content.figures.map(function(n, i) {
+      return '<figure class="ltable-figure"><img src="' + signUrl(n) + '" alt="شکل ' + esc(fa(n)) + ' از بانک سؤال" loading="lazy" />' +
+        '<figcaption>' + esc(content.columns[i]) + '</figcaption></figure>';
+    }).join('') + '</div>' : '';
     return stepHeading(content.title) +
-      '<p class="lesson-text">' + esc(content.body) + '</p>' +
+      '<p class="lesson-text">' + esc(content.body) + '</p>' + figures +
       '<div class="ltable' + (single ? ' is-single' : '') + '" style="--cols:' + content.columns.length + '">' + head + rows + '</div>' +
       '<p class="lesson-takeaway">' + icon('i-sparkles') + '<span>' + esc(content.takeaway) + '</span></p>' +
       ruleLine(content.rule);
