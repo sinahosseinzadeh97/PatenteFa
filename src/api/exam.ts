@@ -83,8 +83,27 @@ exam.post("/start", async (c) => {
   }
   const mode: "exam" | "review" | "topic_practice" = requestedMode ?? "exam";
 
+  const fromSessionId = body.fromSessionId;
+  if (fromSessionId !== undefined && (mode !== "review" || !Number.isInteger(fromSessionId) || (fromSessionId as number) <= 0)) {
+    return c.json({ error: "fromSessionId must be a session id and needs review mode" }, 400);
+  }
+
   let questions;
-  if (mode === "review") {
+  if (mode === "review" && fromSessionId !== undefined) {
+    // "Review now" from a results screen: that session's mistakes (unanswered
+    // included), even though the queue schedules them for tomorrow.
+    const source = await getSessionById(c.env.DB, fromSessionId as number);
+    if (!source || source.user_id !== userId || !source.finished_at) {
+      return c.json({ error: "Session not found or not finished" }, 404);
+    }
+    const missed = (await getSessionAnswers(c.env.DB, source.id)).filter((a) => a.is_correct !== 1);
+    questions = (await Promise.all(missed.map((a) => getQuestionById(c.env.DB, a.question_id)))).filter(
+      (q): q is NonNullable<typeof q> => q !== null
+    );
+    if (questions.length === 0) {
+      return c.json({ error: "No mistakes to review in this session" }, 400);
+    }
+  } else if (mode === "review") {
     questions = await getDueReviewQuestions(c.env.DB, userId);
     if (questions.length === 0) {
       return c.json({ error: "No questions due for review" }, 400);

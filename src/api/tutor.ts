@@ -35,7 +35,11 @@ tutor.post("/explain-wrong", async (c) => {
   }
 
   const answers = await getSessionAnswers(c.env.DB, sessionId);
-  const wrongAnswers = answers.filter((a) => a.is_correct === 0);
+  // Unanswered rows keep is_correct NULL but count as mistakes, like the score
+  // does; only list them once finished so an open session leaks no answers.
+  const wrongAnswers = answers.filter(
+    (a) => a.is_correct === 0 || (session.finished_at != null && a.is_correct !== 1)
+  );
 
   if (wrongAnswers.length === 0) {
     return c.json({

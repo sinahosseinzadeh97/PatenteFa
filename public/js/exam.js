@@ -51,15 +51,16 @@
     App.startTimer();
   };
 
-  App.startExam = async function(mode) {
+  App.startExam = async function(mode, fromSessionId) {
     if (state.examStartPending) return;
     state.examStartPending = true;
     mode = mode || 'exam';
     const returnScreen = state.currentScreen && state.currentScreen !== 'exam'
       ? state.currentScreen
       : 'home';
+    const body = fromSessionId ? { mode: mode, fromSessionId: fromSessionId } : { mode: mode };
     try {
-      const data = await api('POST', '/exam/start', { mode });
+      const data = await api('POST', '/exam/start', body);
       App.initializeExamState(data, { mode: mode, returnScreen: returnScreen });
       App.enterExamScreen();
     } catch (e) {
@@ -138,6 +139,11 @@
 
   App.startReview = function() {
     App.startExam('review');
+  };
+
+  // Results screen: this session's mistakes now, not the spaced-repetition queue.
+  App.reviewSessionMistakes = function() {
+    App.startExam('review', state.lastFinishedSessionId);
   };
 
   App.startTopicPractice = function() {

@@ -26,7 +26,7 @@ export function renderResultsScreen(): string {
       <span class="section-kicker">قدم بعدی پیشنهادی</span>
       <h2 id="results-next-title">اشتباه‌ها را همین حالا مرور کن</h2>
       <p id="results-next-copy">مرور فوری کمک می‌کند تله‌های سؤال در ذهنت تثبیت نشوند.</p>
-      <button id="results-review-btn" class="btn btn-primary btn-full" onclick="App.startReview()"><svg class="ui-icon"><use href="#i-review"/></svg><span>مرور سؤال‌های غلط</span></button>
+      <button id="results-review-btn" class="btn btn-primary btn-full" onclick="App.reviewSessionMistakes()"><svg class="ui-icon"><use href="#i-review"/></svg><span>مرور سؤال‌های غلط</span></button>
     </section>
 
     <div id="results-tutor-banner" class="results-tutor-banner-wrap">
