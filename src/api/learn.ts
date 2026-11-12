@@ -176,6 +176,7 @@ learn.get("/lessons/:lessonId", async (c) => {
       titleIt: lesson.titleIt,
       minutes: lesson.minutes,
       signs: lesson.signs,
+      figures: lesson.figures ?? [],
       steps: lesson.steps,
       stepCount: lesson.steps.length + practice.questions.length + 1,
       practice: practice.questions.map(({ content, row }) => ({

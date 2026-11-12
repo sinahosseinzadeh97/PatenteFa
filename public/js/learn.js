@@ -730,6 +730,10 @@
       '<h2 class="lesson-step-title lesson-hero-title" tabindex="-1" data-step-heading>' + esc(lesson.titleFa) + '</h2>' +
       itSpan(lesson.titleIt, 'lesson-hero-it') +
       (signs ? '<div class="lesson-sign-strip" aria-hidden="true">' + signs + '</div>' : '') +
+      ((lesson.figures || []).length ? '<section class="lesson-block"><h3>' + icon('i-sign') + 'تصویرهای بانک در این درس</h3><div class="ltable-figures lesson-figure-strip">' +
+        lesson.figures.map(function(n) {
+          return '<figure class="ltable-figure"><img src="' + signUrl(n) + '" alt="شکل ' + esc(fa(n)) + ' از بانک سؤال" loading="lazy" /><figcaption>شکل ' + esc(fa(n)) + '</figcaption></figure>';
+        }).join('') + '</div></section>' : '') +
       '<section class="lesson-block"><h3>' + icon('i-target') + 'هدف این درس</h3><p>' + esc(content.objective) + '</p></section>' +
       '<section class="lesson-block"><h3>' + icon('i-help') + 'چرا مهم است</h3><p>' + esc(content.why) + '</p></section>' +
       ruleLine(content.rule);

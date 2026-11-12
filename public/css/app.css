@@ -2862,6 +2862,7 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .ltable-figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
 .ltable-figure img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: #f7f7f4; }
 .ltable-figure figcaption { color: var(--ink-muted); font-size: .74rem; font-weight: 700; }
+.lesson-figure-strip { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); margin: 0; }
 .ltable-head { display: none; }
 .ltable-row { padding: 11px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); }
 .ltable-label { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }

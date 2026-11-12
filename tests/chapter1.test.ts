@@ -260,3 +260,18 @@ test("a table column that names a bank figure shows that figure", () => {
   assert.ok(checked >= 6, "the ch1 figure tables were checked");
   assert.match(readFileSync("public/js/learn.js", "utf8"), /ltable-figures/, "the table renderer draws figures");
 });
+
+test("every lesson shows its bank figures, and lesson text only cites figures the lesson shows", async () => {
+  const { call } = setup();
+  const lesson = CHAPTERS.flatMap((c) => c.lessons).find((l) => l.id === "carreggiate-in-figura") as Lesson;
+  const opened = await call("GET", `/learn/lessons/${lesson.id}`);
+  assert.deepEqual(opened.body.lesson.figures, [550, 552, 562], "the lesson payload carries its figures");
+  assert.match(readFileSync("public/js/learn.js", "utf8"), /lesson\.figures\.map/, "the first page renders them");
+
+  const faDigits = (s: string) => Number(s.replace(/[۰-۹]/g, (d) => String("۰۱۲۳۴۵۶۷۸۹".indexOf(d))));
+  for (const l of CHAPTERS.flatMap((c) => c.lessons)) {
+    for (const match of JSON.stringify(l.steps).matchAll(/(?:تصویر|شکل)\s+([۰-۹]{2,})/g)) {
+      assert.ok((l.figures ?? []).includes(faDigits(match[1])), `${l.id} cites figure ${match[1]} but does not show it`);
+    }
+  }
+});
