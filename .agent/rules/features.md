@@ -445,3 +445,13 @@ Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/20
 - Core move of the chapter: three questions on every marking: what colour, continuous or dashed, and what is attributed to it that it does not say (a stop line does not order a stop by itself; arrows bind only once the lane lines are continuous; an island blocks, a guide stripe only shows).
 - Flag kept open: #2603 (painted "50" = "velocità consigliata") has no regulatory text behind it; lesson 10 says so. Full map, reuse notes and flags: `docs/chapter-6-coverage.md`.
 - Sources: DPR 495/1992 artt. 88, 135, 138–141, 143–154, 179 and CdS artt. 40, 143, 144, 154, 157, 158, 176 on leggeinchiaro.it (updated 23–30/10/2026), read 2026-11-12. The bank's 2023 caveat still applies.
+
+## 32. Chapter 7: Semafori e segnali degli agenti del traffico (2026-11-12)
+
+- Chapter `semafori-agenti` (`SEMAFORI_CHAPTER` in `src/content/lessons-semafori.ts`), `numbers: [7]`, seventh in `CHAPTERS` (right after `segnaletica-orizzontale`), `topicIds: [6]`. Bank group `semafori-vigili`, source ids 2651–2903 (`CHAPTER_7_SOURCE_RANGE`; 253 questions, 22 groups). 10 lessons + `ripasso-capitolo-7`; lessons in `ch7-semafori.ts` (L1–L3), `ch7-luci.ts` (L4–L7), `ch7-agenti.ts` (L8–L10), review in `ch7-ripasso.ts`.
+- Every chapter-7 question maps to exactly one chapter-7 section; no other chapter maps one (`tests/chapter7.test.ts`). Groups are split by concept where needed (e.g. where red sits → L1, what red orders → L2). Readable map, reuse notes and flags: `docs/chapter-7-coverage.md`.
+- Two new `anatomy` scenes in `public/js/road.js`: `agente-braccia` and `agente-angolo` (junction from above, officer in the centre facing the bottom arm, one tappable car per arm with ALT / VIA). Sides are the officer's, not the learner's. The ALT/VIA in the drawing and in the part names must agree (tested). Bank figures 383–386 are never annotated (§22.2). No new step kinds, no motion.
+- Core move of the chapter: "who is this light or gesture for?" (shape inside the light; where you stand relative to the officer) and "for me: stop, go, or stop if I safely can?". Fixed yellow and the raised arm share one rule: stop if you safely can, otherwise clear the junction.
+- Flags kept open: CdS art. 41 c.15 vs the bank on bicycles and vehicle lights (#2683, #2752, #2780); #2841 (show the triangle on request) has no "esibire" text; DPR art. 181 describes the right-angle signal only for the left-turning flow, so the flow in front of the officer is marked "?".
+- Sources: CdS artt. 41, 43, 44, 147, 162, 180 and DPR 495/1992 artt. 24, 158–168, 181, 182 on leggeinchiaro.it (updated 23–29/10/2026), art. 41 c.6/c.15 also on brocardi.it, read 2026-11-12. The bank's 2023 caveat still applies.
+
