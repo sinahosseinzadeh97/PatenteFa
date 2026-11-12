@@ -211,13 +211,26 @@
     var chapters = state.learn.chapters || [];
     // One recommended stop across all chapters: the lesson today's path starts with.
     var first = (state.learn.today && state.learn.today.items || []).find(function(i) { return i.kind === 'lesson'; });
-    box.innerHTML = chapters.map(function(chapter, ci) {
-      return chapterCardHtml(chapter, ci, first ? first.lessonId : null);
-    }).join('') +
+    var recommendedId = first ? first.lessonId : null;
+    // Chapters are collapsed rows. A re-render keeps what the learner opened;
+    // the first render opens only the chapter they are working in.
+    var rendered = box.querySelectorAll('details.chapter-card');
+    var openKeys = Array.prototype.filter.call(rendered, function(d) { return d.open; })
+      .map(function(d) { return d.dataset.chapter; });
+    if (!rendered.length) {
+      var active = chapters.find(function(c) { return c.lessons.some(function(l) { return l.id === recommendedId; }); }) ||
+        chapters.find(function(c) { return !c.completed; });
+      if (active) openKeys = [chapterKey(active)];
+    }
+    box.innerHTML = '<div class="chapter-list">' + chapters.map(function(chapter, ci) {
+      return chapterCardHtml(chapter, ci, recommendedId, openKeys.indexOf(chapterKey(chapter)) !== -1);
+    }).join('') + '</div>' +
       '<p class="chapter-note">«خوانده شد» یعنی درس را تا آخر رفته‌ای، نه اینکه به آن مسلطی. تسلط را مرورها و تمرین‌های بعدی نشان می‌دهند.</p>';
   };
 
-  function chapterCardHtml(chapter, ci, recommendedId) {
+  function chapterKey(chapter) { return (chapter.numbers || []).join('-'); }
+
+  function chapterCardHtml(chapter, ci, recommendedId, isOpen) {
     var lessons = chapter.lessons;
     var numbered = lessons.filter(function(l) { return !l.review; });
     var review = lessons.find(function(l) { return l.review; });
@@ -266,19 +279,28 @@
           icon('i-target') + '<span>تمرین ۱۰ سؤال واقعی از درس‌های خوانده‌شده</span></button>'
       : '';
 
-    return '<article class="chapter-card">' +
-        '<header class="chapter-head">' +
-          '<div class="chapter-head-copy">' +
-            '<span class="chapter-kicker">' + chapterName(chapter.numbers) + '، ' + fa(numbered.length) + ' درس کوتاه' + (review ? ' + مرور فصل' : '') + '</span>' +
-            '<h3 class="chapter-title">' + esc(chapter.titleFa) + '</h3>' +
-            itSpan(chapter.nameIt, 'chapter-it') +
-            '<p class="chapter-summary">' + esc(chapter.summaryFa) + '</p>' +
-          '</div>' +
-          '<div class="chapter-count"><strong>' + fa(doneCount) + ' از ' + fa(numbered.length) + '</strong><small>درس خوانده شده</small></div>' +
-        '</header>' + complete +
-        '<ol class="route" aria-label="مسیر درس‌های ' + esc(chapter.titleFa) + '">' + stops + '</ol>' +
-        '<div class="chapter-actions">' + primary + practice + '</div>' +
-      '</article>';
+    var pct = numbered.length ? Math.round(doneCount / numbered.length * 100) : 0;
+    var badge = chapter.completed ? icon('i-check') : (chapter.numbers || []).map(fa).join('،');
+    var statusCls = chapter.completed ? ' is-complete' : doneCount > 0 || current && current.state === 'in_progress' ? ' is-started' : '';
+
+    return '<details class="chapter-card' + statusCls + '" data-chapter="' + esc(chapterKey(chapter)) + '"' + (isOpen ? ' open' : '') + '>' +
+        '<summary class="chapter-head">' +
+          '<span class="chapter-badge" aria-hidden="true">' + badge + '</span>' +
+          '<span class="chapter-head-copy">' +
+            '<span class="chapter-kicker">' + chapterName(chapter.numbers) + '، ' + fa(numbered.length) + ' درس' + (review ? ' + مرور' : '') + '</span>' +
+            '<span class="chapter-title">' + esc(chapter.titleFa) + '</span>' +
+            '<span class="chapter-progress"><span class="chapter-progress-track"><span class="chapter-progress-fill" style="width:' + pct + '%"></span></span>' +
+              '<small>' + fa(doneCount) + ' از ' + fa(numbered.length) + ' خوانده شده</small></span>' +
+          '</span>' +
+          '<span class="chapter-toggle" aria-hidden="true">' + icon('i-chevron-down') + '</span>' +
+        '</summary>' +
+        '<div class="chapter-body">' +
+          itSpan(chapter.nameIt, 'chapter-it') +
+          '<p class="chapter-summary">' + esc(chapter.summaryFa) + '</p>' + complete +
+          '<ol class="route" aria-label="مسیر درس‌های ' + esc(chapter.titleFa) + '">' + stops + '</ol>' +
+          '<div class="chapter-actions">' + primary + practice + '</div>' +
+        '</div>' +
+      '</details>';
   }
 
   App.focusLearnSection = function() {
