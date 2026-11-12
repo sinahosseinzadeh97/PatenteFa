@@ -1,8 +1,8 @@
 /**
  * src/content/lessons.ts
- * Lesson content model, the pilot chapter (Segnali di precedenza), and the
+ * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -30,6 +30,10 @@
 import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { DIVIETO_CHAPTER } from "./lessons-divieto.js";
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
+import { OBBLIGO_CHAPTER } from "./lessons-obbligo.js";
+import { lessonConfluenze, lessonIntersezioniT, lessonSemaforoAgente } from "./ch5-incroci.js";
+import { reviewPrecedenza } from "./ch5-ripasso.js";
+import { lessonDoveDareStop, lessonRiconoscerePrecedenza, lessonStradaDiritto } from "./ch5-segnali.js";
 import { PERICOLO_CHAPTER } from "./lessons-pericolo.js";
 import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
@@ -676,7 +680,7 @@ const lessonDiritto: Lesson = {
       objective:
         "تشخیص بدهی کِی جاده‌ی تو حق تقدم دارد، کجا این حق تمام می‌شود، و از روی تابلوی هشدارِ قبل از تقاطع بفهمی چه کسی باید راه بدهد.",
       why:
-        "آیین‌نامه تابلوهای حق تقدم را دو دسته می‌کند: تابلوهایی که می‌گویند «تو راه بده» (درس قبل) و تابلوهایی که می‌گویند «دیگران باید به تو راه بدهند». این درس دسته‌ی دوم است.",
+        "آیین‌نامه تابلوهای حق تقدم را دو دسته می‌کند: تابلوهایی که می‌گویند «تو راه بده» (درس ۲) و تابلوهایی که می‌گویند «دیگران باید به تو راه بدهند». این درس دسته‌ی دوم است.",
       rule: "DPR 495/1992, art. 105 c.1",
     },
     {
@@ -684,7 +688,7 @@ const lessonDiritto: Lesson = {
       diagram: "junction",
       title: "دو روی یک تقاطع",
       body:
-        "لوزی زرد یعنی از اینجا جاده‌ی تو حق تقدم دارد. جاده‌های فرعی‌ای که به آن می‌رسند تابلوی DARE PRECEDENZA یا STOP دارند؛ همان تابلوهای درس قبل، از طرف دیگرِ همان تقاطع.",
+        "لوزی زرد یعنی از اینجا جاده‌ی تو حق تقدم دارد. جاده‌های فرعی‌ای که به آن می‌رسند تابلوی DARE PRECEDENZA یا STOP دارند؛ همان تابلوهای درس ۲، از طرف دیگرِ همان تقاطع.",
       callouts: [
         "لوزی زرد روی جاده‌ی اصلی: از اینجا حق تقدم داری.",
         "DARE PRECEDENZA یا STOP روی جاده‌ی فرعی: آن‌ها باید به تو راه بدهند.",
@@ -744,9 +748,16 @@ const lessonDiritto: Lesson = {
             "معمولاً ۱۵۰ متر قبل از تقاطع، بیشتر در جاده‌های بیرون شهر.",
           ],
         },
+        {
+          label: "اشتباه نگیر",
+          values: [
+            "از تقاطع خبر می‌دهد؛ گردش به چپ را ممنوع نمی‌کند و در آزادراه نصب نمی‌شود، چون آزادراه تقاطع هم‌سطح ندارد.",
+            "نه پیش‌آگهیِ DARE PRECEDENZA یا STOP است، نه هشدارِ گذرگاه راه‌آهن یا صلیب سنت آندره، و در آزادراه هم نیست. چون در تقاطعِ پیش رو حق تقدم نداری، دستورش این است که سرعت را حسابی کم کنی.",
+          ],
+        },
       ],
       takeaway: "هر دو مثلثِ هشدارند و فقط از قبل خبر می‌دهند؛ فرقشان این است که حق تقدم با کیست.",
-      rule: "DPR 495/1992, art. 81 c.7, art. 105 c.4, art. 109, art. 112 c.1–2",
+      rule: "DPR 495/1992, art. 81 c.7, art. 105 c.4, art. 109, art. 112 c.1–2; Codice della Strada, art. 145 c.1",
     },
     {
       kind: "terms",
@@ -905,6 +916,8 @@ const lessonDiritto: Lesson = {
         "2284", "2285", "2286", "2287", "2289", "2290", "2291", "2294", "2296", "2297", "4569",
         // INTERSEZIONE CON PRECEDENZA A DESTRA (img 44)
         "2218", "2220", "2222", "2226", "4565",
+        // Chapter 5 (2026-11-12): what 47 and 44 are not ("اشتباه نگیر" row)
+        "2219", "2223", "2224", "2225", "2227", "2228", "2293", "2295",
       ],
     },
   ],
@@ -944,6 +957,13 @@ const lessonSensiUnici: Lesson = {
             "حق تقدم با توست و خودروهای روبه‌رو باید صبر کنند؛ ولی قبل از ورود مطمئن شو که واقعاً راه داده‌اند.",
           ],
         },
+        {
+          label: "چه چیزی نیست",
+          values: [
+            "عبور را نوبتی می‌کند، لحظه‌به‌لحظه؛ نه بر اساس روزهای زوج و فرد.",
+            "دور زدن یا گردش را ممنوع نمی‌کند؛ فقط می‌گوید در باریکه چه کسی اول برود.",
+          ],
+        },
       ],
       takeaway: "در هر دو تابلو، فلشِ رو به بالا جهتِ خودِ توست و فلشِ قرمز جهتی است که باید صبر کند.",
       rule: "DPR 495/1992, art. 110 c.1, art. 114",
@@ -953,7 +973,7 @@ const lessonSensiUnici: Lesson = {
       diagram: "narrowing",
       title: "دو سرِ یک باریکه",
       body:
-        "باریکه‌ای که فقط یک ردیف خودرو از آن رد می‌شود، در دو سرش دو تابلوی متفاوت دارد: یک طرف دایره (راه بده)، طرف دیگر مربع (حق تقدم با توست).",
+        "باریکه‌ای که فقط یک ردیف خودرو از آن رد می‌شود، در دو سرش دو تابلوی متفاوت دارد: یک طرف دایره (راه بده)، طرف دیگر مربع (حق تقدم با توست). باریکه ممکن است دائمی باشد (پل یا تونل باریک) یا موقت، مثلاً وقتی بخشی از سواره‌رو برای کار جاده‌ای بسته شده.",
       callouts: [
         "سمت تو: تابلوی دایره‌ای. صبر کن تا خودروی روبه‌رو رد شود.",
         "سمت مقابل: تابلوی مربعی. آن‌ها حق تقدم دارند.",
@@ -1010,7 +1030,7 @@ const lessonSensiUnici: Lesson = {
             { it: "diritto di precedenza", fa: "حق تقدم" },
           ],
           translation: "تابلوی نشان‌داده‌شده به احتیاط بیشتر دعوت می‌کند، چون دیگر حق تقدم نداری.",
-          why: "درست است: این تابلوی پایان حق تقدم است (درس ۲) و دلیلش هم درست است.",
+          why: "درست است: این تابلوی پایان حق تقدم است (درس ۴) و دلیلش هم درست است.",
         },
       ],
       takeaway: "وقتی «perché» می‌بینی، دو چیز را جدا بسنج: خودِ ادعا و دلیلش. هر دو باید درست باشند.",
@@ -1090,6 +1110,8 @@ const lessonSensiUnici: Lesson = {
         "2229", "2231", "2232", "2233", "2239", "2240", "2247", "2250", "2255", "2257",
         // DIRITTO DI PRECEDENZA NEL SENSO UNICO ALTERNATO (img 53)
         "2371", "2372", "2373", "2374", "2380", "2381",
+        // Chapter 5 (2026-11-12): what the two signs are not ("چه چیزی نیست" row)
+        "2246", "2385", "2386",
       ],
     },
     {
@@ -1097,34 +1119,62 @@ const lessonSensiUnici: Lesson = {
       sourceIds: [
         "2230", "2234", "2235", "2238", "2241", "2248", "2249", "2251", "2252", "2254",
         "2382", "2383", "2384",
+        // Chapter 5 (2026-11-12): temporary narrowings (roadworks)
+        "2237",
       ],
     },
   ],
 };
 
+/**
+ * Chapter 5 of the ministerial program — "Segnali di precedenza" — question-bank
+ * source ids 2148–2390 (CHAPTER_5_SOURCE_RANGE). It began as the 3-lesson pilot;
+ * on 2026-11-12 it grew to the whole bank group. The pilot's lesson ids and step
+ * order are unchanged (saved progress stays valid); new lessons live in
+ * ch5-segnali.ts and ch5-incroci.ts, the review in ch5-ripasso.ts.
+ */
 export const PILOT_CHAPTER: Chapter = {
   id: "segnali-precedenza",
   numbers: [5],
   topicIds: [4],
   nameIt: "Segnali di precedenza",
   titleFa: "تابلوهای حق تقدم",
-  summaryFa: "چه کسی اول رد می‌شود؟ سه درس کوتاه درباره‌ی تابلوهایی که این را تعیین می‌کنند.",
-  reviewedOn: "2026-09-26",
+  summaryFa: "چه کسی اول رد می‌شود؟ تابلوهای راه دادن و حق تقدم، تقاطع‌ها و ورودها، باریکه‌ی نوبتی، و وقتی چراغ یا مأمور هم هست. نُه درس کوتاه و یک مرور.",
+  reviewedOn: "2026-11-12",
   sources: [
     {
-      label: "Codice della Strada (D.Lgs. 285/1992), artt. 140, 145",
+      label: "Codice della Strada (D.Lgs. 285/1992), artt. 38, 39, 41, 140, 145, 147, 177",
       url: "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285",
     },
     {
-      label: "Regolamento di esecuzione (DPR 495/1992), artt. 81, 105–114",
+      label: "Regolamento di esecuzione (DPR 495/1992), artt. 81, 105–114, 123",
       url: "https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:1992-12-16;495",
     },
     {
-      label: "Question bank: Ed0ardo/QuizPatenteB (2023)",
+      label: "Testo consolidato consultato il 12/11/2026: Legge in Chiaro, DPR 495/1992 artt. 105–114 (aggiornati al 26–30/10/2026)",
+      url: "https://leggeinchiaro.it/articolo-105-regolamento-codice-strada/",
+    },
+    {
+      label: "Testo consolidato consultato il 12/11/2026: Legge in Chiaro, Codice della Strada artt. 38, 39, 41, 147, 177 (aggiornati al 23–27/10/2026)",
+      url: "https://leggeinchiaro.it/articolo-38-codice-della-strada/",
+    },
+    {
+      label: "Question bank: Ed0ardo/QuizPatenteB (2023), group «segnali-precedenza»",
       url: "https://github.com/Ed0ardo/QuizPatenteB",
     },
   ],
-  lessons: [lessonDareStop, lessonDiritto, lessonSensiUnici],
+  lessons: [
+    lessonRiconoscerePrecedenza,
+    lessonDareStop,
+    lessonDoveDareStop,
+    lessonDiritto,
+    lessonStradaDiritto,
+    lessonIntersezioniT,
+    lessonConfluenze,
+    lessonSensiUnici,
+    lessonSemaforoAgente,
+    reviewPrecedenza,
+  ],
 };
 
 /** Content steps + one step per practice question + the completion step. */
@@ -1133,7 +1183,7 @@ export function lessonStepCount(lesson: Lesson): number {
 }
 
 /** Every chapter in official chapter order (question-bank order), which is the order learners are guided through. */
-export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PERICOLO_CHAPTER, DIVIETO_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
+export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PERICOLO_CHAPTER, DIVIETO_CHAPTER, OBBLIGO_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {

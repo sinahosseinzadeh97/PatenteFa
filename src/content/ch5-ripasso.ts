@@ -1,0 +1,182 @@
+/**
+ * src/content/ch5-ripasso.ts
+ * Chapter 5 (Segnali di precedenza): the chapter review. Nine real bank
+ * questions, one per lesson and none shown inside a lesson; a mistake routes
+ * back to the lesson section that teaches it (tests/chapter5.test.ts).
+ */
+import type { Lesson } from "./lessons.js";
+import { SIGN, SIGN_FA } from "./ch5-signs.js";
+
+export const reviewPrecedenza: Lesson = {
+  id: "ripasso-capitolo-5",
+  titleFa: "مرور فصل ۵",
+  titleIt: "RIPASSO · SEGNALI DI PRECEDENZA",
+  minutes: 6,
+  signs: [40, 41, 43, 45, 47, 49, 51, 52],
+  figures: [972],
+  review: true,
+  steps: [
+    {
+      kind: "intro",
+      title: "مرور فصل",
+      objective:
+        "نُه سؤال واقعی از بانک، یکی از هر درس. هیچ‌کدام را در درس‌ها ندیده‌ای، پس این مرور نشان می‌دهد چه چیزی واقعاً در ذهنت مانده است.",
+      why: "تقریباً هر سؤال این فصل یکی از دو چیز را می‌پرسد: «چه کسی به چه کسی راه می‌دهد؟» و «این تابلو کجاست و چه چیزی نیست؟». سؤالی که اینجا اشتباه کنی به فهرست مرورت اضافه می‌شود و به بخشِ درسِ مربوطش وصل است.",
+    },
+    {
+      kind: "table",
+      title: "فصل ۵ در نُه خط",
+      body: "قبل از سؤال‌ها، نکته‌ی اصلی هر درس را یک بار دیگر ببین. اگر جایی برایت تازه بود، اول همان درس را دوباره باز کن.",
+      columns: ["نکته‌ی اصلی"],
+      rows: [
+        { label: "درس ۱", it: "precedenza · prescrizione", sign: 48, values: ["همه‌ی ۱۴ تابلو = حق تقدم = نوعی دستور؛ نه خطر، نه ممنوعیت، نه اطلاعات"] },
+        { label: "درس ۲", it: "DARE PRECEDENZA · STOP", sign: 41, values: ["مثلث وارونه: راه بده، اگر لازم شد بایست؛ STOP: همیشه کامل بایست"] },
+        { label: "درس ۳", it: "dove", sign: 43, values: ["DARE و STOP سرِ خودِ تقاطع، شهر و بیرون شهر، رمپ آزادراه؛ STOP ≠ ALT"] },
+        { label: "درس ۴", it: "DIRITTO DI PRECEDENZA", sign: 47, values: ["لوزی زرد و ۴۷: دیگران راه می‌دهند؛ ضربدر ۴۴: به راست راه بده؛ احتیاط همیشه"] },
+        { label: "درس ۵", it: "diritto · fine", sign: 52, values: ["لوزی تا تابلوی پایانش، نه تا مرز شهر؛ آژیر و چراغ آبی مقدم‌اند؛ نوار سیاه فقط پایان حق تقدم"] },
+        { label: "درس ۶", it: "intersezione a T", sign: 49, values: ["خط پهن تویی؛ فرعی از یک طرف؛ نه بن‌بست، نه ممنوعیت"] },
+        { label: "درس ۷", it: "confluenza", sign: 51, values: ["ورود با خط شتاب؛ آن‌ها روی رمپ DARE PRECEDENZA دارند؛ از چپ = سواره‌روی یک‌طرفه"] },
+        { label: "درس ۸", it: "senso unico alternato", sign: 45, values: ["دایره‌ی قرمز: صبر کن؛ مربع آبی: حق تقدم با توست؛ فقط باریکه‌ی نوبتی"] },
+        { label: "درس ۹", it: "semaforo · agente", sign: 53, values: ["مأمور > چراغی که کار می‌کند > تابلو؛ خاموش یا زرد چشمک‌زن = تابلو"] },
+      ],
+      takeaway: "در هر جمله دو سؤال بپرس: «حق تقدم با کیست؟» و «چه چیزی به این تابلو نسبت داده شده که نمی‌گوید؟».",
+    },
+  ],
+  practice: [
+    {
+      sourceId: "2350",
+      sign: 52,
+      textIt: "Il segnale raffigurato è un segnale di precedenza",
+      answer: 1,
+      chunks: [
+        { it: SIGN, fa: SIGN_FA },
+        { it: "è un segnale di precedenza", fa: "یک تابلوی حق تقدم است" },
+      ],
+      translation: "تابلوی نشان‌داده‌شده یک تابلوی حق تقدم است.",
+      why: "درست است (درس ۱). لوزی زرد از کلاس دومِ تابلوهای حق تقدم است.",
+      rule: "DPR 495/1992 art. 105 c.1",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2174",
+      sign: 41,
+      textIt: "Il segnale raffigurato impone di arrestarsi e dare la precedenza prima di impegnare l'incrocio",
+      answer: 1,
+      chunks: [
+        { it: SIGN, fa: SIGN_FA },
+        { it: "impone di arrestarsi e dare la precedenza", fa: "دستور می‌دهد کامل بایستی و حق تقدم بدهی", verb: "impone ← imporre" },
+        { it: "prima di impegnare l'incrocio", fa: "قبل از وارد شدن به تقاطع" },
+      ],
+      translation: "تابلوی نشان‌داده‌شده دستور می‌دهد قبل از وارد شدن به تقاطع کامل بایستی و حق تقدم بدهی.",
+      why: "درست است (درس ۲). دستورِ STOP همین است، بی‌قیدوشرط.",
+      rule: "DPR 495/1992 art. 107 c.1",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2213",
+      sign: 43,
+      textIt: "Il segnale raffigurato preannuncia la presenza di una barriera doganale",
+      answer: 0,
+      chunks: [
+        { it: "Il segnale raffigurato preannuncia", fa: "تابلوی نشان‌داده‌شده از قبل خبر می‌دهد", verb: "preannuncia ← preannunciare" },
+        { it: "la presenza di una barriera doganale", fa: "از وجودِ یک راه‌بندِ گمرک", focus: "contrast" },
+      ],
+      translation: "تابلوی نشان‌داده‌شده از قبل از وجودِ یک راه‌بندِ گمرک خبر می‌دهد.",
+      why: "غلط است (درس ۳). پیش‌آگهیِ STOP فقط از STOP در تقاطع بعدی خبر می‌دهد؛ گمرک تابلوی ALT – DOGANA را دارد.",
+      rule: "DPR 495/1992 art. 108 c.1; art. 123",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2287",
+      sign: 47,
+      textIt: "Il segnale raffigurato, all'incrocio, ci dà la precedenza sui veicoli provenienti sia da destra che da sinistra",
+      answer: 1,
+      chunks: [
+        { it: "Il segnale raffigurato,", fa: "تابلوی نشان‌داده‌شده،" },
+        { it: "all'incrocio,", fa: "در تقاطع،" },
+        { it: "ci dà la precedenza", fa: "به ما حق تقدم می‌دهد", verb: "dà ← dare" },
+        { it: "sui veicoli provenienti sia da destra che da sinistra", fa: "نسبت به خودروهایی که هم از راست و هم از چپ می‌آیند" },
+      ],
+      translation: "تابلوی نشان‌داده‌شده در تقاطع به ما نسبت به خودروهایی که هم از راست و هم از چپ می‌آیند حق تقدم می‌دهد.",
+      why: "درست است (درس ۴). با ۴۷ فرعی‌های هر دو طرف باید راه بدهند.",
+      rule: "DPR 495/1992 art. 112 c.1, c.3",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2355",
+      figure: 972,
+      textIt: "Il segnale di figura (A) può essere ripetuto in formato piccolo e integrato con il pannello in figura (B)",
+      answer: 1,
+      chunks: [
+        { it: "Il segnale di figura (A)", fa: "تابلوی شکلِ (A)" },
+        { it: "può essere ripetuto in formato piccolo", fa: "ممکن است در اندازه‌ی کوچک تکرار شود", focus: "condition", verb: "può ← potere" },
+        { it: "e integrato con il pannello in figura (B)", fa: "و با پنلِ شکلِ (B) کامل شود" },
+      ],
+      translation: "تابلوی شکلِ (A) ممکن است در اندازه‌ی کوچک تکرار شود و با پنلِ شکلِ (B) کامل شود.",
+      why: "درست است (درس ۵). لوزیِ کوچک قبل و بعد از تقاطع‌ها تکرار می‌شود و پنلش شکل تقاطع را نشان می‌دهد: خط پهن جاده‌ی اصلی است.",
+      rule: "DPR 495/1992 art. 113 c.2",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2315",
+      sign: 49,
+      textIt: "Il segnale raffigurato preannuncia l'incrocio con una strada senza diritto di precedenza",
+      answer: 1,
+      chunks: [
+        { it: "Il segnale raffigurato preannuncia l'incrocio", fa: "تابلوی نشان‌داده‌شده از تقاطع خبر می‌دهد", verb: "preannuncia ← preannunciare" },
+        { it: "con una strada senza diritto di precedenza", fa: "با جاده‌ای بدون حق تقدم" },
+      ],
+      translation: "تابلوی نشان‌داده‌شده از تقاطع با جاده‌ای بدون حق تقدم خبر می‌دهد.",
+      why: "درست است (درس ۶). فرعیِ سمت چپ حق تقدم ندارد؛ تو داری.",
+      rule: "DPR 495/1992 art. 112 c.2–3",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2340",
+      sign: 51,
+      textIt: "Il segnale raffigurato comporta la presenza del segnale DARE PRECEDENZA sulla strada di immissione laterale",
+      answer: 1,
+      chunks: [
+        { it: SIGN, fa: SIGN_FA },
+        { it: "comporta la presenza del segnale DARE PRECEDENZA", fa: "یعنی تابلوی DARE PRECEDENZA وجود دارد", verb: "comporta ← comportare" },
+        { it: "sulla strada di immissione laterale", fa: "روی جاده‌ی ورودیِ کناری" },
+      ],
+      translation: "تابلوی نشان‌داده‌شده یعنی روی جاده‌ی ورودیِ کناری تابلوی DARE PRECEDENZA وجود دارد.",
+      why: "درست است (درس ۷). واردشونده‌ها باید راه بدهند، پس تابلوی راه دادن روی جاده‌ی آن‌هاست.",
+      rule: "DPR 495/1992 art. 112 c.3",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2241",
+      sign: 45,
+      textIt: "Il segnale raffigurato si incontra prima di una strettoia che, di norma, consente il passaggio di una sola fila di veicoli",
+      answer: 1,
+      chunks: [
+        { it: "Il segnale raffigurato si incontra", fa: "این تابلو دیده می‌شود", verb: "si incontra ← incontrarsi" },
+        { it: "prima di una strettoia che,", fa: "قبل از باریکه‌ای که،" },
+        { it: "di norma,", fa: "معمولاً،", focus: "condition" },
+        { it: "consente il passaggio di una sola fila di veicoli", fa: "فقط اجازه‌ی عبورِ یک ردیف خودرو را می‌دهد", verb: "consente ← consentire" },
+      ],
+      translation: "این تابلو قبل از باریکه‌ای دیده می‌شود که معمولاً فقط اجازه‌ی عبورِ یک ردیف خودرو را می‌دهد.",
+      why: "درست است (درس ۸). باریکه‌ی نوبتی یعنی هر بار فقط یک جهت می‌تواند رد شود.",
+      rule: "DPR 495/1992 art. 110 c.1",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "2188",
+      sign: 41,
+      textIt: "Il segnale raffigurato preannuncia di arrestarsi all'incrocio anche se il semaforo emette luce verde",
+      answer: 0,
+      chunks: [
+        { it: "Il segnale raffigurato preannuncia", fa: "تابلوی نشان‌داده‌شده از قبل خبر می‌دهد", verb: "preannuncia ← preannunciare" },
+        { it: "di arrestarsi all'incrocio", fa: "که سرِ تقاطع کامل بایستی" },
+        { it: "anche se il semaforo emette luce verde", fa: "حتی اگر چراغ سبز باشد", focus: "contrast", verb: "emette ← emettere" },
+      ],
+      translation: "تابلوی نشان‌داده‌شده از قبل خبر می‌دهد که سرِ تقاطع کامل بایستی، حتی اگر چراغ سبز باشد.",
+      why: "غلط است (درس ۹). چراغی که کار می‌کند بر STOP مقدم است؛ STOP فقط با چراغ خاموش یا زرد چشمک‌زن حاکم است.",
+      rule: "Codice della Strada art. 38 c.2; DPR 495/1992 art. 105 c.6",
+      conceptStep: 1,
+    },
+  ],
+  related: [],
+};

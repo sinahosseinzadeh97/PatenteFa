@@ -320,7 +320,7 @@ test("'next lesson' skips lessons the learner already completed", async () => {
   const { call, raw } = setup();
   raw.prepare(`INSERT INTO lesson_progress (user_id, lesson_id, step, completed_at) VALUES (1, ?, 10, datetime('now'))`).run(LESSONS[0].id);
   // Official order: chapter 5 (segnali di precedenza) is followed by chapters 11–12.
-  const lastIncroci = PILOT_CHAPTER.lessons[2];
+  const lastIncroci = PILOT_CHAPTER.lessons.at(-1) as (typeof PILOT_CHAPTER.lessons)[number];
   const opened = await call(8001, "GET", `/learn/lessons/${lastIncroci.id}`);
   assert.deepEqual(opened.body.next, {
     lessonId: LESSONS[1].id,

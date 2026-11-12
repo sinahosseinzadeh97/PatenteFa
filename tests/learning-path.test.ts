@@ -35,7 +35,8 @@ const TEACHING_LESSONS = ALL_LESSONS.filter((lesson) => !lesson.review);
 // ── Curated content ──────────────────────────────────────────────────────────
 
 test("every lesson has the full teaching structure and 3–5 real practice questions", () => {
-  assert.equal(PILOT_CHAPTER.lessons.length, 3);
+  // The pilot grew into the full chapter 5 (tests/chapter5.test.ts): 9 lessons + a review.
+  assert.equal(PILOT_CHAPTER.lessons.length, 10);
   assert.equal(new Set(ALL_LESSONS.map((lesson) => lesson.id)).size, ALL_LESSONS.length, "lesson ids are unique across chapters");
   for (const lesson of TEACHING_LESSONS) {
     const kinds = lesson.steps.map((step) => step.kind);
@@ -168,17 +169,20 @@ test("today's path puts unfinished work first, then due review, and never exceed
 });
 
 test("lesson state counts only this lesson's answers and due review items", () => {
-  const [s1, s2] = summarizeLessons(
+  // The pilot's DARE/STOP lesson (2165, 2155 practice; 2163 mapped) and DIRITTO lesson (2356).
+  const dareStop = PILOT_CHAPTER.lessons[1];
+  const summaries = summarizeLessons(
     PILOT_CHAPTER,
-    [{ lesson_id: L1.id, step: 4, started_at: "", updated_at: "", completed_at: null }],
+    [{ lesson_id: dareStop.id, step: 4, started_at: "", updated_at: "", completed_at: null }],
     [
-      { lesson_id: L1.id, question_id: 2165, user_answer: 1, is_correct: 0 },
-      { lesson_id: L1.id, question_id: 2155, user_answer: 1, is_correct: 1 },
+      { lesson_id: dareStop.id, question_id: 2165, user_answer: 1, is_correct: 0 },
+      { lesson_id: dareStop.id, question_id: 2155, user_answer: 1, is_correct: 1 },
     ],
     ["2163", "2356", "9999"]
   );
+  const [s1, s2] = [summaries[1], summaries[3]];
   assert.equal(s1.state, "in_progress");
-  assert.deepEqual(s1.practice, { answered: 2, correct: 1, total: L1.practice.length });
+  assert.deepEqual(s1.practice, { answered: 2, correct: 1, total: dareStop.practice.length });
   assert.equal(s1.dueReview, 1);
   assert.equal(s2.state, "not_started");
   assert.equal(s2.dueReview, 1);
@@ -188,7 +192,7 @@ test("a practice question whose bank text or answer drifted is excluded, not sil
   const row = (sourceId: string, text: string, answer: number): DbQuestion => ({
     id: Number(sourceId), source_id: sourceId, topic_id: 4, text_it: text, correct_answer: answer, image_url: null, wrong_rate: 0,
   });
-  const [a, b, c, d] = L1.practice;
+  const [a, b, c, ...rest] = L1.practice;
   const rows = [
     row(a.sourceId, a.textIt, a.answer),
     row(b.sourceId, b.textIt, 1 - b.answer),
@@ -196,7 +200,7 @@ test("a practice question whose bank text or answer drifted is excluded, not sil
   ];
   const resolved = resolvePracticeQuestions(L1, rows);
   assert.deepEqual(resolved.questions.map((q) => q.content.sourceId), [a.sourceId]);
-  assert.deepEqual(resolved.excluded, [b.sourceId, c.sourceId, d.sourceId]);
+  assert.deepEqual(resolved.excluded, [b.sourceId, c.sourceId, ...rest.map((q) => q.sourceId)]);
 });
 
 test("related practice serves due review first, then unseen, then lesson-only, then the longest-unseen", () => {
@@ -276,7 +280,7 @@ test("a new learner starts lesson 1, resume is monotonic, and bad input is rejec
   assert.equal(home.status, 200);
   assert.deepEqual(home.body.chapters.map((c: { id: string }) => c.id), CHAPTERS.map((c) => c.id));
   const pilotHome = home.body.chapters.find((c: { id: string }) => c.id === PILOT_CHAPTER.id);
-  assert.deepEqual(pilotHome.lessons.map((l: LessonSummary) => l.state), ["not_started", "not_started", "not_started"]);
+  assert.ok(pilotHome.lessons.every((l: LessonSummary) => l.state === "not_started"));
   // A new learner starts at lesson 1 of chapter 1, the first chapter of the program.
   assert.equal(home.body.today.items[0].lessonId, CHAPTERS[0].lessons[0].id);
 
