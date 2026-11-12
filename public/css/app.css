@@ -2795,6 +2795,10 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-car-nose { fill: rgba(20, 21, 26, .55); }
 .rd-door { fill: #6f7584; stroke: #ffc300; stroke-width: 1.2; }
 .rd-person circle, .rd-person rect { fill: #f2f0eb; }
+.rd-officer ellipse, .rd-officer circle { fill: #f2f0eb; stroke: #14151a; stroke-width: 1; }
+.rd-officer .rd-officer-spot { fill: #4a4d55; stroke: #8d939f; stroke-width: 1.2; }
+.rd-officer-arm { stroke: #ffc300; stroke-width: 5; stroke-linecap: round; }
+.rd-officer-face { fill: #c1272d; }
 .rd-child circle, .rd-child rect { fill: #ffd56b; }
 .rd-elder circle, .rd-elder rect { fill: #d9c7ff; }
 .rd-cane { stroke: #f2f0eb; stroke-width: 1.6; }
@@ -2854,6 +2858,11 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 
 /* ── Comparison table: stacked cards on a phone, columns from 560px ─────── */
 .ltable { display: grid; gap: 8px; }
+.ltable-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin: 0 0 12px; }
+.ltable-figure { margin: 0; display: grid; gap: 4px; justify-items: center; }
+.ltable-figure img { width: 100%; height: auto; border: 1px solid var(--border); border-radius: var(--radius-md); background: #f7f7f4; }
+.ltable-figure figcaption { color: var(--ink-muted); font-size: .74rem; font-weight: 700; }
+.lesson-figure-strip { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); margin: 0; }
 .ltable-head { display: none; }
 .ltable-row { padding: 11px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); }
 .ltable-label { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }

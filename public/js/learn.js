@@ -639,8 +639,12 @@
           '<span><strong>' + esc(row.label) + '</strong>' + (row.it ? itSpan(row.it, 'ltable-it') : '') + '</span>' +
         '</div><dl class="ltable-cells">' + cells + '</dl></div>';
     }).join('');
+    var figures = content.figures ? '<div class="ltable-figures">' + content.figures.map(function(n, i) {
+      return '<figure class="ltable-figure"><img src="' + signUrl(n) + '" alt="شکل ' + esc(fa(n)) + ' از بانک سؤال" loading="lazy" />' +
+        '<figcaption>' + esc(content.columns[i]) + '</figcaption></figure>';
+    }).join('') + '</div>' : '';
     return stepHeading(content.title) +
-      '<p class="lesson-text">' + esc(content.body) + '</p>' +
+      '<p class="lesson-text">' + esc(content.body) + '</p>' + figures +
       '<div class="ltable' + (single ? ' is-single' : '') + '" style="--cols:' + content.columns.length + '">' + head + rows + '</div>' +
       '<p class="lesson-takeaway">' + icon('i-sparkles') + '<span>' + esc(content.takeaway) + '</span></p>' +
       ruleLine(content.rule);
@@ -726,6 +730,10 @@
       '<h2 class="lesson-step-title lesson-hero-title" tabindex="-1" data-step-heading>' + esc(lesson.titleFa) + '</h2>' +
       itSpan(lesson.titleIt, 'lesson-hero-it') +
       (signs ? '<div class="lesson-sign-strip" aria-hidden="true">' + signs + '</div>' : '') +
+      ((lesson.figures || []).length ? '<section class="lesson-block"><h3>' + icon('i-sign') + 'تصویرهای بانک در این درس</h3><div class="ltable-figures lesson-figure-strip">' +
+        lesson.figures.map(function(n) {
+          return '<figure class="ltable-figure"><img src="' + signUrl(n) + '" alt="شکل ' + esc(fa(n)) + ' از بانک سؤال" loading="lazy" /><figcaption>شکل ' + esc(fa(n)) + '</figcaption></figure>';
+        }).join('') + '</div></section>' : '') +
       '<section class="lesson-block"><h3>' + icon('i-target') + 'هدف این درس</h3><p>' + esc(content.objective) + '</p></section>' +
       '<section class="lesson-block"><h3>' + icon('i-help') + 'چرا مهم است</h3><p>' + esc(content.why) + '</p></section>' +
       ruleLine(content.rule);

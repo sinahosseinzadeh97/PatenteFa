@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -36,6 +36,7 @@ import { reviewPrecedenza } from "./ch5-ripasso.js";
 import { lessonDoveDareStop, lessonRiconoscerePrecedenza, lessonStradaDiritto } from "./ch5-segnali.js";
 import { PERICOLO_CHAPTER } from "./lessons-pericolo.js";
 import { SEGNALETICA_CHAPTER } from "./lessons-segnaletica.js";
+import { SEMAFORI_CHAPTER } from "./lessons-semafori.js";
 import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
 import type { StoppingSetting } from "../lib/stopping.js";
@@ -290,7 +291,9 @@ export interface RoadPart {
 }
 
 /** An original drawing (public/js/road.js), never a bank figure. */
-export type RoadScene = "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach";
+export type RoadScene =
+  | "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach"
+  | "agente-braccia" | "agente-angolo";
 
 interface StepBase {
   title: string;
@@ -386,6 +389,8 @@ export type LessonStep =
       kind: "table";
       body: string;
       columns: string[];
+      /** Bank figure for each column, drawn above the table; needed whenever a column names a figure. */
+      figures?: number[];
       rows: { label: string; it?: string; sign?: number; values: string[] }[];
       takeaway: string;
     })
@@ -1191,6 +1196,7 @@ export const CHAPTERS: Chapter[] = [
   OBBLIGO_CHAPTER,
   PILOT_CHAPTER,
   SEGNALETICA_CHAPTER,
+  SEMAFORI_CHAPTER,
   VELOCITA_CHAPTER,
   INCROCI_CHAPTER,
   SORPASSO_CHAPTER,

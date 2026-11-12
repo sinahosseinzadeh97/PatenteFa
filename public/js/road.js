@@ -26,7 +26,9 @@
       ? 'M' + (x + 7) + ' ' + (y + 3) + ' L' + (x + 2) + ' ' + (y + h / 2) + ' L' + (x + 7) + ' ' + (y + h - 3) + 'Z'
       : dir === 'up'
         ? 'M' + (x + 3) + ' ' + (y + 7) + ' L' + (x + w / 2) + ' ' + (y + 2) + ' L' + (x + w - 3) + ' ' + (y + 7) + 'Z'
-        : 'M' + (x + w - 7) + ' ' + (y + 3) + ' L' + (x + w - 2) + ' ' + (y + h / 2) + ' L' + (x + w - 7) + ' ' + (y + h - 3) + 'Z';
+        : dir === 'down'
+          ? 'M' + (x + 3) + ' ' + (y + h - 7) + ' L' + (x + w / 2) + ' ' + (y + h - 2) + ' L' + (x + w - 3) + ' ' + (y + h - 7) + 'Z'
+          : 'M' + (x + w - 7) + ' ' + (y + 3) + ' L' + (x + w - 2) + ' ' + (y + h / 2) + ' L' + (x + w - 7) + ' ' + (y + h - 3) + 'Z';
     return '<g class="rd-car ' + (cls || '') + '">' + rect(x, y, w, h, 'rd-car-body', ' rx="4"') + '<path class="rd-car-nose" d="' + nose + '"/></g>';
   }
   function person(x, y, cls) {
@@ -229,7 +231,35 @@
         part('pedonale', zebra(266, 66, 18, 118), [264, 66, 22, 120]) +
         car(30, 117, 40, 18, 'rd-car-you', 'right') + car(220, 36, 40, 18, 'rd-car-other', 'left');
     } },
+    // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
+    // arm. Sides are named from the officer's point of view (his left is the screen's right).
+    'agente-braccia': { h: 260, draw: function() {
+      return officerJunction() + officer([[158, 130, 142, 130], [182, 130, 198, 130]]) + officerFlows({ fronte: 'ALT', spalle: 'ALT', sinistra: 'VIA', destra: 'VIA' });
+    } },
+    'agente-angolo': { h: 260, draw: function() {
+      return officerJunction() + officer([[182, 130, 198, 130], [170, 138, 170, 156]]) + officerFlows({ fronte: '?', spalle: 'ALT', sinistra: 'VIA', destra: 'ALT' });
+    } },
   };
+
+  function officerJunction() {
+    return rect(0, 0, 340, 260, 'rd-ground') + rect(0, 100, 340, 60, 'rd-asphalt') + rect(140, 0, 60, 260, 'rd-asphalt') +
+      line(0, 130, 136, 130, 'rd-dash') + line(204, 130, 340, 130, 'rd-dash') + line(170, 0, 170, 96, 'rd-dash') + line(170, 164, 170, 260, 'rd-dash') +
+      rect(170, 164, 30, 4, 'rd-zebra') + rect(140, 92, 30, 4, 'rd-zebra') + rect(204, 100, 4, 30, 'rd-zebra') + rect(132, 130, 4, 30, 'rd-zebra');
+  }
+  /** Seen from above, on a light spot so the arms never blend with lane lines: amber arms, shoulders, head, and a mark for the face (towards the bottom arm). */
+  function officer(arms) {
+    return '<g class="rd-officer"><circle class="rd-officer-spot" cx="170" cy="130" r="29"/>' +
+      arms.map(function(a) { return line(a[0], a[1], a[2], a[3], 'rd-officer-arm'); }).join('') +
+      '<ellipse cx="170" cy="130" rx="12" ry="7"/><circle cx="170" cy="130" r="6"/>' +
+      '<polygon class="rd-officer-face" points="165,136 175,136 170,142"/></g>';
+  }
+  /** One approaching car per arm, each a tappable part, with its ALT / VIA status written beside it. */
+  function officerFlows(status) {
+    return part('fronte', car(176, 200, 18, 34, 'rd-car-other', 'up') + label(208, 222, 'di fronte · ' + status.fronte), [[172, 196, 26, 42], [204, 210, 96, 18]]) +
+      part('spalle', car(146, 26, 18, 34, 'rd-car-other', 'down') + label(36, 46, 'alle spalle · ' + status.spalle), [[142, 22, 26, 42], [32, 34, 100, 18]]) +
+      part('sinistra', car(270, 104, 34, 18, 'rd-car-other', 'left') + label(222, 88, 'a sinistra · ' + status.sinistra), [[266, 100, 42, 26], [218, 76, 110, 18]]) +
+      part('destra', car(36, 138, 34, 18, 'rd-car-other', 'right') + label(24, 182, 'a destra · ' + status.destra), [[32, 134, 42, 26], [20, 170, 104, 18]]);
+  }
 
   /** SVG markup for a scene, or '' for an unknown scene name. */
   App.roadSceneSvg = function(scene) {

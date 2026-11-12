@@ -137,6 +137,50 @@ test("while the exam is open, no stats, profile or tutor route can see a selecti
   assert.deepEqual(tutor.body.questions, []);
 });
 
+test("after finish, the tutor lists unanswered questions as mistakes too", async () => {
+  const { call, startExam, correctOf, wrongOf } = setup();
+  const { sessionId, ids } = await startExam();
+  const [q1, q2, q3] = ids;
+  const finish = await call(USER_A, "POST", `/exam/${sessionId}/finish`, {
+    durationSeconds: 1,
+    answers: { [q1]: correctOf(q1), [q2]: wrongOf(q2), [q3]: wrongOf(q3) },
+  });
+  assert.equal(finish.status, 200);
+
+  const tutor = await call(USER_A, "POST", "/tutor/explain-wrong", { sessionId });
+  assert.equal(tutor.status, 200);
+  assert.equal(tutor.body.wrongCount, finish.body.wrongCount);
+  assert.equal(tutor.body.wrongCount, ids.length - 1);
+  assert.ok(tutor.body.questions.some((q: Json) => q.userAnswer === null));
+  assert.ok(!tutor.body.questions.some((q: Json) => q.questionId === q1));
+});
+
+test("review from a finished session deals its mistakes now, unanswered included", async () => {
+  const { call, startExam, correctOf, wrongOf } = setup();
+  const { sessionId, ids } = await startExam();
+  const [q1, q2] = ids;
+
+  const early = await call(USER_A, "POST", "/exam/start", { mode: "review", fromSessionId: sessionId });
+  assert.equal(early.status, 404, "an open exam cannot be mined for review");
+
+  await call(USER_A, "POST", `/exam/${sessionId}/finish`, {
+    durationSeconds: 1,
+    answers: { [q1]: correctOf(q1), [q2]: wrongOf(q2) },
+  });
+
+  for (const bad of [{ mode: "exam", fromSessionId: sessionId }, { mode: "review", fromSessionId: "x" }]) {
+    assert.equal((await call(USER_A, "POST", "/exam/start", bad)).status, 400);
+  }
+  assert.equal((await call(USER_B, "POST", "/exam/start", { mode: "review", fromSessionId: sessionId })).status, 404);
+
+  const review = await call(USER_A, "POST", "/exam/start", { mode: "review", fromSessionId: sessionId });
+  assert.equal(review.status, 200);
+  const reviewIds = review.body.questions.map((q: Json) => q.questionId);
+  assert.equal(reviewIds.length, ids.length - 1);
+  assert.ok(!reviewIds.includes(q1));
+  assert.ok(reviewIds.includes(q2));
+});
+
 test("the selections sent with finish override stale saves; malformed ones are rejected", async () => {
   const { call, startExam, correctOf, wrongOf } = setup();
   const { sessionId, ids } = await startExam();
