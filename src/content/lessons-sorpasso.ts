@@ -1,6 +1,9 @@
 /**
  * src/content/lessons-sorpasso.ts
- * Chapter 4 of the learning path: Sorpasso e segnaletica orizzontale.
+ * Official chapter 15 (Sorpasso), plus the centre-line lesson `lessonStrisce`,
+ * which was built here first and now belongs to chapter 6 (Segnaletica
+ * orizzontale, src/content/lessons-segnaletica.ts). It keeps its id and step
+ * order so saved progress and mistake links still point at the same section.
  * Same trust rules as src/content/lessons.ts — real bank statements by
  * source_id with text + answer snapshots, faithful translations, explicit
  * question → section mappings — plus three step kinds of its own, drawn by
@@ -159,7 +162,7 @@ const STRISCIA_502_FA = "خطِ سفیدِ خط‌چینِ تصویر";
 const CONTINUA_501 = "La striscia bianca continua di mezzo in figura";
 const CONTINUA_501_FA = "خطِ سفیدِ ممتدِ وسطِ تصویر";
 
-const lessonStrisce: Lesson = {
+export const lessonStrisce: Lesson = {
   id: "sorpasso-strisce",
   titleFa: "خطِ وسطِ جاده را بخوان",
   titleIt: "STRISCE LONGITUDINALI",
@@ -183,7 +186,7 @@ const lessonStrisce: Lesson = {
         "خطِ وسطِ جاده‌ی دوطرفه دو جهت را از هم جدا می‌کند و می‌گوید از آن می‌شود عبور کرد یا نه. هر خط را از سمتِ خودت بخوان. جایت را عوض کن و ببین جوابِ کدام خط عوض می‌شود.",
       lines: LINES,
       takeaway:
-        "«می‌توانم از خط عبور کنم؟» را خطِ سمتِ خودت جواب می‌دهد. روی هیچ خطی، چه ممتد چه خط‌چین، نباید رانندگی کنی؛ فقط از خط‌چین عبور می‌کنی. و «می‌توانم عبور کنم» هنوز یعنی «می‌توانم سبقت بگیرم» نیست: بقیه‌ی شرط‌ها در درس‌های بعد.",
+        "«می‌توانم از خط عبور کنم؟» را خطِ سمتِ خودت جواب می‌دهد. روی هیچ خطی، چه ممتد چه خط‌چین، نباید رانندگی کنی؛ فقط از خط‌چین عبور می‌کنی. و «می‌توانم عبور کنم» هنوز یعنی «می‌توانم سبقت بگیرم» نیست: بقیه‌ی شرط‌ها در فصل ۱۵ (سبقت).",
       rule: `${CDS_40} c.3, c.4, c.8, c.10 lett. b`,
     },
     {
@@ -546,6 +549,8 @@ const lessonValutare: Lesson = {
   titleIt: "VISIBILITÀ, SPAZIO, TRAFFICO",
   minutes: 5,
   signs: [2, 4, 5, 6, 7],
+  // #2543, #2546, #2582, #2583 (chapter-6 bank group, overtaking on the dashed line of fig. 502) are mapped here.
+  figures: [502],
   steps: [
     {
       kind: "intro",
@@ -1135,10 +1140,10 @@ const lessonFasi: Lesson = {
 export const SORPASSO_CHAPTER: Chapter = {
   id: "sorpasso-segnaletica",
   numbers: [15],
-  topicIds: [12, 5],
-  nameIt: "Sorpasso e segnaletica orizzontale",
-  titleFa: "سبقت و خط‌کشی جاده",
-  summaryFa: "کِی می‌شود سبقت گرفت؟ چهار درسِ کوتاه: خواندنِ خطِ وسط، تابلو و خط با هم، سنجیدنِ دید و ترافیک، و مراحلِ سبقت.",
+  topicIds: [12],
+  nameIt: "Sorpasso",
+  titleFa: "سبقت",
+  summaryFa: "کِی می‌شود سبقت گرفت؟ سه درسِ کوتاه: تابلو و خط با هم، سنجیدنِ دید و ترافیک، و مراحلِ سبقت. خواندنِ خطِ وسط در فصل ۶ است.",
   reviewedOn: "2026-10-10",
   sources: [
     {
@@ -1162,5 +1167,5 @@ export const SORPASSO_CHAPTER: Chapter = {
       url: "https://github.com/Ed0ardo/QuizPatenteB",
     },
   ],
-  lessons: [lessonStrisce, lessonSegnali, lessonValutare, lessonFasi],
+  lessons: [lessonSegnali, lessonValutare, lessonFasi],
 };

@@ -15,13 +15,14 @@ import {
   type SceneDraw,
 } from "../src/content/lessons.js";
 import { ASSESS_RULES, ASSESS_SCENES } from "../src/content/overtaking.js";
-import { SORPASSO_CHAPTER } from "../src/content/lessons-sorpasso.js";
+import { SORPASSO_CHAPTER, lessonStrisce } from "../src/content/lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "../src/content/lessons-velocita.js";
 import { assessAnswer, buildTodayPath, judgeScene, summarizeLessons } from "../src/lib/learning.js";
 import type { AppEnv } from "../src/types.js";
 import { createSqliteD1, signedInitData } from "./helpers/sqlite-d1.js";
 
-const LESSONS = SORPASSO_CHAPTER.lessons;
+// The overtaking material: the centre-line lesson (built here, now chapter 6 lesson 2) and chapter 15's three lessons.
+const LESSONS = [lessonStrisce, ...SORPASSO_CHAPTER.lessons];
 const [L1, L2, L3, L4] = LESSONS;
 const CHECKS: SafetyCheck[] = ["visibility", "ahead", "behind", "space"];
 const variants = (scene: AssessScene) => [
@@ -196,11 +197,12 @@ test("the manoeuvre runs check → signal and move left → pass → mirror and 
 
 // ── Chapter integration ──────────────────────────────────────────────────────
 
-test("the chapter is last (official chapter 15), offered on the overtaking and road-marking topics, with four lessons", () => {
+test("the chapter is last (official chapter 15), offered on the overtaking topic, with three lessons; the centre lines are chapter 6", () => {
   assert.equal(CHAPTERS.at(-1), SORPASSO_CHAPTER);
   assert.deepEqual(SORPASSO_CHAPTER.numbers, [15]);
-  assert.deepEqual(SORPASSO_CHAPTER.topicIds, [12, 5]);
-  assert.equal(LESSONS.length, 4);
+  assert.deepEqual(SORPASSO_CHAPTER.topicIds, [12]);
+  assert.deepEqual(SORPASSO_CHAPTER.lessons, [L2, L3, L4]);
+  assert.deepEqual(CHAPTERS.find((c) => c.lessons.includes(L1))?.numbers, [6]);
   assert.deepEqual(
     LESSONS.map((l) => l.steps.find((s) => ["markings", "assess", "manoeuvre"].includes(s.kind))?.kind),
     ["markings", "assess", "assess", "manoeuvre"]
@@ -230,7 +232,7 @@ test("after the speed chapter, today's path and 'next lesson' lead into this cha
     chapter.lessons.map((l) => ({ lesson_id: l.id, step: 99, started_at: "", updated_at: "2026-10-10 09:00:00", completed_at: "2026-10-10 09:00:00" }));
   const summaries = CHAPTERS.flatMap((chapter) => summarizeLessons(chapter, chapter === SORPASSO_CHAPTER ? [] : done(chapter), [], []));
   const first = buildTodayPath(summaries, 0).items[0];
-  assert.ok(first.kind === "lesson" && first.lessonId === L1.id);
+  assert.ok(first.kind === "lesson" && first.lessonId === L2.id);
 });
 
 // ── API ──────────────────────────────────────────────────────────────────────
@@ -311,14 +313,14 @@ test("the chapter is listed, opens directly, and the last intersections lesson (
   const { call } = setup();
   const home = await call(9401, "GET", "/learn");
   assert.equal(home.body.chapters.at(-1).id, SORPASSO_CHAPTER.id);
-  assert.equal(home.body.chapters.at(-1).lessons.length, 4);
+  assert.equal(home.body.chapters.at(-1).lessons.length, 3);
   const lesson = await call(9401, "GET", `/learn/lessons/${L3.id}`);
   assert.equal(lesson.status, 200);
-  assert.deepEqual(lesson.body.position, { index: 3, total: 4, review: false });
+  assert.deepEqual(lesson.body.position, { index: 2, total: 3, review: false });
   assert.equal(lesson.body.lesson.practice.length, L3.practice.length);
   assert.equal(lesson.body.stopping, null);
   const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS.at(-2)!.lessons.at(-1)!.id}`);
-  assert.deepEqual(lastIncroci.body.next, { lessonId: L1.id, titleFa: L1.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa, chapterNumbers: [15] });
+  assert.deepEqual(lastIncroci.body.next, { lessonId: L2.id, titleFa: L2.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa, chapterNumbers: [15] });
 });
 
 test("progress and answers in this chapter are per learner, resume never moves back, and a wrong answer is queued once", async () => {

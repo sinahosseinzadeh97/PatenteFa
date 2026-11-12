@@ -206,6 +206,29 @@
         part('croce', '<g class="rd-cross"><path d="M262 122 l24 16 M286 122 l-24 16"/></g>' + label(256, 158, 'croce'), [258, 116, 32, 28]) +
         car(4, 84, 40, 18, 'rd-car-you', 'right');
     } },
+
+    // Chapter 6: approaching a junction in the middle of three lanes, left to right. Lane lines are
+    // dashed, then continuous for the last stretch (DPR art. 140 c.4); arrows left / straight / straight-right.
+    approach: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 0, 286, 24, 'rd-walk') + line(0, 24, 286, 24, 'rd-curb') +
+        rect(0, 188, 286, 32, 'rd-walk') + line(0, 188, 286, 188, 'rd-curb') +
+        rect(0, 24, 340, 164, 'rd-asphalt') + rect(286, 0, 54, 220, 'rd-asphalt') +
+        line(0, 27, 256, 27, 'rd-line') + line(0, 185, 256, 185, 'rd-line') +
+        part('mezzeria', line(0, 65, 256, 65, 'rd-line'), [0, 60, 252, 10]) +
+        part('tratteggio', line(0, 106, 120, 106, 'rd-dash') + line(0, 146, 120, 146, 'rd-dash'), [[0, 101, 120, 10], [0, 141, 120, 10]]) +
+        part('continua', line(120, 106, 256, 106, 'rd-line') + line(120, 146, 256, 146, 'rd-line'), [[120, 101, 132, 10], [120, 141, 132, 10]]) +
+        part('scritta', '<text class="rd-paint-text" x="112" y="92">TORINO</text>', [110, 80, 40, 16]) +
+        part('frecce',
+          '<path class="rd-paint" d="M174 92 H200 Q210 92 210 82"/><polygon class="rd-zebra" points="204,82 216,82 210,73"/>' +
+          '<path class="rd-paint" d="M174 126 H206"/><polygon class="rd-zebra" points="206,120 216,126 206,132"/>' +
+          '<path class="rd-paint" d="M174 166 H206 M188 166 Q196 166 196 172"/><polygon class="rd-zebra" points="206,160 216,166 206,172"/>' +
+          '<polygon class="rd-zebra" points="190,172 202,172 196,181"/>',
+          [[168, 72, 52, 28], [168, 114, 52, 26], [168, 152, 52, 31]]) +
+        part('arresto', rect(256, 66, 5, 119, 'rd-zebra'), [252, 66, 12, 119]) +
+        part('pedonale', zebra(266, 66, 18, 118), [264, 66, 22, 120]) +
+        car(30, 117, 40, 18, 'rd-car-you', 'right') + car(220, 36, 40, 18, 'rd-car-other', 'left');
+    } },
   };
 
   /** SVG markup for a scene, or '' for an unknown scene name. */

@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -35,6 +35,7 @@ import { lessonConfluenze, lessonIntersezioniT, lessonSemaforoAgente } from "./c
 import { reviewPrecedenza } from "./ch5-ripasso.js";
 import { lessonDoveDareStop, lessonRiconoscerePrecedenza, lessonStradaDiritto } from "./ch5-segnali.js";
 import { PERICOLO_CHAPTER } from "./lessons-pericolo.js";
+import { SEGNALETICA_CHAPTER } from "./lessons-segnaletica.js";
 import { SORPASSO_CHAPTER } from "./lessons-sorpasso.js";
 import { VELOCITA_CHAPTER } from "./lessons-velocita.js";
 import type { StoppingSetting } from "../lib/stopping.js";
@@ -289,7 +290,7 @@ export interface RoadPart {
 }
 
 /** An original drawing (public/js/road.js), never a bank figure. */
-export type RoadScene = "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway";
+export type RoadScene = "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach";
 
 interface StepBase {
   title: string;
@@ -1183,7 +1184,17 @@ export function lessonStepCount(lesson: Lesson): number {
 }
 
 /** Every chapter in official chapter order (question-bank order), which is the order learners are guided through. */
-export const CHAPTERS: Chapter[] = [DEFINIZIONI_CHAPTER, PERICOLO_CHAPTER, DIVIETO_CHAPTER, OBBLIGO_CHAPTER, PILOT_CHAPTER, VELOCITA_CHAPTER, INCROCI_CHAPTER, SORPASSO_CHAPTER];
+export const CHAPTERS: Chapter[] = [
+  DEFINIZIONI_CHAPTER,
+  PERICOLO_CHAPTER,
+  DIVIETO_CHAPTER,
+  OBBLIGO_CHAPTER,
+  PILOT_CHAPTER,
+  SEGNALETICA_CHAPTER,
+  VELOCITA_CHAPTER,
+  INCROCI_CHAPTER,
+  SORPASSO_CHAPTER,
+];
 
 export function findLesson(lessonId: string): Lesson | null {
   for (const chapter of CHAPTERS) {
