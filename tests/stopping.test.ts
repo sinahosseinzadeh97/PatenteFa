@@ -16,6 +16,7 @@ import {
 } from "../src/content/lessons.js";
 import { INCROCI_CHAPTER } from "../src/content/lessons-incroci.js";
 import { VELOCITA_CHAPTER } from "../src/content/lessons-velocita.js";
+import { SEGNALETICA_CHAPTER } from "../src/content/lessons-segnaletica.js";
 import { buildTodayPath, summarizeLessons } from "../src/lib/learning.js";
 import {
   DRY_FRICTION,
@@ -319,8 +320,8 @@ test("the chapter is listed in official order, opens directly, and ships the mod
 test("'next lesson' skips lessons the learner already completed", async () => {
   const { call, raw } = setup();
   raw.prepare(`INSERT INTO lesson_progress (user_id, lesson_id, step, completed_at) VALUES (1, ?, 10, datetime('now'))`).run(LESSONS[0].id);
-  // Official order: chapter 5 (segnali di precedenza) is followed by chapters 11–12.
-  const lastIncroci = PILOT_CHAPTER.lessons.at(-1) as (typeof PILOT_CHAPTER.lessons)[number];
+  // Course order: chapter 6 (segnaletica orizzontale) is followed by chapters 11–12.
+  const lastIncroci = SEGNALETICA_CHAPTER.lessons.at(-1) as (typeof SEGNALETICA_CHAPTER.lessons)[number];
   const opened = await call(8001, "GET", `/learn/lessons/${lastIncroci.id}`);
   assert.deepEqual(opened.body.next, {
     lessonId: LESSONS[1].id,

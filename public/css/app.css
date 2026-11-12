@@ -2826,6 +2826,8 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-tri { fill: #f7f7f4; stroke: #c1272d; stroke-width: 3; stroke-linejoin: round; }
 .rd-tri-sym { fill: #14151a; }
 .rd-cross path { stroke: #c1272d; stroke-width: 5; stroke-linecap: square; }
+.rd-paint { fill: none; stroke: #f2f0eb; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
+.rd-paint-text { fill: #f2f0eb; font-family: 'Barlow', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .08em; pointer-events: none; }
 .rd-part { cursor: pointer; }
 .rd-hit { fill: transparent; }
 .rd-clear { fill: transparent; }
