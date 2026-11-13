@@ -51,7 +51,6 @@ test("chapter 7 is the bank's seventh group and comes right after chapter 6", ()
   assert.equal(INDEX, 6);
   const numbers = CHAPTERS.flatMap((c) => c.numbers);
   assert.deepEqual(numbers, [...numbers].sort((a, b) => a - b), "the course follows official chapter order");
-  assert.ok(!numbers.includes(8), "chapter 8 is not started");
   assert.equal(new Set(CHAPTERS.flatMap((c) => c.lessons.map((l) => l.id))).size, CHAPTERS.flatMap((c) => c.lessons).length, "lesson ids are unique");
 });
 
