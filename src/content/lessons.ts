@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -27,6 +27,7 @@
 
 // The chapter files (and overtaking.ts) only import *types* from this file
 // (erased at build), so this is not a runtime import cycle.
+import { COMPLEMENTARI_CHAPTER } from "./lessons-complementari.js";
 import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { DIVIETO_CHAPTER } from "./lessons-divieto.js";
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
@@ -1199,6 +1200,7 @@ export const CHAPTERS: Chapter[] = [
   SEGNALETICA_CHAPTER,
   SEMAFORI_CHAPTER,
   INDICAZIONE_CHAPTER,
+  COMPLEMENTARI_CHAPTER,
   VELOCITA_CHAPTER,
   INCROCI_CHAPTER,
   SORPASSO_CHAPTER,

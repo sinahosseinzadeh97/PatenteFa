@@ -40,7 +40,7 @@ function statementsOf(lesson: Lesson): Statement[] {
 
 const inChapter = (id: string) => Number(id) >= FIRST && Number(id) <= LAST;
 
-test("chapter 8 is the bank's eighth group and comes right after chapter 8", () => {
+test("chapter 8 is the bank's eighth group and comes right after chapter 7", () => {
   // "semafori-vigili" ends at group 219; "segnali-indicazione" is groups 220–282 (source ids 2904–3506).
   assert.equal(BANK[FIRST - 2][3], 219);
   assert.equal(BANK[FIRST - 1][3], 220);
@@ -52,7 +52,6 @@ test("chapter 8 is the bank's eighth group and comes right after chapter 8", () 
   assert.equal(INDEX, 7);
   const numbers = CHAPTERS.flatMap((c) => c.numbers);
   assert.deepEqual(numbers, [...numbers].sort((a, b) => a - b), "the course follows official chapter order");
-  assert.ok(!numbers.includes(9), "chapter 9 is not started");
   assert.equal(new Set(CHAPTERS.flatMap((c) => c.lessons.map((l) => l.id))).size, CHAPTERS.flatMap((c) => c.lessons).length, "lesson ids are unique");
 });
 
