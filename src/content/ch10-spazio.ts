@@ -1,0 +1,450 @@
+/**
+ * src/content/ch10-spazio.ts
+ * Chapter 10 (Pannelli integrativi), lessons 1–2: what a supplementary panel
+ * is, and the panels that say WHERE a sign applies: distance (II.1), length
+ * (II.2), and start / continuation / end (II.5).
+ *
+ * Trust rules as in src/content/lessons.ts; checked by tests/chapter10.test.ts
+ * and `npm run verify:lessons`.
+ */
+import type { Lesson } from "./lessons.js";
+
+const PANEL = "Il pannello integrativo raffigurato";
+const PANEL_FA = "پنلِ تکمیلیِ تصویر";
+const SIGN = "Il segnale raffigurato";
+const SIGN_FA = "تابلوی تصویر";
+
+// ── Lesson 1 ──────────────────────────────────────────────────────────────────
+
+export const lessonDistanzaEstesa: Lesson = {
+  id: "pannelli-distanza-estesa",
+  titleFa: "پنل چیست؟ فاصله یا طول",
+  titleIt: "PANNELLI INTEGRATIVI · DISTANZA · ESTESA",
+  minutes: 5,
+  signs: [121, 122, 123, 126, 127, 128, 132],
+  figures: [901, 907],
+  steps: [
+    {
+      kind: "intro",
+      title: "هدف این درس",
+      objective:
+        "بعد از این درس می‌دانی پنلِ تکمیلی چیست و چرا هیچ‌وقت تنها نصب نمی‌شود، چهار سؤالی را که هر پنل جواب می‌دهد می‌شناسی (کجا، کی، برای چه کسی، چه چیزی)، و عددِ تنها را از عددِ بینِ دو فلش جدا می‌کنی: اولی فاصله تا شروع است، دومی طولِ بخش.",
+      why: "۱۹ سؤال. بانک عدد را با فاصله‌ی ایمنی، شیب، عرضِ جاده، ارتفاعِ پل یا «متری که رفته‌ای» عوض می‌کند و فاصله و طول را جابه‌جا می‌پرسد. در فصل ۲ (درس ۱) این دو پنل را زیرِ تابلوی خطر دیدی؛ این‌جا همین منطق برای همه‌ی خانواده‌هاست.",
+    },
+    {
+      kind: "table",
+      title: "پنلِ تکمیلی یعنی چه",
+      body: "مستطیلِ کوچکی (معمولاً سفید با نوشته یا تصویرِ سیاه) که زیرِ یک تابلو می‌آید و معنای همان تابلو را کامل می‌کند. تابلوی اصلی می‌گوید «چه»؛ پنل جزئیاتش را. به همین دلیل پنل هرگز تنها نصب نمی‌شود.",
+      columns: ["پنل چه می‌گوید", "در کدام درس"],
+      rows: [
+        { label: "کجا", it: "dove", sign: 121, values: ["فاصله تا شروع، طولِ بخش، شروع / ادامه / پایان، کدام خط", "درس ۱، ۲ و ۹"] },
+        { label: "کی", it: "quando", sign: 123, values: ["ساعت‌ها، روزهای تعطیل، روزهای کاری", "درس ۳"] },
+        { label: "برای چه کسی", it: "per chi", sign: 126, values: ["فقط این وسایل، یا همه «به‌جز» (eccetto) این‌ها", "درس ۴"] },
+        { label: "چه چیزی", it: "che cosa", sign: 132, values: ["تصویری که خطر یا وضعیت را توضیح می‌دهد: یخ، باران، تصادف، صف، برف‌روب و…", "درس ۵ تا ۸"] },
+      ],
+      takeaway: "پنل تابلو را عوض نمی‌کند؛ فقط می‌گوید کجا، کی یا برای چه کسی، یا خطر را دقیق‌تر توضیح می‌دهد.",
+      rule: "DPR 495/1992 art. 83 c.1–3",
+    },
+    {
+      kind: "classify",
+      title: "این پنل به کدام سؤال جواب می‌دهد؟",
+      body: "فقط به پنل نگاه کن، نه به جزئیاتش. این‌ها تمرینِ آموزشی‌اند، نه سؤالِ بانک؛ هر کدام را در درسِ خودش کامل می‌خوانی.",
+      options: [
+        { it: "dove", fa: "کجا" },
+        { it: "quando", fa: "کی" },
+        { it: "per chi", fa: "برای چه کسی" },
+        { it: "che cosa", fa: "چه چیزی (توضیحِ خطر)" },
+      ],
+      items: [
+        { prompt: "عدد با «m»", sign: 121, answer: 0, explain: "فاصله: تا شروعِ خطر یا قاعده چقدر مانده است." },
+        { prompt: "«7,30 - 19,00»", sign: 123, answer: 1, explain: "ساعت: تابلو فقط در این ساعت‌ها اعتبار دارد." },
+        { prompt: "تصویرِ کامیون، سیاه روی سفید", sign: 126, answer: 2, explain: "تابلو فقط برای همین وسایل معتبر است (درس ۴)." },
+        { prompt: "«eccetto» و اتوبوس", sign: 127, answer: 2, explain: "تابلو برای همه معتبر است، به‌جز اتوبوس‌ها (درس ۴)." },
+        { prompt: "فلشِ رو به بالا", sign: 128, answer: 0, explain: "شروع: قاعده از همین‌جا به جلو اعتبار دارد (درس ۲)." },
+        { prompt: "دو خودروی تصادفی روی زمینه‌ی قرمز", sign: 132, answer: 3, explain: "توضیحِ خطر: جلوتر تصادف شده است (درس ۶)." },
+      ],
+      takeaway: "عدد و فلش = کجا. ساعت و روز = کی. وسیله یا eccetto = برای چه کسی. تصویرِ یک وضعیت = چه چیزی.",
+    },
+    {
+      kind: "table",
+      title: "عددِ تنها: فاصله تا شروع",
+      body: "پنلِ distanza فقط یک عدد دارد، بدونِ فلش. می‌گوید از همین تابلو تا جایی که خطر یا قاعده شروع می‌شود چقدر راه است. معنایش بسته به تابلوی بالایش کمی فرق می‌کند، ولی همیشه «فاصله تا شروع» است.",
+      columns: ["عدد یعنی"],
+      rows: [
+        { label: "زیرِ تابلوی خطر", it: "segnale di pericolo", sign: 121, values: ["فاصله تا نقطه‌ای که خطر شروع می‌شود. «۳۲۰ m»: خطر ۳۲۰ متر جلوتر است."] },
+        { label: "زیرِ تابلوی ممنوع یا اجباری", it: "divieto · obbligo", values: ["فاصله تا جایی که دستور از آن‌جا شروع می‌شود؛ تا آن‌جا هنوز اعتبار ندارد."] },
+        { label: "زیرِ تابلوی راهنما", it: "segnale di indicazione", values: ["فاصله‌ای که تا جایِ نشان‌داده‌شده (مثلاً پارکینگ یا پمپ‌بنزین) مانده است."] },
+        { label: "واحد", it: "m · km", values: ["متر یا کیلومتر: «3,8 km» هم همین معنا را دارد."] },
+        { label: "چه نیست", it: "non è", values: ["فاصله‌ی ایمنی با خودروی جلو، متری که تا این‌جا آمده‌ای، شیب، عرض یا طولِ بخشِ خطرناک نیست."] },
+      ],
+      takeaway: "عددِ بی‌فلش = «چقدر مانده تا شروع». طول را نمی‌گوید.",
+      rule: "DPR 495/1992 art. 83 c.4 (modello II.1)",
+    },
+    {
+      kind: "table",
+      title: "عدد بینِ دو فلش: طولِ بخش",
+      body: "پنلِ estesa همان عدد را بینِ دو فلشِ رو به بالا دارد. فلش‌ها یعنی «از این‌جا و در ادامه»: خطر یا قاعده از همین تابلو شروع می‌شود و به اندازه‌ی این عدد ادامه دارد.",
+      columns: ["عدد یعنی"],
+      rows: [
+        { label: "زیرِ تابلوی خطر", it: "estesa del tratto pericoloso", sign: 122, values: ["طولِ بخشِ خطرناک. «↑ 380 m ↑»: ۳۸۰ متر جاده‌ی خطرناک از همین‌جا."] },
+        { label: "نمونه‌ی بانک", it: "curve pericolose in successione", sign: 907, values: ["پیچ‌های پشتِ سرِ هم، ۳۸۰ متر طول."] },
+        { label: "نمونه‌ی بانک", it: "strada deformata", sign: 901, values: ["جاده‌ی ناهموار در طولِ ۳۸۰ متر؛ نه این‌که ۳۸۰ متر جلوتر شروع شود."] },
+        { label: "زیرِ تابلوی ممنوع یا اجباری", it: "divieto · obbligo", values: ["طولِ بخشی که دستور در آن معتبر است. پنل ممکن است زیرِ تابلوی ممنوع هم بیاید."] },
+        { label: "چه نیست", it: "non è", values: ["دستورِ «مستقیم برو» نیست (فلش‌ها جهتِ اجباری نیستند)، فاصله‌ی ایمنی در باران یا ارتفاعِ پل هم نیست."] },
+      ],
+      takeaway: "فلش‌ها دو طرفِ عدد = «طولِ بخش، از همین‌جا». بی‌فلش = «فاصله تا شروع».",
+      rule: "DPR 495/1992 art. 83 c.5 (modello II.2)",
+    },
+    {
+      kind: "terms",
+      title: "واژه‌های کلیدی این درس",
+      terms: [
+        { it: "il pannello integrativo", fa: "پنلِ تکمیلی (زیرِ تابلو)" },
+        { it: "completarne il significato", base: "completare", fa: "معنای آن را کامل کردن" },
+        { it: "la distanza", fa: "فاصله (تا شروع)" },
+        { it: "il punto d'inizio", fa: "نقطه‌ی شروع" },
+        { it: "la lunghezza del tratto", fa: "طولِ بخشی از جاده" },
+        { it: "vale la prescrizione", base: "valere", fa: "دستور اعتبار دارد" },
+        { it: "la distanza di sicurezza", fa: "فاصله‌ی ایمنی (این پنل نیست)" },
+      ],
+    },
+    {
+      kind: "trap",
+      title: "همان پنل، دو ادعا",
+      body: "هر دو جمله درباره‌ی پنلِ بی‌فلش زیرِ تابلوی خطر است. فقط یکی کارِ این پنل را درست می‌گوید:",
+      examples: [
+        {
+          sourceId: "3688",
+          sign: 121,
+          textIt: "Il pannello integrativo raffigurato, posto sotto un segnale di pericolo, indica la distanza tra il segnale ed il punto d'inizio del pericolo",
+          answer: 1,
+          chunks: [
+            { it: PANEL + ",", fa: PANEL_FA },
+            { it: "posto sotto un segnale di pericolo,", fa: "وقتی زیرِ تابلوی خطر نصب شده", verb: "posto ← porre", focus: "condition" },
+            { it: "indica la distanza tra il segnale ed il punto d'inizio del pericolo", fa: "فاصله‌ی تابلو تا نقطه‌ی شروعِ خطر را نشان می‌دهد", verb: "indica ← indicare" },
+          ],
+          translation: "پنلِ تکمیلیِ تصویر، وقتی زیرِ تابلوی خطر است، فاصله‌ی تابلو تا نقطه‌ی شروعِ خطر را نشان می‌دهد.",
+          why: "درست است. عددِ بی‌فلش یعنی «چقدر مانده تا شروع».",
+        },
+        {
+          sourceId: "3696",
+          sign: 121,
+          textIt: "Il pannello integrativo raffigurato, posto sotto il segnale di pericolo, indica la lunghezza del tratto di strada pericoloso",
+          answer: 0,
+          chunks: [
+            { it: PANEL + ",", fa: PANEL_FA },
+            { it: "posto sotto il segnale di pericolo,", fa: "وقتی زیرِ تابلوی خطر نصب شده", verb: "posto ← porre", focus: "condition" },
+            { it: "indica la lunghezza del tratto di strada pericoloso", fa: "طولِ بخشِ خطرناکِ جاده را نشان می‌دهد", verb: "indica ← indicare", focus: "contrast" },
+          ],
+          translation: "پنلِ تکمیلیِ تصویر، وقتی زیرِ تابلوی خطر است، طولِ بخشِ خطرناکِ جاده را نشان می‌دهد.",
+          why: "غلط است. طول کارِ پنلِ دیگری است: همان عدد بینِ دو فلش.",
+        },
+      ],
+      takeaway: "اول فلش‌ها را بشمار: صفر فلش = فاصله، دو فلش = طول.",
+      rule: "DPR 495/1992 art. 83 c.4–5",
+    },
+  ],
+  practice: [
+    {
+      sourceId: "3691",
+      sign: 121,
+      textIt: "Il pannello integrativo raffigurato, posto sotto un segnale di obbligo o divieto, indica la distanza dalla quale inizia la prescrizione",
+      answer: 1,
+      chunks: [
+        { it: PANEL + ",", fa: PANEL_FA },
+        { it: "posto sotto un segnale di obbligo o divieto,", fa: "وقتی زیرِ تابلوی اجباری یا ممنوع نصب شده", verb: "posto ← porre", focus: "condition" },
+        { it: "indica la distanza dalla quale inizia la prescrizione", fa: "فاصله‌ای را نشان می‌دهد که دستور از آن‌جا شروع می‌شود", verb: "inizia ← iniziare" },
+      ],
+      translation: "پنلِ تکمیلیِ تصویر، وقتی زیرِ تابلوی اجباری یا ممنوع است، فاصله‌ای را نشان می‌دهد که دستور از آن‌جا شروع می‌شود.",
+      why: "درست است (قدم ۳). زیرِ تابلوی دستوری هم عددِ بی‌فلش فاصله تا شروعِ دستور است.",
+      rule: "DPR 495/1992 art. 83 c.4",
+      conceptStep: 3,
+    },
+    {
+      sourceId: "3694",
+      sign: 121,
+      textIt: "Il pannello integrativo mostrato in figura A indica la distanza di sicurezza da mantenere dal veicolo che sta davanti",
+      answer: 0,
+      chunks: [
+        { it: "Il pannello integrativo mostrato in figura A", fa: "پنلِ تکمیلیِ شکلِ A", verb: "mostrato ← mostrare" },
+        { it: "indica la distanza di sicurezza da mantenere", fa: "فاصله‌ی ایمنی‌ای را نشان می‌دهد که باید حفظ کرد", verb: "indica ← indicare", focus: "contrast" },
+        { it: "dal veicolo che sta davanti", fa: "از وسیله‌ای که جلوتر است" },
+      ],
+      translation: "پنلِ تکمیلیِ شکلِ A فاصله‌ی ایمنی‌ای را نشان می‌دهد که باید از وسیله‌ی جلویی حفظ کرد.",
+      why: "غلط است (قدم ۳). عدد فاصله‌ی تابلو تا شروعِ خطر یا دستور است، نه فاصله با خودروی جلو.",
+      rule: "DPR 495/1992 art. 83 c.4",
+      conceptStep: 3,
+    },
+    {
+      sourceId: "3698",
+      sign: 122,
+      textIt: "Il pannello integrativo raffigurato, posto sotto un segnale di obbligo, indica la lunghezza del tratto stradale nel quale vale la prescrizione del segnale",
+      answer: 1,
+      chunks: [
+        { it: PANEL + ",", fa: PANEL_FA },
+        { it: "posto sotto un segnale di obbligo,", fa: "وقتی زیرِ تابلوی اجباری نصب شده", verb: "posto ← porre", focus: "condition" },
+        { it: "indica la lunghezza del tratto stradale", fa: "طولِ بخشی از جاده را نشان می‌دهد", verb: "indica ← indicare" },
+        { it: "nel quale vale la prescrizione del segnale", fa: "که دستورِ تابلو در آن اعتبار دارد", verb: "vale ← valere" },
+      ],
+      translation: "پنلِ تکمیلیِ تصویر، وقتی زیرِ تابلوی اجباری است، طولِ بخشی از جاده را نشان می‌دهد که دستورِ تابلو در آن اعتبار دارد.",
+      why: "درست است (قدم ۴). دو فلش یعنی طولِ بخش؛ زیرِ تابلوی اجباری، طولِ بخشی که اجبار در آن هست.",
+      rule: "DPR 495/1992 art. 83 c.5",
+      conceptStep: 4,
+    },
+    {
+      sourceId: "3705",
+      sign: 901,
+      textIt: "Il segnale raffigurato indica la distanza tra il segnale e l'inizio della strada in cattivo stato",
+      answer: 0,
+      chunks: [
+        { it: SIGN, fa: SIGN_FA },
+        { it: "indica la distanza tra il segnale", fa: "فاصله‌ی میانِ تابلو", verb: "indica ← indicare", focus: "contrast" },
+        { it: "e l'inizio della strada in cattivo stato", fa: "و شروعِ جاده‌ی خراب را نشان می‌دهد" },
+      ],
+      translation: "تابلوی تصویر فاصله‌ی میانِ تابلو و شروعِ جاده‌ی خراب را نشان می‌دهد.",
+      why: "غلط است (قدم ۴). عدد بینِ دو فلش است: جاده‌ی ناهموار از همین‌جا ۳۸۰ متر ادامه دارد.",
+      rule: "DPR 495/1992 art. 83 c.5",
+      conceptStep: 4,
+    },
+    {
+      sourceId: "3700",
+      sign: 122,
+      textIt: "Il pannello integrativo raffigurato in figura B, posto sotto ad un segnale di pericolo, indica, in chilometri, la lunghezza del tratto di strada pericoloso",
+      answer: 1,
+      chunks: [
+        { it: "Il pannello integrativo raffigurato in figura B,", fa: "پنلِ تکمیلیِ شکلِ B" },
+        { it: "posto sotto ad un segnale di pericolo,", fa: "وقتی زیرِ تابلوی خطر نصب شده", verb: "posto ← porre", focus: "condition" },
+        { it: "indica, in chilometri, la lunghezza del tratto di strada pericoloso", fa: "طولِ بخشِ خطرناک را به کیلومتر نشان می‌دهد", verb: "indica ← indicare" },
+      ],
+      translation: "پنلِ تکمیلیِ شکلِ B، وقتی زیرِ تابلوی خطر است، طولِ بخشِ خطرناکِ جاده را به کیلومتر نشان می‌دهد.",
+      why: "درست است (قدم ۴). «2,8 km» بینِ دو فلش: ۲٫۸ کیلومتر جاده‌ی خطرناک.",
+      rule: "DPR 495/1992 art. 83 c.5",
+      conceptStep: 4,
+    },
+  ],
+  related: [
+    { step: 3, sourceIds: ["3688", "3689", "3690", "3691", "3692", "3693", "3694", "3695", "3696"] },
+    { step: 4, sourceIds: ["3697", "3698", "3699", "3700", "3701", "3702", "3703", "3704", "3705", "3706"] },
+  ],
+};
+
+// ── Lesson 2 ──────────────────────────────────────────────────────────────────
+
+export const lessonInizioContinuazioneFine: Lesson = {
+  id: "pannelli-inizio-continuazione-fine",
+  titleFa: "شروع، ادامه، پایان: فلش کجا را نشان می‌دهد",
+  titleIt: "INIZIO · CONTINUAZIONE · FINE",
+  minutes: 5,
+  signs: [128, 129, 130],
+  figures: [940, 953, 958, 959, 963, 914, 930, 933, 939, 951, 956, 903, 915, 944, 952, 957, 970],
+  steps: [
+    {
+      kind: "intro",
+      title: "هدف این درس",
+      objective:
+        "بعد از این درس با یک قاعده هر پنلِ فلش‌دار را می‌خوانی: فلش به بخشی از جاده اشاره می‌کند که قاعده در آن معتبر است. رو به جلو = از همین‌جا شروع می‌شود؛ دو طرف = قبل و بعد از تابلو ادامه دارد؛ رو به عقب = همین‌جا تمام می‌شود.",
+      why: "۳۴ سؤال. فلش‌ها در بانک با «مستقیم برو»، «برگرد»، «دوطرفه»، «یک‌طرفه» و «سربالایی» عوض می‌شوند، و شروع و پایان جابه‌جا پرسیده می‌شوند. در فصل ۳ (درسِ پارک ممنوع) همین فلش‌ها را زیرِ پارک ممنوع دیدی.",
+    },
+    {
+      kind: "table",
+      title: "شروع",
+      body: "پنلِ عمودی با یک فلشِ رو به بالا در بالای پنل، یا پنلِ افقی با فلشی در سمتِ چپ رو به چپ. فلش به جلوی تابلو اشاره می‌کند: قاعده از همین نقطه به بعد اعتبار دارد و قبل از تابلو آزاد است. نوعِ افقی وقتی است که تابلو موازیِ جاده نصب شده (بیشتر برای پارک).",
+      columns: ["قاعده"],
+      rows: [
+        { label: "پنلِ شروع", it: "inizio", sign: 128, values: ["«از این‌جا شروع می‌شود». قانون می‌گوید فقط جایی بگذارند که لازم است شروع را تأکید کنند."] },
+        { label: "پارک ممنوع + ↑", it: "inizio del divieto di sosta", sign: 940, values: ["پارک ممنوع از همین تابلو شروع می‌شود."] },
+        { label: "توقف ممنوع + ↑", it: "inizio del divieto di fermata", sign: 953, values: ["توقف ممنوع از همین تابلو شروع می‌شود."] },
+        { label: "پارکینگ + ↑ یا ←", it: "inizio del parcheggio", sign: 958, values: ["محوطه‌ی پارک از این‌جا شروع می‌شود. همین معنا را P با فلشِ افقیِ رو به چپ دارد."] },
+        { label: "مسیرِ پیاده + ↑", it: "inizio del percorso pedonale", sign: 963, values: ["مسیرِ پیاده (اجباری) از این‌جا شروع می‌شود."] },
+        { label: "چه نیست", it: "non è", values: ["دستورِ «مستقیم برو»، سربالایی، پایانِ یک‌طرفه یا خطِ ویژه‌ی اتوبوس نیست. زیرِ تابلوی خطر هم «پایانِ خطر» نیست."] },
+      ],
+      takeaway: "فلش رو به جلو (بالا، یا افقیِ رو به چپ) = قاعده از همین‌جا به جلو.",
+      rule: "DPR 495/1992 art. 83 c.8 (modello II.5)",
+    },
+    {
+      kind: "table",
+      title: "ادامه",
+      body: "دو فلشِ مخالفِ هم: بالا و پایین در پنلِ عمودی، چپ و راست در پنلِ افقی. قاعده هم قبل از تابلو بود و هم بعد از آن ادامه دارد. این پنل یادآوری است که هنوز در همان بخش هستی.",
+      columns: ["قاعده"],
+      rows: [
+        { label: "پنلِ ادامه", it: "continuazione", sign: 129, values: ["«قبل و بعد از این تابلو» معتبر است. زیرِ تابلوی خطر یعنی خطر ادامه دارد."] },
+        { label: "سبقت ممنوع + ↕", it: "continuazione del divieto di sorpasso", sign: 930, values: ["سبقت ممنوع هنوز ادامه دارد."] },
+        { label: "حداکثر سرعت + ↕", it: "continuazione del limite", sign: 933, values: ["همان حداکثرِ سرعت ادامه دارد."] },
+        { label: "پارک ممنوع + ↕", it: "il divieto di sosta continua", sign: 939, values: ["پارک ممنوع ادامه دارد."] },
+        { label: "توقف ممنوع + ↕", it: "prima e dopo il segnale", sign: 951, values: ["توقف هم قبل و هم بعد از تابلو ممنوع است."] },
+        { label: "جاده‌ی لغزنده + ↔", it: "strada sdrucciolevole", sign: 914, values: ["بخشِ لغزنده ادامه دارد."] },
+        { label: "پارکینگ + ↔", it: "parcheggio", sign: 956, values: ["محوطه‌ی پارک ادامه دارد؛ پایانش نیست."] },
+        { label: "چه نیست", it: "non è", values: ["«برگرد»، یک‌طرفه‌ی متناوب، «دو جهتِ مجاز» یا جاده‌ی دوطرفه نیست. فلش‌ها جهتِ حرکت نیستند؛ بخشِ معتبرِ جاده‌اند."] },
+      ],
+      takeaway: "دو فلش = قاعده هم پشتِ سر هست هم جلو.",
+      rule: "DPR 495/1992 art. 83 c.8 (modello II.5)",
+    },
+    {
+      kind: "table",
+      title: "پایان",
+      body: "یک فلشِ رو به پایین در پایینِ پنلِ عمودی، یا فلشِ رو به راست در سمتِ راستِ پنلِ افقی. فلش به عقب، یعنی به بخشی که پشتِ سر گذاشتی، اشاره می‌کند: قاعده تا این‌جا بود و همین‌جا تمام می‌شود.",
+      columns: ["قاعده"],
+      rows: [
+        { label: "پنلِ پایان", it: "fine", sign: 130, values: ["«تا این‌جا». زیرِ تابلوی ممنوع یعنی پایانِ ممنوعیت، نه شروعِ آن."] },
+        { label: "پارک ممنوع + ↓", it: "termina il divieto di sosta", sign: 944, values: ["پارک ممنوع همین‌جا تمام می‌شود."] },
+        { label: "توقف ممنوع + →", it: "termina il divieto di fermata", sign: 952, values: ["توقف ممنوع همین‌جا تمام می‌شود (پنلِ افقی)."] },
+        { label: "پارکینگ + →", it: "fine del parcheggio", sign: 957, values: ["محوطه‌ی پارک همین‌جا تمام می‌شود. P با ↑ یا ← شروع است، نه پایان."] },
+        { label: "جاده‌ی ناهموار + ↓", it: "fine della strada deformata", sign: 903, values: ["بخشِ ناهموار همین‌جا تمام می‌شود."] },
+        { label: "جاده‌ی لغزنده + →", it: "fine della strada sdrucciolevole", sign: 915, values: ["بخشِ لغزنده همین‌جا تمام می‌شود."] },
+        { label: "LAVORI + ↓", it: "fine del cantiere", sign: 970, values: ["کارگاهِ جاده همین‌جا تمام می‌شود (فصل ۹ درس ۱)."] },
+        { label: "چه نیست", it: "non è", values: ["سراشیبی، جاده‌ی بسته یا «تنها جهتِ مجاز» نیست. پایانِ سبقت ممنوع تابلوی مخصوصِ خودش را دارد (دایره‌ی سفید با خطِ مورب)."] },
+      ],
+      takeaway: "فلش رو به عقب (پایین، یا افقیِ رو به راست) = قاعده تا این‌جا بود.",
+      rule: "DPR 495/1992 art. 83 c.8 (modello II.5)",
+    },
+    {
+      kind: "classify",
+      title: "قاعده کجا معتبر است؟",
+      body: "از دیدِ راننده‌ای که به تابلو می‌رسد، بگو قاعده در کدام بخشِ جاده معتبر است. تمرینِ آموزشی است، نه سؤالِ بانک.",
+      options: [
+        { it: "da qui in avanti", fa: "از این‌جا به جلو" },
+        { it: "prima e dopo", fa: "قبل و بعد از تابلو" },
+        { it: "fino a qui", fa: "تا این‌جا (پشتِ سر)" },
+      ],
+      items: [
+        { prompt: "پارک ممنوع با فلشِ رو به بالا", sign: 940, answer: 0, explain: "شروع: از تابلو به جلو پارک ممنوع است؛ پشتِ تابلو آزاد است." },
+        { prompt: "پارک ممنوع با دو فلش", sign: 939, answer: 1, explain: "ادامه: هم قبل و هم بعد از تابلو پارک ممنوع است." },
+        { prompt: "پارک ممنوع با فلشِ رو به پایین", sign: 944, answer: 2, explain: "پایان: ممنوعیت در بخشی بود که پشتِ سر گذاشتی؛ جلوتر آزاد است." },
+        { prompt: "P با فلشِ افقیِ رو به راست", sign: 957, answer: 2, explain: "پایانِ محوطه‌ی پارک." },
+        { prompt: "P با فلشِ افقیِ رو به چپ", sign: 959, answer: 0, explain: "شروعِ محوطه‌ی پارک: نوعِ افقیِ فلشِ رو به جلو." },
+        { prompt: "سرعتِ ۸۰ با دو فلش", sign: 933, answer: 1, explain: "همان محدودیت ادامه دارد." },
+      ],
+      takeaway: "فلش همیشه به بخشِ معتبرِ جاده اشاره می‌کند، نه به جهتی که باید بروی.",
+    },
+    {
+      kind: "terms",
+      title: "واژه‌های کلیدی این درس",
+      terms: [
+        { it: "l'inizio", fa: "شروع" },
+        { it: "la continuazione", fa: "ادامه" },
+        { it: "la fine", fa: "پایان" },
+        { it: "evidenzia", base: "evidenziare", fa: "برجسته نشان می‌دهد" },
+        { it: "termina", base: "terminare", fa: "تمام می‌شود" },
+        { it: "prima e dopo il segnale", fa: "قبل و بعد از تابلو" },
+        { it: "l'area destinata al parcheggio", fa: "محوطه‌ای که برای پارک تعیین شده" },
+        { it: "il divieto di fermata", fa: "توقف ممنوع" },
+      ],
+    },
+    {
+      kind: "trap",
+      title: "فلشِ افقی زیرِ P",
+      body: "هر دو جمله درباره‌ی پایانِ پارکینگ است، با دو فلشِ افقیِ مختلف:",
+      examples: [
+        {
+          sourceId: "3777",
+          sign: 957,
+          textIt: "Il segnale raffigurato indica la fine dell'area destinata al parcheggio",
+          answer: 1,
+          chunks: [
+            { it: SIGN, fa: SIGN_FA },
+            { it: "indica la fine", fa: "پایانِ … را نشان می‌دهد", verb: "indica ← indicare" },
+            { it: "dell'area destinata al parcheggio", fa: "محوطه‌ای که برای پارک تعیین شده" },
+          ],
+          translation: "تابلوی تصویر پایانِ محوطه‌ی پارک را نشان می‌دهد.",
+          why: "درست است. فلشِ رو به راست در سمتِ راستِ پنل = تا این‌جا.",
+        },
+        {
+          sourceId: "3760",
+          sign: 959,
+          textIt: "Il segnale raffigurato evidenzia il punto in cui finisce l'area destinata al parcheggio",
+          answer: 0,
+          chunks: [
+            { it: SIGN, fa: SIGN_FA },
+            { it: "evidenzia il punto in cui finisce", fa: "نقطه‌ای را نشان می‌دهد که … تمام می‌شود", verb: "finisce ← finire", focus: "contrast" },
+            { it: "l'area destinata al parcheggio", fa: "محوطه‌ی پارک" },
+          ],
+          translation: "تابلوی تصویر نقطه‌ای را نشان می‌دهد که محوطه‌ی پارک تمام می‌شود.",
+          why: "غلط است. فلشِ رو به چپ در سمتِ چپِ پنل = شروع.",
+        },
+      ],
+      takeaway: "پنلِ افقی: فلشِ چپ = شروع، دو فلش = ادامه، فلشِ راست = پایان.",
+      rule: "DPR 495/1992 art. 83 c.8",
+    },
+  ],
+  practice: [
+    {
+      sourceId: "3756",
+      sign: 128,
+      textIt: "Il pannello raffigurato (A) indica una strada in salita",
+      answer: 0,
+      chunks: [
+        { it: "Il pannello raffigurato (A)", fa: "پنلِ تصویرِ (A)" },
+        { it: "indica una strada in salita", fa: "جاده‌ی سربالایی را نشان می‌دهد", verb: "indica ← indicare", focus: "contrast" },
+      ],
+      translation: "پنلِ تصویرِ (A) جاده‌ی سربالایی را نشان می‌دهد.",
+      why: "غلط است (قدم ۱). فلشِ رو به بالا شیب نیست؛ یعنی «قاعده از این‌جا شروع می‌شود».",
+      rule: "DPR 495/1992 art. 83 c.8",
+      conceptStep: 1,
+    },
+    {
+      sourceId: "3763",
+      sign: 930,
+      textIt: "Il segnale raffigurato conferma la continuazione del divieto di sorpasso",
+      answer: 1,
+      chunks: [
+        { it: SIGN, fa: SIGN_FA },
+        { it: "conferma la continuazione", fa: "ادامه‌ی … را تأیید می‌کند", verb: "conferma ← confermare" },
+        { it: "del divieto di sorpasso", fa: "سبقت ممنوع" },
+      ],
+      translation: "تابلوی تصویر ادامه‌ی سبقت ممنوع را تأیید می‌کند.",
+      why: "درست است (قدم ۲). دو فلشِ مخالف = ممنوعیت هنوز ادامه دارد.",
+      rule: "DPR 495/1992 art. 83 c.8",
+      conceptStep: 2,
+    },
+    {
+      sourceId: "3771",
+      sign: 129,
+      textIt: "Il pannello integrativo raffigurato (A), posto sotto un segnale di pericolo, ne indica la fine",
+      answer: 0,
+      chunks: [
+        { it: "Il pannello integrativo raffigurato (A),", fa: "پنلِ تکمیلیِ تصویرِ (A)" },
+        { it: "posto sotto un segnale di pericolo,", fa: "وقتی زیرِ تابلوی خطر نصب شده", verb: "posto ← porre", focus: "condition" },
+        { it: "ne indica la fine", fa: "پایانِ آن را نشان می‌دهد", verb: "indica ← indicare", focus: "contrast" },
+      ],
+      translation: "پنلِ تکمیلیِ تصویرِ (A)، وقتی زیرِ تابلوی خطر است، پایانِ آن (خطر) را نشان می‌دهد.",
+      why: "غلط است (قدم ۲). دو فلش = خطر ادامه دارد. پایان یک فلشِ رو به پایین است.",
+      rule: "DPR 495/1992 art. 83 c.8",
+      conceptStep: 2,
+    },
+    {
+      sourceId: "3778",
+      sign: 903,
+      textIt: "Il segnale raffigurato indica la fine della strada deformata",
+      answer: 1,
+      chunks: [
+        { it: SIGN, fa: SIGN_FA },
+        { it: "indica la fine", fa: "پایانِ … را نشان می‌دهد", verb: "indica ← indicare" },
+        { it: "della strada deformata", fa: "جاده‌ی ناهموار" },
+      ],
+      translation: "تابلوی تصویر پایانِ جاده‌ی ناهموار را نشان می‌دهد.",
+      why: "درست است (قدم ۳). فلشِ رو به پایین در پایینِ پنل = بخشِ ناهموار تا این‌جا بود.",
+      rule: "DPR 495/1992 art. 83 c.8",
+      conceptStep: 3,
+    },
+    {
+      sourceId: "3782",
+      sign: 130,
+      textIt: "Il pannello integrativo raffigurato (A), posto sotto un segnale di divieto, indica l'inizio del divieto",
+      answer: 0,
+      chunks: [
+        { it: "Il pannello integrativo raffigurato (A),", fa: "پنلِ تکمیلیِ تصویرِ (A)" },
+        { it: "posto sotto un segnale di divieto,", fa: "وقتی زیرِ تابلوی ممنوع نصب شده", verb: "posto ← porre", focus: "condition" },
+        { it: "indica l'inizio del divieto", fa: "شروعِ ممنوعیت را نشان می‌دهد", verb: "indica ← indicare", focus: "contrast" },
+      ],
+      translation: "پنلِ تکمیلیِ تصویرِ (A)، وقتی زیرِ تابلوی ممنوع است، شروعِ ممنوعیت را نشان می‌دهد.",
+      why: "غلط است (قدم ۳). فلشِ رو به پایین به عقب اشاره می‌کند: پایانِ ممنوعیت.",
+      rule: "DPR 495/1992 art. 83 c.8",
+      conceptStep: 3,
+    },
+  ],
+  related: [
+    { step: 1, sourceIds: ["3751", "3752", "3753", "3754", "3755", "3756", "3757", "3758", "3759", "3760", "3761"] },
+    { step: 2, sourceIds: ["3762", "3763", "3764", "3765", "3766", "3767", "3768", "3769", "3770", "3771", "3772", "3773"] },
+    { step: 3, sourceIds: ["3774", "3775", "3776", "3777", "3778", "3779", "3780", "3781", "3782", "3783", "3785"] },
+  ],
+};
