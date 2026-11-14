@@ -82,6 +82,27 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | segnale raffigurato | تابلوی نشان‌داده‌شده | |
 | pannello integrativo | پنل تکمیلی | |
 
+## Lights and dashboard (chapter 18)
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| luci di posizione | چراغ‌های موقعیت | |
+| luci di marcia diurna | چراغِ روز | |
+| proiettori di profondità | نورِ بالا | |
+| luce posteriore per nebbia | چراغِ مهِ عقب | |
+| proiettori fendinebbia anteriori | چراغِ مهِ جلو | |
+| luci di sosta | چراغِ پارک | |
+| luce della targa | چراغِ پلاک | |
+| catadiottro | شبرنگ | |
+| abbagliare | چشم زدن (با نور) | |
+| uso intermittente (lampeggio) | چشمک زدن با نورِ بالا | |
+| spia | چراغِ نشانگر | |
+| segnale mobile di pericolo | مثلثِ خطر | |
+| liquido di raffreddamento | مایعِ خنک‌کننده | |
+| alternatore, generatore di corrente | دینام | |
+| impianto frenante | سیستمِ ترمز | |
+| guarnizioni dei freni | لنتِ ترمز | |
+| cinture di sicurezza | کمربندِ ایمنی | |
 ## Overtaking (chapter 15)
 
 | Italiano | فارسی | Never write |
@@ -128,5 +149,7 @@ Recorded 2026-11-14. Each one moves into «Never write» once the content is fix
   to *strisce pedonali*.
 - **segnale raffigurato:** some lessons write «تابلوی تصویر».
 - **tamponamento:** chapter 12 L3 writes «زدن به عقبِ خودروی جلو», chapter 10's review «تصادف از پشت». Pick one.
+- **segnalazione luminosa di pericolo:** chapter 18 writes «چراغِ خطر (چهار راهنما با هم)»; chapter 11 L5 and
+  chapter 15 L4 write «فلاشر». Align them, then add «فلاشر» to Never write.
 - **dosso:** chapter 15 (L2, L6) writes «قله‌ی سربالایی»; the chapter 13 work in progress uses «برآمدگی». In
   overtaking, a dosso is a blind crest, not a speed bump, and «برآمدگی» alone reads as the bump. Pick one.
