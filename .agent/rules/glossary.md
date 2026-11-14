@@ -82,6 +82,25 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | segnale raffigurato | تابلوی نشان‌داده‌شده | |
 | pannello integrativo | پنل تکمیلی | |
 
+## Motorways, load and towing (chapter 17)
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| segnale mobile triangolare di pericolo (triangolo) | مثلثِ خطر | |
+| giubbotto o bretelle ad alta visibilità | جلیقه‌ی شب‌نما · بندهای بازتابنده | |
+| ingombro della carreggiata | بسته شدنِ سواره‌رو | |
+| area di servizio | محوطه‌ی خدمات آزادراه | |
+| sporgenza del carico | بیرون‌زدگیِ بار | |
+| pannello (retroriflettente) | پنلِ (بازتابنده) | |
+| merci pericolose | کالای خطرناک | |
+| traino (di un veicolo in avaria) | یدک کشیدن | |
+| motrice | خودروی کشنده | |
+| gancio di traino | قلابِ یدک‌کش | |
+| freno a inerzia | ترمزِ اینرسی | |
+| caravan (roulotte) | کاروان | |
+| fuoristrada (Suv) | شاسی‌بلند | |
+| ciclomotorista | موتور گازی‌سوار | |
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

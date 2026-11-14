@@ -231,6 +231,34 @@
         part('pedonale', zebra(266, 66, 18, 118), [264, 66, 22, 120]) +
         car(30, 117, 40, 18, 'rd-car-you', 'right') + car(220, 36, 40, 18, 'rd-car-other', 'left');
     } },
+    // Chapter 17: a car stopped in its lane outside a built-up area, you drive left to right. Not to scale:
+    // the triangle sits ≥ 50 m behind it in the same lane, the car behind sees it from ≥ 100 m (CdS art. 162).
+    triangolo: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-ground') +
+        rect(0, 56, 340, 108, 'rd-asphalt') + line(0, 58, 340, 58, 'rd-line') + line(0, 162, 340, 162, 'rd-line') +
+        line(0, 110, 340, 110, 'rd-dash') + rect(0, 164, 340, 14, 'rd-gravel') +
+        car(206, 70, 40, 18, 'rd-car-other', 'left') +
+        part('veicolo', car(270, 128, 40, 18, 'rd-car-parked', 'right') + label(262, 124, 'veicolo fermo'), [266, 116, 70, 34]) +
+        part('triangolo', '<polygon class="rd-tri" points="138,150 147,132 156,150"/>' + label(124, 128, 'triangolo'), [120, 118, 50, 36]) +
+        part('distanza', rect(156, 186, 110, 18, 'rd-brace', ' rx="9"') + label(211, 199, '≥ 50 m', 'rd-label-center'), [156, 184, 110, 22]) +
+        part('visibilita', car(4, 128, 40, 18, 'rd-car-you', 'right') + line(46, 141, 136, 141, 'rd-sight') + label(66, 156, '≥ 100 m'), [2, 124, 136, 38]) +
+        part('giubbotto', person(318, 188, 'rd-child') + label(270, 214, 'giubbotto'), [264, 178, 72, 40]);
+    } },
+    // Chapter 17: a car with a trailer turning right into a side road. The trailer's wheels run on a tighter
+    // curve than the car's, towards the kerb and the pedestrian standing there.
+    rimorchio: { h: 230, draw: function() {
+      return rect(0, 0, 340, 230, 'rd-ground') +
+        rect(0, 36, 340, 96, 'rd-asphalt') + rect(196, 132, 96, 98, 'rd-asphalt') +
+        line(0, 84, 340, 84, 'rd-dash') + line(244, 140, 244, 230, 'rd-dash') +
+        rect(0, 132, 196, 98, 'rd-walk') + rect(292, 132, 48, 98, 'rd-walk') + rect(0, 0, 340, 36, 'rd-walk') +
+        line(0, 132, 196, 132, 'rd-curb') + line(196, 132, 196, 230, 'rd-curb') + line(292, 132, 340, 132, 'rd-curb') + line(292, 132, 292, 230, 'rd-curb') +
+        part('motrice', '<g transform="rotate(62 236 128)">' + car(216, 119, 40, 18, 'rd-car-you', 'right') + '</g>' + label(262, 112, 'motrice'), [214, 100, 62, 56]) +
+        part('rimorchio', '<g transform="rotate(14 172 108)">' + rect(146, 98, 44, 20, 'rd-car-body', ' rx="2"') + '</g>' +
+          line(190, 112, 214, 119, 'rd-line') + label(120, 94, 'rimorchio'), [118, 82, 100, 44]) +
+        part('traiettoria', '<path class="rd-sight" fill="none" d="M10 110 C150 110 258 104 266 230"/>' +
+          '<path class="rd-x" d="M10 122 C150 122 206 100 206 230"/>' + label(20, 104, 'motrice') + label(20, 146, 'rimorchio', 'rd-label-dark'), [6, 98, 70, 54]) +
+        part('pedone', person(184, 140) + label(132, 176, 'pedone', 'rd-label-dark'), [128, 132, 66, 50]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {

@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -incroci.ts, -velocita.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -incroci.ts, -velocita.ts, -sorpasso.ts, -autostrade.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -27,6 +27,7 @@
 
 // The chapter files (and overtaking.ts) only import *types* from this file
 // (erased at build), so this is not a runtime import cycle.
+import { AUTOSTRADE_CHAPTER } from "./lessons-autostrade.js";
 import { COMPLEMENTARI_CHAPTER } from "./lessons-complementari.js";
 import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { DIVIETO_CHAPTER } from "./lessons-divieto.js";
@@ -297,7 +298,7 @@ export interface RoadPart {
 /** An original drawing (public/js/road.js), never a bank figure. */
 export type RoadScene =
   | "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach"
-  | "agente-braccia" | "agente-angolo";
+  | "agente-braccia" | "agente-angolo" | "triangolo" | "rimorchio";
 
 interface StepBase {
   title: string;
@@ -1208,6 +1209,7 @@ export const CHAPTERS: Chapter[] = [
   VELOCITA_CHAPTER,
   INCROCI_CHAPTER,
   SORPASSO_CHAPTER,
+  AUTOSTRADE_CHAPTER,
 ];
 
 export function findLesson(lessonId: string): Lesson | null {
