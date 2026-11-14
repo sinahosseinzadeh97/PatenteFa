@@ -338,7 +338,7 @@ export const lessonCorsie: Lesson = {
             { fa: "corsia دوطرفه است", it: "può essere a doppio senso di circolazione", sourceId: "177", textIt: "La corsia può essere a doppio senso di circolazione", answer: 0 },
             { fa: "از دو سواره‌رو تشکیل شده", it: "è formata da due carreggiate", sourceId: "180", textIt: "La corsia è formata da due carreggiate", answer: 0 },
             { fa: "در شهر دو موتور کنار هم در یک خط", it: "possono circolare affiancati due motocicli", sourceId: "182", textIt: "Nei centri abitati, su una stessa corsia possono circolare affiancati due motocicli", answer: 0 },
-            { fa: "بیرون شهر دو موپد کنار هم در یک خط", it: "possono circolare affiancati due ciclomotori", sourceId: "183", textIt: "Fuori dai centri abitati, su una stessa corsia possono circolare affiancati due ciclomotori", answer: 0 },
+            { fa: "بیرون شهر دو موتور گازی کنار هم در یک خط", it: "possono circolare affiancati due ciclomotori", sourceId: "183", textIt: "Fuori dai centri abitati, su una stessa corsia possono circolare affiancati due ciclomotori", answer: 0 },
           ],
         },
       ],
@@ -724,7 +724,7 @@ export const lessonElementi: Lesson = {
         { label: "برای چیست؟", values: ["هدایت خودروها به جهت‌های مختلف", "پناه و ایستادن عابران"] },
         { label: "شکل", values: ["خط‌کشی مورب سفید، یا برآمده که قبلش خط‌کشی مورب است؛ دورش خط سفید ممتد", "برآمده یا محافظت‌شده، گاهی با ستون چراغ زرد ثابت"] },
         { label: "کجا؟", values: ["تقاطع‌ها و دوراهی‌ها", "کنار خط عابر یا ایستگاه تراموا و اتوبوس"] },
-        { label: "عبور خودرو", values: ["ممنوع، حتی موتور و موپد", "ممنوع"] },
+        { label: "عبور خودرو", values: ["ممنوع، حتی موتورسیکلت و موتور گازی", "ممنوع"] },
       ],
       takeaway: "اگر جمله‌ای درباره‌ی isola گفت «برای عابر» یا «برای سوار و پیاده شدن مسافر»، آن را با salvagente قاطی کرده است.",
       rule: "CdS art. 3 c.1 n.27, n.45; art. 40",
@@ -944,7 +944,7 @@ export const lessonAutostrade: Lesson = {
       kind: "factors",
       title: "چه کسی حق ورود دارد؟",
       body:
-        "هر دو جاده فقط برای بعضی وسایل موتوری‌اند. موپد، چهارچرخ سبک، دوچرخه و ماشین‌آلات کشاورزی هرگز وارد نمی‌شوند. از ۱۴ دسامبر ۲۰۲۴ موتورسیکلت از ۱۲۰ سی‌سی (برقی از ۶ کیلووات) هم وارد می‌شود، به شرطی که راننده‌اش بالای ۱۸ سال باشد؛ جمله‌ی بانک درباره‌ی «حداقل ۱۵۰ سی‌سی» همچنان درست است.",
+        "هر دو جاده فقط برای بعضی وسایل موتوری‌اند. موتور گازی، چهارچرخ سبک، دوچرخه و ماشین‌آلات کشاورزی هرگز وارد نمی‌شوند. از ۱۴ دسامبر ۲۰۲۴ موتورسیکلت از ۱۲۰ سی‌سی (برقی از ۶ کیلووات) هم وارد می‌شود، به شرطی که راننده‌اش بالای ۱۸ سال باشد؛ جمله‌ی بانک درباره‌ی «حداقل ۱۵۰ سی‌سی» همچنان درست است.",
       columns: [
         {
           title: "درست است (VERO)",
@@ -960,7 +960,7 @@ export const lessonAutostrade: Lesson = {
           items: [
             { fa: "همه‌ی موتورسیکلت‌ها", it: "possono circolare tutti i tipi di motocicli", sourceId: "141", textIt: "Nelle autostrade possono circolare tutti i tipi di motocicli", answer: 0 },
             { fa: "فقط سواری‌ها", it: "possono circolare solo le autovetture", sourceId: "140", textIt: "Nelle autostrade possono circolare solo le autovetture", answer: 0 },
-            { fa: "موپد در برون‌شهری اصلی", it: "i ciclomotori possono transitare", sourceId: "50", textIt: "Sulle strade extraurbane principali i ciclomotori possono transitare", answer: 0 },
+            { fa: "موتور گازی در برون‌شهری اصلی", it: "i ciclomotori possono transitare", sourceId: "50", textIt: "Sulle strade extraurbane principali i ciclomotori possono transitare", answer: 0 },
             { fa: "چهارچرخ سبک در برون‌شهری اصلی", it: "i quadricicli leggeri possono transitare", sourceId: "48", textIt: "Sulle strade extraurbane principali i quadricicli leggeri possono transitare", answer: 0 },
           ],
         },
@@ -1080,12 +1080,12 @@ export const lessonAutostrade: Lesson = {
       chunks: [
         { it: "Nelle autostrade", fa: "در آزادراه‌ها" },
         { it: "possono circolare", fa: "می‌توانند تردد کنند", verb: "possono ← potere" },
-        { it: "i ciclomotori", fa: "موپدها" },
+        { it: "i ciclomotori", fa: "موتور گازی‌ها" },
         { it: "e i motocicli con cilindrata fino a 125 cm3", fa: "و موتورسیکلت‌های تا ۱۲۵ سی‌سی", focus: "limit" },
       ],
-      translation: "در آزادراه‌ها موپدها و موتورسیکلت‌های تا ۱۲۵ سی‌سی می‌توانند تردد کنند.",
+      translation: "در آزادراه‌ها موتور گازی‌ها و موتورسیکلت‌های تا ۱۲۵ سی‌سی می‌توانند تردد کنند.",
       why:
-        "غلط است. موپد هرگز وارد آزادراه نمی‌شود و همین کافی است. نکته‌ی به‌روز: از دسامبر ۲۰۲۴ موتورسیکلت ۱۲۰ تا ۱۲۵ سی‌سی با راننده‌ی بالای ۱۸ سال مجاز شده، ولی جمله موپد را هم مجاز می‌داند، پس همچنان غلط است.",
+        "غلط است. موتور گازی هرگز وارد آزادراه نمی‌شود و همین کافی است. نکته‌ی به‌روز: از دسامبر ۲۰۲۴ موتورسیکلت ۱۲۰ تا ۱۲۵ سی‌سی با راننده‌ی بالای ۱۸ سال مجاز شده، ولی جمله موتور گازی را هم مجاز می‌داند، پس همچنان غلط است.",
       rule: "CdS art. 175 c.2 lett. a, c.2-bis (L. 177/2024)",
       conceptStep: 2,
     },
@@ -1164,7 +1164,7 @@ export const lessonIncrociZone: Lesson = {
         { label: "چه کسی وارد می‌شود؟", values: ["فقط وسایل مجاز", "عابر، دوچرخه، وسایل امدادی با آژیر و چراغ آبی روشن، وسایلِ در خدمت افراد کم‌توان، و وسایل برقی (بدون آلایندگی) اگر صریحاً مجاز شده باشند"] },
         { label: "همیشه بسته؟", values: ["نه؛ ممکن است فقط بعضی ساعت‌ها محدود باشد", "برای خودروهای عادی بله"] },
       ],
-      takeaway: "ZTL «محدود» است، نه «همیشه ممنوع». منطقه‌ی عابر پیاده حتی برای موتور و موپد هم بسته است.",
+      takeaway: "ZTL «محدود» است، نه «همیشه ممنوع». منطقه‌ی عابر پیاده حتی برای موتورسیکلت و موتور گازی هم بسته است.",
       rule: "CdS art. 3 c.1 n.2, n.54; art. 7 c.9",
     },
     {
