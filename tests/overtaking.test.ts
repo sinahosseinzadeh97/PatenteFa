@@ -23,6 +23,7 @@ import { createSqliteD1, signedInitData } from "./helpers/sqlite-d1.js";
 
 // The overtaking material: the centre-line lesson (built here, now chapter 6 lesson 2) and chapter 15's three lessons.
 const LESSONS = [lessonStrisce, ...SORPASSO_CHAPTER.lessons];
+const INDEX = CHAPTERS.indexOf(SORPASSO_CHAPTER);
 const [L1, L2, L3, L4] = LESSONS;
 const CHECKS: SafetyCheck[] = ["visibility", "ahead", "behind", "space"];
 const variants = (scene: AssessScene) => [
@@ -197,8 +198,8 @@ test("the manoeuvre runs check → signal and move left → pass → mirror and 
 
 // ── Chapter integration ──────────────────────────────────────────────────────
 
-test("the chapter is last (official chapter 15), offered on the overtaking topic, with three lessons; the centre lines are chapter 6", () => {
-  assert.equal(CHAPTERS.at(-1), SORPASSO_CHAPTER);
+test("the chapter is official chapter 15, after every lower chapter, offered on the overtaking topic, with three lessons; the centre lines are chapter 6", () => {
+  assert.ok(CHAPTERS.slice(INDEX + 1).every((c) => c.numbers[0] > 15), "only later chapters come after");
   assert.deepEqual(SORPASSO_CHAPTER.numbers, [15]);
   assert.deepEqual(SORPASSO_CHAPTER.topicIds, [12]);
   assert.deepEqual(SORPASSO_CHAPTER.lessons, [L2, L3, L4]);
@@ -312,14 +313,14 @@ test("the assess endpoint judges right, wrong and 'not enough information' answe
 test("the chapter is listed, opens directly, and the last intersections lesson (chapter 14) hands over to it", async () => {
   const { call } = setup();
   const home = await call(9401, "GET", "/learn");
-  assert.equal(home.body.chapters.at(-1).id, SORPASSO_CHAPTER.id);
-  assert.equal(home.body.chapters.at(-1).lessons.length, 3);
+  assert.equal(home.body.chapters[INDEX].id, SORPASSO_CHAPTER.id);
+  assert.equal(home.body.chapters[INDEX].lessons.length, 3);
   const lesson = await call(9401, "GET", `/learn/lessons/${L3.id}`);
   assert.equal(lesson.status, 200);
   assert.deepEqual(lesson.body.position, { index: 2, total: 3, review: false });
   assert.equal(lesson.body.lesson.practice.length, L3.practice.length);
   assert.equal(lesson.body.stopping, null);
-  const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS.at(-2)!.lessons.at(-1)!.id}`);
+  const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS[INDEX - 1].lessons.at(-1)!.id}`);
   assert.deepEqual(lastIncroci.body.next, { lessonId: L2.id, titleFa: L2.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa, chapterNumbers: [15] });
 });
 
