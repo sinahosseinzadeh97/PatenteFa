@@ -672,7 +672,7 @@
           '<strong>' + (picked === item.answer ? 'درست است.' : 'جواب: ' + esc(content.options[item.answer].fa) + '.') + '</strong> ' + esc(item.explain) + '</p>'
       : '';
     return '<li class="classify-item" id="cls-' + index + '-' + i + '">' +
-      (item.sign ? '<span class="sign-tile classify-sign"><img src="' + signUrl(item.sign) + '" alt="تابلو برای دسته‌بندی" /></span>' : '') +
+      (item.sign ? '<span class="sign-tile classify-sign"><img src="' + signUrl(item.sign) + '" alt="تصویر برای دسته‌بندی" /></span>' : '') +
       (item.figure ? '<figure class="practice-sign is-figure"><img src="' + signUrl(item.figure) + '" alt="شکل ' + esc(fa(item.figure)) + ' از بانک سؤال" loading="lazy" /></figure>' : '') +
       '<p class="classify-prompt">' + esc(item.prompt) + '</p>' +
       '<div class="classify-options" role="group" aria-label="دسته را انتخاب کن">' + options + '</div>' + verdict + '</li>';
