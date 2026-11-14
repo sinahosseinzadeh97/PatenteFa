@@ -6,15 +6,19 @@
  * explicit question → section mappings — plus the "Who goes first?" scenarios
  * in src/content/crossings.ts.
  *
- * Scope is deliberately limited to what was verified (figures read by hand,
- * rules checked against the current Codice della Strada, reviewed 2026-10-08):
- * reading a figure, giving way to the right, vehicles on rails, turning, moving
- * together, and DARE PRECEDENZA / STOP at a junction. Not covered: circular
- * "everyone has someone on the right" figures, roundabouts, traffic lights,
- * police directions. Their questions are left unmapped on purpose.
+ * Chapter 14 since 2026-11-14 (bank group precedenza-incroci, source ids
+ * 4721–5135, 415 questions, every one mapped to exactly one chapter-14
+ * section; tests/chapter14.test.ts). Lessons 1–4 keep their ids and step
+ * kinds (saved progress points into them); lesson 5 (ch14-irregolari.ts)
+ * covers diagonal and five/six-arm junctions, lesson 6 (ch14-stallo.ts) the
+ * deadlock figures, and ch14-ripasso.ts is the chapter review. Readable map
+ * and flags: docs/chapter-14-coverage.md.
  */
 import type { Chapter, Lesson } from "./lessons.js";
 import { FIG_613, FIG_614, FIG_633, FIG_637, FIG_640, FIG_643, FIG_655 } from "./crossings.js";
+import { lessonIrregolari } from "./ch14-irregolari.js";
+import { reviewIncroci } from "./ch14-ripasso.js";
+import { lessonStallo } from "./ch14-stallo.js";
 
 const SECONDO = "Secondo le norme di precedenza";
 const SECONDO_FA = "طبق قواعد حق تقدم";
@@ -34,7 +38,7 @@ const lessonLeggere: Lesson = {
   titleIt: "LEGGERE LA FIGURA",
   minutes: 4,
   signs: [],
-  figures: [620, 633, 640, 646, 651, 667],
+  figures: [620, 633, 638, 640, 642, 646, 651, 667],
   steps: [
     {
       kind: "intro",
@@ -42,7 +46,7 @@ const lessonLeggere: Lesson = {
       objective:
         "بعد از این درس، برای هر وسیله در شکل‌های بانک سؤال می‌گویی از کجا می‌آید، به کجا می‌رود، سمت راستش چه کسی است و جلویش چه تابلویی هست.",
       why:
-        "در بانک سؤال بیش از ۴۰۰ جمله درباره‌ی شکل‌هایی با وسیله‌های حرف‌دار هست. خیلی از اشتباه‌ها از بد خواندنِ شکل می‌آید، نه از ندانستنِ قاعده.",
+        "۷ سؤال مستقیماً همین مهارت را می‌سنجند، ولی هر ۴۱۵ سؤالِ این فصل یک شکل با وسیله‌های حرف‌دار دارد. خیلی از اشتباه‌ها از بد خواندنِ شکل می‌آید، نه از ندانستنِ قاعده.",
     },
     {
       kind: "scenario",
@@ -180,7 +184,7 @@ const lessonLeggere: Lesson = {
         },
       ],
       translation: "طبق قواعد حق تقدم، در تقاطعِ نشان‌داده‌شده در شکل، سمت راستِ وسیله‌ی C اشغال است.",
-      why: "درست است. C از سمت راستِ تصویر می‌آید و رو به چپ می‌راند؛ پس راستش بالای تصویر است و B از همان‌جا می‌آید.",
+      why: "درست است (قدم ۱). C از سمت راستِ تصویر می‌آید و رو به چپ می‌راند؛ پس راستش بالای تصویر است و B از همان‌جا می‌آید.",
       rule: CDS_145,
       conceptStep: 1,
     },
@@ -198,7 +202,7 @@ const lessonLeggere: Lesson = {
       ],
       translation: "در تقاطعِ شکل، وسیله‌های A و R باید در صورت لزوم بایستند.",
       why:
-        "درست است. جلوی A و R تابلوی DARE PRECEDENZA و مثلث‌های سفید است: راه می‌دهند و اگر کسی می‌آید می‌ایستند. ایستادنِ همیشگی فقط پشت STOP لازم است.",
+        "درست است (قدم ۲). جلوی A و R تابلوی DARE PRECEDENZA و مثلث‌های سفید است: راه می‌دهند و اگر کسی می‌آید می‌ایستند. ایستادنِ همیشگی فقط پشت STOP لازم است.",
       rule: "Codice della Strada, art. 145 c.4; DPR 495/1992, art. 106 c.1",
       conceptStep: 2,
     },
@@ -216,13 +220,14 @@ const lessonLeggere: Lesson = {
       ],
       translation: "در تقاطعِ نشان‌داده‌شده در شکل، وسیله‌ی P اول رد می‌شود، چون سمت راستش خالی است.",
       why:
-        "غلط است. P از پایین-چپِ تصویر رو به بالا می‌راند؛ راستش سمت راستِ تصویر است و A از همان‌جا می‌آید. راستِ P خالی نیست، پس دلیلِ جمله غلط است و P اول نیست.",
+        "غلط است (قدم ۱). P از پایین-چپِ تصویر رو به بالا می‌راند؛ راستش سمت راستِ تصویر است و A از همان‌جا می‌آید. راستِ P خالی نیست، پس دلیلِ جمله غلط است و P اول نیست.",
       rule: CDS_145,
       conceptStep: 1,
     },
   ],
   related: [
-    { step: 1, sourceIds: ["5077", "4803", "5026", "4864"] },
+    // 4727 (642) and 4856 (638): "has the right free" while turning left, asked of a deadlock figure.
+    { step: 1, sourceIds: ["5077", "4803", "5026", "4864", "4727", "4856"] },
     { step: 2, sourceIds: ["5051"] },
   ],
 };
@@ -235,7 +240,7 @@ const lessonDestra: Lesson = {
   titleIt: "PRECEDENZA A DESTRA · TRAM",
   minutes: 5,
   signs: [],
-  figures: [604, 607, 608, 613, 614, 615, 616, 618, 631, 636, 640],
+  figures: [604, 607, 608, 610, 613, 614, 615, 616, 618, 631, 636, 640, 650],
   steps: [
     {
       kind: "intro",
@@ -243,7 +248,7 @@ const lessonDestra: Lesson = {
       objective:
         "در تقاطعی بدون تابلو و چراغ، پیدا کنی چه کسی اول رد می‌شود و بقیه به چه ترتیبی؛ و بدانی چرا فقط وسیله‌ی ریلی استثناست.",
       why:
-        "قاعده‌ی پایه‌ی آیین‌نامه: وقتی مسیر دو وسیله قطع می‌شود، به کسی که از راست می‌آید راه بده، مگر تابلو چیز دیگری بگوید. بیشترِ شکل‌های بانک با همین یک قاعده و یک زنجیره حل می‌شوند.",
+        "۱۱۳ سؤال به این درس وصل‌اند. قاعده‌ی پایه‌ی آیین‌نامه: وقتی مسیر دو وسیله قطع می‌شود، به کسی که از راست می‌آید راه بده، مگر تابلو چیز دیگری بگوید. بیشترِ شکل‌های بانک با همین یک قاعده و یک زنجیره حل می‌شوند.",
       rule: CDS_145,
     },
     {
@@ -350,7 +355,7 @@ const lessonDestra: Lesson = {
       ],
       translation: "طبق قواعد حق تقدم، وسیله‌ی R می‌تواند بدون حق تقدم دادن به هیچ وسیله‌ای وارد تقاطعِ شکل شود.",
       why:
-        "درست است. R رو به چپِ تصویر می‌راند و راستش (بالای تصویر) خالی است؛ تابلو و ریل هم نیست. پس به کسی راه نمی‌دهد و اول رد می‌شود.",
+        "درست است (قدم ۱). R رو به چپِ تصویر می‌راند و راستش (بالای تصویر) خالی است؛ تابلو و ریل هم نیست. پس به کسی راه نمی‌دهد و اول رد می‌شود.",
       rule: CDS_145,
       conceptStep: 1,
     },
@@ -366,7 +371,7 @@ const lessonDestra: Lesson = {
       ],
       translation: "در وضعیتِ نشان‌داده‌شده در شکل، وسیله‌ی H دوم رد می‌شود.",
       why:
-        "درست است. B (اتوبوسی که از راستِ تصویر می‌آید) راستش خالی است و اول می‌رود. H (اتوبوسی که از پایین می‌آید) B را در سمت راستش دارد، پس دوم است. C از چپ، H را در راستش دارد و آخر است. اتوبوس بودن امتیازی نمی‌دهد.",
+        "درست است (قدم ۱). B (اتوبوسی که از راستِ تصویر می‌آید) راستش خالی است و اول می‌رود. H (اتوبوسی که از پایین می‌آید) B را در سمت راستش دارد، پس دوم است. C از چپ، H را در راستش دارد و آخر است. اتوبوس بودن امتیازی نمی‌دهد.",
       rule: CDS_145,
       conceptStep: 1,
     },
@@ -382,7 +387,7 @@ const lessonDestra: Lesson = {
       ],
       translation: "در تقاطعِ شکل، ترتیبِ عبورِ وسیله‌ها این است: F، R، D.",
       why:
-        "غلط است. F اتوبوس برقی (filobus) است و روی ریل نیست، پس امتیازی ندارد. R راستش خالی است و اول می‌رود، بعد D، و F که D را در سمت راستش دارد آخر است: R، D، F.",
+        "غلط است (قدم ۲). F اتوبوس برقی (filobus) است و روی ریل نیست، پس امتیازی ندارد. R راستش خالی است و اول می‌رود، بعد D، و F که D را در سمت راستش دارد آخر است: R، D، F.",
       rule: "Codice della Strada, art. 145 c.2–3",
       conceptStep: 2,
     },
@@ -399,7 +404,7 @@ const lessonDestra: Lesson = {
       ],
       translation: "در تقاطعِ نشان‌داده‌شده در شکل، وسیله‌ها به این ترتیب عبور می‌کنند: D، A، R.",
       why:
-        "غلط است. D یک veicolo eccezionale (وسیله‌ی بزرگ‌تر از اندازه‌ی معمول) است، ولی این به او حق تقدم نمی‌دهد. R از چپِ تصویر می‌آید و راستش خالی است، پس اول است؛ بعد D که R را در راستش دارد؛ آخر A. ترتیب درست: R، D، A.",
+        "غلط است (قدم ۲). D یک veicolo eccezionale (وسیله‌ی بزرگ‌تر از اندازه‌ی معمول) است، ولی این به او حق تقدم نمی‌دهد. R از چپِ تصویر می‌آید و راستش خالی است، پس اول است؛ بعد D که R را در راستش دارد؛ آخر A. ترتیب درست: R، D، A.",
       rule: CDS_145,
       conceptStep: 2,
     },
@@ -441,6 +446,11 @@ const lessonDestra: Lesson = {
         "4740", "4747",
         // Rails, no image
         "4559",
+        // 650: L, E, autocarro N, filobus R (no privilege for the filobus)
+        "4959", "4960", "4961", "4962", "4963", "4964", "4965", "4966", "4967",
+        "4968", "4969", "4970", "4971", "4972", "4973", "4974", "4975", "4976",
+        // 610: tram T, then L + A together, then C
+        "4871", "4872",
       ],
     },
   ],
@@ -454,7 +464,7 @@ const lessonSvolte: Lesson = {
   titleIt: "SVOLTARE · CONTEMPORANEAMENTE",
   minutes: 5,
   signs: [],
-  figures: [601, 606, 620, 637, 639, 643, 644, 646],
+  figures: [601, 606, 620, 637, 639, 643, 644, 646, 651, 660],
   steps: [
     {
       kind: "intro",
@@ -462,7 +472,7 @@ const lessonSvolte: Lesson = {
       objective:
         "بدانی کسی که به چپ می‌پیچد به چه کسانی راه می‌دهد، چرا گردشِ کوتاه به راست معمولاً با کسی تلاقی ندارد، و کِی دو وسیله با هم رد می‌شوند.",
       why:
-        "قاعده‌ی راست فقط جایی معنا دارد که مسیرها همدیگر را قطع کنند. با دانستنِ همین، شکل‌های چهار وسیله‌ای بانک هم قدم‌به‌قدم حل می‌شوند.",
+        "۹۷ سؤال به این درس وصل‌اند. قاعده‌ی راست فقط جایی معنا دارد که مسیرها همدیگر را قطع کنند. با دانستنِ همین، شکل‌های چهار وسیله‌ای بانک هم قدم‌به‌قدم حل می‌شوند.",
       rule: "Codice della Strada, art. 145 c.2; art. 154 c.3",
     },
     {
@@ -559,7 +569,7 @@ const lessonSvolte: Lesson = {
         { it: "su alcun veicolo", fa: "نسبت به هیچ وسیله‌ای" },
       ],
       translation: "وقتی به تقاطعِ شکل می‌رسیم، وسیله‌ی B چون به چپ می‌پیچد، نسبت به هیچ وسیله‌ای حق تقدم ندارد.",
-      why: "غلط است. B نسبت به L حق تقدم دارد، چون L او را در سمت راستش دارد. ترتیب: H، D، B، L.",
+      why: "غلط است (قدم ۱). B نسبت به L حق تقدم دارد، چون L او را در سمت راستش دارد. ترتیب: H، D، B، L.",
       rule: CDS_145,
       conceptStep: 1,
     },
@@ -580,7 +590,7 @@ const lessonSvolte: Lesson = {
       ],
       translation: "هنگامِ عبور از تقاطعِ شکل، وسیله‌های C و A بعد از وسیله‌ی L هم‌زمان رد می‌شوند.",
       why:
-        "درست است. L راستش خالی است و اول می‌رود. C و A هر دو از پایین می‌آیند؛ C مستقیم می‌رود و A از خطِ کنارِ وسط به چپ می‌پیچد، و مسیرشان قطع نمی‌شود. پس با هم رد می‌شوند. D آخر است.",
+        "درست است (قدم ۲). L راستش خالی است و اول می‌رود. C و A هر دو از پایین می‌آیند؛ C مستقیم می‌رود و A از خطِ کنارِ وسط به چپ می‌پیچد، و مسیرشان قطع نمی‌شود. پس با هم رد می‌شوند. D آخر است.",
       rule: CDS_145,
       conceptStep: 2,
     },
@@ -597,7 +607,7 @@ const lessonSvolte: Lesson = {
       ],
       translation: "در تقاطعِ نشان‌داده‌شده در شکل، وسیله‌ی D اولین وسیله‌ای است که وارد تقاطع می‌شود.",
       why:
-        "درست است. D از چپِ تصویر می‌آید و نزدیک لبه به راست می‌پیچد. H از پایین می‌آید، ولی مسیرش با مسیرِ کوتاهِ D قطع نمی‌شود؛ پس D منتظر کسی نیست. بعد C، A و H به ترتیبِ قاعده‌ی راست رد می‌شوند.",
+        "درست است (قدم ۱). D از چپِ تصویر می‌آید و نزدیک لبه به راست می‌پیچد. H از پایین می‌آید، ولی مسیرش با مسیرِ کوتاهِ D قطع نمی‌شود؛ پس D منتظر کسی نیست. بعد C، A و H به ترتیبِ قاعده‌ی راست رد می‌شوند.",
       rule: "Codice della Strada, art. 145 c.2; art. 154 c.3 lett. a",
       conceptStep: 1,
     },
@@ -616,7 +626,7 @@ const lessonSvolte: Lesson = {
       ],
       translation: "برای پیچیدن به چپ، طبق قاعده‌ی عادی باید مرکزِ تقاطع را سمت راستِ خودمان بگذاریم، مثل وسیله‌های شکل.",
       why:
-        "درست است. آیین‌نامه می‌گوید پیچیدن به چپ نزدیکِ مرکز تقاطع و در سمت چپِ آن انجام می‌شود؛ یعنی مرکز سمت راستِ تو می‌ماند. در شکل، N و A همین‌طور پیچیده‌اند.",
+        "درست است (قدم ۱). آیین‌نامه می‌گوید پیچیدن به چپ نزدیکِ مرکز تقاطع و در سمت چپِ آن انجام می‌شود؛ یعنی مرکز سمت راستِ تو می‌ماند. در شکل، N و A همین‌طور پیچیده‌اند.",
       rule: "Codice della Strada, art. 154 c.3 lett. b",
       conceptStep: 1,
     },
@@ -637,6 +647,10 @@ const lessonSvolte: Lesson = {
         "5074", "5075", "5076", "5078", "5079", "5080", "5081",
         // Left-turn position and precedence (601 + no image)
         "4530", "4538", "4483", "4486", "4487", "4490", "4568", "4468",
+        // 651: D (left, right free), E, S, A; two opposite left turns (5026 is lesson 1)
+        "5017", "5018", "5019", "5020", "5021", "5022", "5023", "5024", "5025", "5027", "5028", "5029",
+        // 660: H (right turn), D, B (left turn gives way to D)
+        "5097", "5098", "5099", "5100", "5101", "5102", "5103", "5104",
       ],
     },
     {
@@ -659,7 +673,7 @@ const lessonSegnali: Lesson = {
   titleIt: "DARE PRECEDENZA · STOP NELL'INCROCIO",
   minutes: 5,
   signs: [40, 41],
-  figures: [633, 647, 655],
+  figures: [633, 647, 648, 654, 655],
   steps: [
     {
       kind: "intro",
@@ -667,7 +681,7 @@ const lessonSegnali: Lesson = {
       objective:
         "وقتی روی بعضی بازوها DARE PRECEDENZA یا STOP هست، ترتیب را درست بچینی: اول آن‌هایی که تابلو ندارند، بعد آن‌هایی که تابلو دارند؛ و درونِ هر گروه همان قاعده‌های درس ۲ و ۳.",
       why:
-        "معنیِ خودِ این تابلوها را در فصل «تابلوهای حق تقدم» دیدی. اینجا اثرشان را در تقاطع می‌بینی: تابلو قاعده‌ی راست را بین دو گروه کنار می‌گذارد.",
+        "۵۵ سؤال به این درس وصل‌اند. معنیِ خودِ این تابلوها را در فصل ۵ («تابلوهای حق تقدم») دیدی. اینجا اثرشان را در تقاطع می‌بینی: تابلو قاعده‌ی راست را بین دو گروه کنار می‌گذارد.",
       rule: "Codice della Strada, art. 145 c.2, c.4",
     },
     {
@@ -760,7 +774,7 @@ const lessonSegnali: Lesson = {
         { it: "dare la precedenza al veicolo S", fa: "به وسیله‌ی S حق تقدم بدهد" },
       ],
       translation: "طبق قواعد حق تقدم، در تقاطعِ نشان‌داده‌شده در شکل، وسیله‌ی A باید به وسیله‌ی S حق تقدم بدهد.",
-      why: "درست است. A و S هیچ‌کدام تابلو ندارند. A به چپ می‌پیچد و S روبه‌رویش مستقیم می‌آید؛ هنگامِ پیچیدن، S از راستِ A می‌آید.",
+      why: "درست است (قدم ۲). A و S هیچ‌کدام تابلو ندارند. A به چپ می‌پیچد و S روبه‌رویش مستقیم می‌آید؛ هنگامِ پیچیدن، S از راستِ A می‌آید.",
       rule: "Codice della Strada, art. 145 c.2; art. 154 c.3 lett. b",
       conceptStep: 2,
     },
@@ -777,7 +791,7 @@ const lessonSegnali: Lesson = {
       ],
       translation: "طبق قواعد حق تقدم، در تقاطعِ نشان‌داده‌شده در شکل، وسیله‌ی E باید منتظرِ عبورِ وسیله‌ی R بماند.",
       why:
-        "غلط است. E و R هر دو تابلوی DARE PRECEDENZA دارند و هر دو بعد از S و A می‌روند. بینِ خودشان، R به چپ می‌پیچد و E روبه‌رویش مستقیم می‌آید؛ پس R منتظرِ E می‌ماند، نه برعکس.",
+        "غلط است (قدم ۲). E و R هر دو تابلوی DARE PRECEDENZA دارند و هر دو بعد از S و A می‌روند. بینِ خودشان، R به چپ می‌پیچد و E روبه‌رویش مستقیم می‌آید؛ پس R منتظرِ E می‌ماند، نه برعکس.",
       rule: "Codice della Strada, art. 145 c.2, c.4",
       conceptStep: 2,
     },
@@ -792,7 +806,7 @@ const lessonSegnali: Lesson = {
         { it: "A, N, R", fa: "A، N، R" },
       ],
       translation: "در تقاطعِ شکل، ترتیبِ عبورِ وسیله‌ها این است: A، N، R.",
-      why: "غلط است. A تابلوی DARE PRECEDENZA دارد و باید به N که تابلو ندارد راه بدهد، حتی اگر N از چپش بیاید. ترتیب درست: N، A، R.",
+      why: "غلط است (قدم ۱). A تابلوی DARE PRECEDENZA دارد و باید به N که تابلو ندارد راه بدهد، حتی اگر N از چپش بیاید. ترتیب درست: N، A، R.",
       rule: "Codice della Strada, art. 145 c.4",
       conceptStep: 1,
     },
@@ -810,7 +824,7 @@ const lessonSegnali: Lesson = {
       ],
       translation: "طبق قواعد حق تقدم، در تقاطعِ نشان‌داده‌شده در شکل، وسیله‌ی O باید به همه‌ی وسیله‌های دیگر حق تقدم بدهد.",
       why:
-        "درست است. O تابلوی DARE PRECEDENZA دارد، پس به L و H در جاده‌ی بدون تابلو راه می‌دهد. B هم تابلو دارد، ولی از سمتِ راستِ O می‌آید؛ پس O به B هم راه می‌دهد.",
+        "درست است (قدم ۲). O تابلوی DARE PRECEDENZA دارد، پس به L و H در جاده‌ی بدون تابلو راه می‌دهد. B هم تابلو دارد، ولی از سمتِ راستِ O می‌آید؛ پس O به B هم راه می‌دهد.",
       rule: "Codice della Strada, art. 145 c.2, c.4",
       conceptStep: 2,
     },
@@ -824,6 +838,11 @@ const lessonSegnali: Lesson = {
         "4908", "4909", "4910", "4911", "4912", "4913", "4914", "4915", "4916", "4917", "4918",
         // 647: L + H together, B, O
         "4896", "4897", "4898", "4899", "4900", "4901", "4902", "4903", "4904", "4905", "4906", "4907",
+        // 654: C, R (no signs), A, H (DARE PRECEDENZA)
+        "4919", "4920", "4921", "4922", "4923", "4924", "4925", "4926", "4927", "4928", "4929", "4930",
+        // 648: tram T, G (no signs), P, B (DARE PRECEDENZA); 4952–4953 ("stops in the centre") are lesson 6
+        "4941", "4942", "4943", "4944", "4945", "4946", "4947", "4948", "4949", "4950", "4951",
+        "4954", "4955", "4956", "4957", "4958",
       ],
     },
   ],
@@ -835,11 +854,11 @@ export const INCROCI_CHAPTER: Chapter = {
   topicIds: [4],
   nameIt: "Precedenza negli incroci",
   titleFa: "حق تقدم و تقاطع‌ها",
-  summaryFa: "چه کسی اول از تقاطع رد می‌شود؟ چهار درس کوتاه: خواندنِ شکل، قاعده‌ی راست، پیچیدن، و اثرِ تابلوها.",
-  reviewedOn: "2026-10-08",
+  summaryFa: "چه کسی اول از تقاطع رد می‌شود؟ شش درس کوتاه: خواندنِ شکل، قاعده‌ی راست، پیچیدن، اثرِ تابلوها، تقاطع‌های کج و چندشاخه، و گره‌ای که همه منتظرِ هم‌اند.",
+  reviewedOn: "2026-11-14",
   sources: [
     {
-      label: "Codice della Strada (D.Lgs. 285/1992), artt. 145, 154, 177 — testo vigente, agg. 24/04/2026",
+      label: "Codice della Strada (D.Lgs. 285/1992), artt. 145, 154, 177 — testo vigente (Normattiva)",
       url: "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285",
     },
     {
@@ -847,9 +866,13 @@ export const INCROCI_CHAPTER: Chapter = {
       url: "https://www.normattiva.it/uri-res/N2Ls?urn:nir:presidente.repubblica:decreto:1992-12-16;495",
     },
     {
-      label: "Question bank: Ed0ardo/QuizPatenteB (2023), figure 601–667",
+      label: "ACI, Codice della Strada: art. 145 e art. 154 (pagine aggiornate il 14/11/2026)",
+      url: "https://aci.gov.it/codice-della-strada/art-145/",
+    },
+    {
+      label: "Question bank: Ed0ardo/QuizPatenteB (2023), figure 601–669",
       url: "https://github.com/Ed0ardo/QuizPatenteB",
     },
   ],
-  lessons: [lessonLeggere, lessonDestra, lessonSvolte, lessonSegnali],
+  lessons: [lessonLeggere, lessonDestra, lessonSvolte, lessonSegnali, lessonIrregolari, lessonStallo, reviewIncroci],
 };

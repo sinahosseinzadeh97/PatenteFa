@@ -82,6 +82,20 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | segnale raffigurato | تابلوی نشان‌داده‌شده | |
 | pannello integrativo | پنل تکمیلی | |
 
+## Junctions (chapter 14)
+
+`incrocio` / `intersezione` = تقاطع, `precedenza` = حق تقدم and `filobus` = اتوبوس برقی follow the rows above.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| tram, veicolo su rotaie | تراموا، وسیله‌ی ریلی | |
+| centro dell'incrocio | مرکزِ تقاطع | |
+| svoltare a sinistra / a destra | به چپ / به راست پیچیدن | |
+| impegnare l'incrocio | وارد تقاطع شدن | |
+| disimpegnare l'incrocio | از تقاطع بیرون رفتن | |
+| avere la destra libera / occupata | راستِ خالی / اشغال داشتن | |
+| stallo (everyone has someone on the right) | گره | |
+
 ## Lights and dashboard (chapter 18)
 
 | Italiano | فارسی | Never write |
@@ -140,6 +154,25 @@ chapters 13 and 18 adopt: `passo carrabile` = ورودیِ خودرو به مل�
 | freno di stazionamento, freno a mano | ترمزِ دستی | |
 | portiera, sportello | درِ خودرو | |
 | sottrazione / decurtazione dei punti | کم شدنِ امتیازِ گواهینامه | |
+
+## Motorways, load and towing (chapter 17)
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| segnale mobile triangolare di pericolo (triangolo) | مثلثِ خطر | |
+| giubbotto o bretelle ad alta visibilità | جلیقه‌ی شب‌نما · بندهای بازتابنده | |
+| ingombro della carreggiata | بسته شدنِ سواره‌رو | |
+| area di servizio | محوطه‌ی خدمات آزادراه | |
+| sporgenza del carico | بیرون‌زدگیِ بار | |
+| pannello (retroriflettente) | پنلِ (بازتابنده) | |
+| merci pericolose | کالای خطرناک | |
+| traino (di un veicolo in avaria) | یدک کشیدن | |
+| motrice | خودروی کشنده | |
+| gancio di traino | قلابِ یدک‌کش | |
+| freno a inerzia | ترمزِ اینرسی | |
+| caravan (roulotte) | کاروان | |
+| fuoristrada (Suv) | شاسی‌بلند | |
+| ciclomotorista | موتور گازی‌سوار | |
 
 ## Open conflicts (content not yet aligned)
 

@@ -44,6 +44,12 @@ test("every scenario is internally consistent with its drawing", () => {
     for (const id of crossing.phases.slice(1).flat()) {
       assert.ok(crossing.waits[id]?.includes(id), `${crossing.id}/${id}: explains why it waits`);
     }
+    if (crossing.centre) {
+      // Deadlock figures: only a left-turner moves to the centre, and it finishes last, alone.
+      const v = crossing.vehicles.find((x) => x.id === crossing.centre);
+      assert.ok(v && !v.leaving && v.move === "left", `${crossing.id}: the centre vehicle turns left`);
+      assert.deepEqual(crossing.phases.at(-1), [crossing.centre], `${crossing.id}: the centre vehicle finishes last`);
+    }
     for (const step of crossing.explain) {
       for (const arm of step.signs ?? []) {
         assert.ok(crossing.arms.find((a) => a.id === arm)?.sign, `${crossing.id}: highlighted arm ${arm} has a sign`);
@@ -72,10 +78,13 @@ test("each scenario's order is the bank's: VERO statements hold, FALSO ones brea
     const vero = crossing.evidence.filter((e) => e.answer === 1);
     const before = new Set(vero.flatMap((e) => (e.before ?? []).map(([a, b]) => `${a}>${b}`)));
     const ids = crossing.phases.flat();
-    for (const k of ids) for (const i of ids) for (const j of ids) {
-      if (before.has(`${i}>${k}`) && before.has(`${k}>${j}`)) before.add(`${i}>${j}`);
-    }
     const together = new Set(vero.flatMap((e) => (e.together ?? []).flatMap(([a, b]) => [`${a}=${b}`, `${b}=${a}`])));
+    // "D and N together" + "N before B" ⇒ "D before B" (figure 638): a simultaneous pair shares its order.
+    const same = (a: string, b: string) => a === b || together.has(`${a}=${b}`);
+    for (const k of ids) for (const i of ids) for (const j of ids) {
+      if (before.has(`${i}>${k}`) && (before.has(`${k}>${j}`) || same(k, j))) before.add(`${i}>${j}`);
+      if (same(i, k) && before.has(`${k}>${j}`)) before.add(`${i}>${j}`);
+    }
     const phase = phaseOf(crossing);
     for (const a of ids) {
       for (const b of ids) {
@@ -207,20 +216,20 @@ test("the intersections chapter is listed, opens directly, and points mistakes b
   const home = await call(7001, "GET", "/learn");
   const incroci = home.body.chapters.find((c: { id: string }) => c.id === INCROCI_CHAPTER.id);
   assert.deepEqual(incroci.numbers, [14]);
-  assert.equal(incroci.lessons.length, 4);
+  assert.equal(incroci.lessons.length, 7, "six lessons and the chapter review");
 
   const lesson = await call(7001, "GET", `/learn/lessons/${LESSON_2.id}`);
   assert.equal(lesson.status, 200);
   assert.equal(lesson.body.chapter.id, INCROCI_CHAPTER.id);
-  assert.deepEqual(lesson.body.position, { index: 2, total: 4, review: false });
+  assert.deepEqual(lesson.body.position, { index: 2, total: 6, review: false });
   assert.equal(lesson.body.lesson.practice.length, LESSON_2.practice.length);
   assert.ok(lesson.body.lesson.practice.every((q: { isFigure: boolean }) => q.isFigure));
   assert.equal(lesson.body.lesson.steps[orderStep(LESSON_2)].crossing.figure, 614);
 
   assert.equal(lessonLinkForSourceId("4910")?.lessonId, INCROCI_CHAPTER.lessons[3].id, "655 order statement → lesson 4");
-  assert.equal(lessonLinkForSourceId("4840"), null, "circular figure 638 stays unmapped");
+  assert.equal(lessonLinkForSourceId("4840")?.lessonId, "stallo-al-centro", "circular figure 638 → lesson 6 (since 2026-11-14)");
 
-  // Official order: the chapter before 14 in the course (11–12) hands over to it.
+  // Official order: the chapter before 14 in the course (13 once it exists, else 12) hands over to it.
   const before = CHAPTERS[CHAPTERS.indexOf(INCROCI_CHAPTER) - 1];
   const beforeLast = await call(7001, "GET", `/learn/lessons/${before.lessons.at(-1)!.id}`);
   assert.deepEqual(beforeLast.body.next, {
