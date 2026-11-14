@@ -66,7 +66,8 @@ test("chapter 11 is the bank's eleventh group, between chapter 10 and chapter 12
 test("lesson 1 is the existing `velocita-adeguata`, moved without changing its id", () => {
   assert.equal(LESSONS[0].id, "velocita-adeguata");
   assert.ok(!VELOCITA_CHAPTER.lessons.some((l) => l.id === "velocita-adeguata"), "taught in one chapter only");
-  assert.deepEqual(VELOCITA_CHAPTER.lessons.map((l) => l.id), ["spazio-di-reazione", "frenatura-e-arresto", "distanza-di-sicurezza"]);
+  // Chapter 12 kept these three ids and added lesson 4 + its review (tests/chapter12.test.ts).
+  assert.deepEqual(VELOCITA_CHAPTER.lessons.slice(0, 3).map((l) => l.id), ["spazio-di-reazione", "frenatura-e-arresto", "distanza-di-sicurezza"]);
 });
 
 test("every chapter 11 question maps to exactly one chapter 11 teaching section, and no other module maps one", () => {

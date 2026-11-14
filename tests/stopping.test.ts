@@ -248,13 +248,13 @@ test("mistakes route to the section that teaches them; out-of-scope questions st
   assert.deepEqual([link("4287")?.lessonId, link("4287")?.step], ["frenatura-e-arresto", 1]);
   assert.deepEqual([link("896")?.lessonId, link("896")?.step], ["frenatura-e-arresto", 2], "SALITA RIPIDA sign → braking factors");
   assert.deepEqual([link("4336")?.lessonId, link("4336")?.step], ["distanza-di-sicurezza", 1]);
-  assert.deepEqual([link("4216")?.lessonId, link("4216")?.step], ["distanza-di-sicurezza", 2], "20 m from snowplows");
+  assert.deepEqual([link("4216")?.lessonId, link("4216")?.step], ["distanza-casi-particolari", 1], "20 m from snowplows: chapter 12 lesson 4");
   // Numeric limits, junction liability, level crossings and long descents are chapter 11's other lessons now.
   assert.equal(link("4134")?.lessonId, "limiti-tipo-strada");
   assert.equal(link("4153")?.lessonId, "velocita-rischi-prevedibili");
   assert.equal(link("4159")?.lessonId, "passaggio-livello-emergenza");
   assert.equal(link("4166")?.lessonId, "discesa-folle-servofreno");
-  assert.equal(link("4332"), null, "4332 is out of scope");
+  assert.deepEqual([link("4332")?.lessonId, link("4332")?.step], ["distanza-casi-particolari", 2], "gap before overtaking: chapter 12 lesson 4");
   assert.deepEqual(VELOCITA_CHAPTER.topicIds, [11]);
   assert.deepEqual(LIMITI_CHAPTER.topicIds, [10]);
 });
@@ -313,11 +313,11 @@ test("the chapter is listed in official order, opens directly, and ships the mod
   assert.equal(listed.id, VELOCITA_CHAPTER.id);
   assert.deepEqual(listed.topicIds, [11]);
   assert.deepEqual(listed.numbers, [12]);
-  assert.equal(listed.lessons.length, 3);
+  assert.equal(listed.lessons.length, 5, "four lessons + the chapter review");
 
   const lesson = await call(8001, "GET", `/learn/lessons/${LESSONS[2].id}`);
   assert.equal(lesson.status, 200);
-  assert.deepEqual(lesson.body.position, { index: 3, total: 3, review: false });
+  assert.deepEqual(lesson.body.position, { index: 3, total: 4, review: false });
   assert.equal(lesson.body.lesson.practice.length, 5);
   assert.equal(lesson.body.stopping.table.length, SPEEDS_KMH.length * REACTION_TIMES_S.length * SURFACES.length);
   assert.equal(lesson.body.stopping.friction, DRY_FRICTION);

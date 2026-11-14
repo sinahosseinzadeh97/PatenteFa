@@ -1,7 +1,18 @@
 /**
  * src/content/lessons-velocita.ts
- * Official chapter 12 (distanza di sicurezza): reaction distance, braking and
- * stopping distance, following distance. Its first lesson, `velocita-adeguata`,
+ * Official chapter 12 (Distanza di sicurezza; bank group `distanza-di-sicurezza`,
+ * source ids 4207–4341, 135 questions). Four lessons + the review:
+ *
+ *  L1 `spazio-di-reazione`         reaction distance (km/h ÷ 3.6 per second), distraction
+ *  L2 `frenatura-e-arresto`        braking ∝ speed², grip and slope, total stopping distance
+ *  L3 `distanza-di-sicurezza`      what the gap is for, its minimum, what it depends on
+ *  L4 `distanza-casi-particolari`  (ch12-casi.ts) the only two numbers (20 m, 100 m), never shrink it
+ *  review `ripasso-capitolo-12`    (ch12-ripasso.ts)
+ *
+ * L1–L3 keep their ids and step order (saved progress points at steps). Coverage
+ * map, reuse notes and source flags: docs/chapter-12-coverage.md.
+ *
+ * Its former first lesson, `velocita-adeguata`,
  * is exported and taught as lesson 1 of chapter 11 (src/content/lessons-limiti.ts);
  * until 2026-11-14 this module covered chapters 11 and 12 together.
  * Same trust rules as src/content/lessons.ts — real bank statements by
@@ -19,6 +30,8 @@
  * The numeric speed limits (art. 142), level crossings, servo brakes on long
  * descents and liability at junctions are chapter 11's other lessons.
  */
+import { lessonDistanzaCasi } from "./ch12-casi.js";
+import { reviewDistanza } from "./ch12-ripasso.js";
 import type { Chapter, Lesson } from "./lessons.js";
 
 const SIGN = "Il segnale raffigurato";
@@ -362,7 +375,7 @@ const lessonReazione: Lesson = {
       objective:
         "بعد از این درس می‌دانی مسافتِ واکنش از کجا تا کجاست، چطور حسابش می‌کنی (km/h تقسیم بر ۳٫۶، ضربدر زمانِ واکنش) و چه چیزهایی بلندترش می‌کند.",
       why:
-        "بانک سؤال عددهای همین بخش را می‌پرسد («در یک ثانیه با ۵۰ km/h حدود ۱۴ متر») و یک اشتباهِ رایج را: اینکه رفلکسِ سریع، ترمز را کوتاه می‌کند.",
+        "۲۳ سؤال؛ بانک عددهای همین بخش را می‌پرسد («در یک ثانیه با ۵۰ km/h حدود ۱۴ متر») و یک اشتباهِ رایج را: اینکه رفلکسِ سریع، ترمز را کوتاه می‌کند.",
     },
     {
       kind: "stopping",
@@ -554,7 +567,7 @@ const lessonReazione: Lesson = {
       ],
       translation:
         "مسافتی که در زمانِ واکنش طی می‌شود، همان مسافتی است که از لحظه‌ی دیدنِ یک موقعیتِ خطرناک تا لحظه‌ی شروعِ ترمز طی می‌شود.",
-      why: "درست است. این تعریفِ دقیقِ مسافتِ واکنش است: از دیدنِ خطر تا اولین فشارِ ترمز. در این فاصله خودرو با همان سرعت جلو می‌رود.",
+      why: "درست است (قدم ۱). این تعریفِ دقیقِ مسافتِ واکنش است: از دیدنِ خطر تا اولین فشارِ ترمز. در این فاصله خودرو با همان سرعت جلو می‌رود.",
       rule: "Polizia di Stato, «Comportamenti da tenere quando si guida»: tempo di reazione",
       conceptStep: 1,
     },
@@ -568,7 +581,7 @@ const lessonReazione: Lesson = {
         { it: "se si viaggia a 130 km/h", fa: "اگر با ۱۳۰ کیلومتر بر ساعت برانی", focus: "condition", verb: "si viaggia ← viaggiare" },
       ],
       translation: "در یک ثانیه، اگر با ۱۳۰ کیلومتر بر ساعت برانی، حدود ۳۶ متر طی می‌شود.",
-      why: "درست است. ۱۳۰ تقسیم بر ۳٫۶ حدود ۳۶ است: هر ثانیه حدود ۳۶ متر. یعنی یک ثانیه حواس‌پرتی، ۳۶ متر بدون ترمز.",
+      why: "درست است (قدم ۱). ۱۳۰ تقسیم بر ۳٫۶ حدود ۳۶ است: هر ثانیه حدود ۳۶ متر. یعنی یک ثانیه حواس‌پرتی، ۳۶ متر بدون ترمز.",
       rule: KMH_TO_MS,
       conceptStep: 1,
     },
@@ -582,7 +595,7 @@ const lessonReazione: Lesson = {
         { it: "se si viaggia a 50 km/h", fa: "اگر با ۵۰ کیلومتر بر ساعت برانی", focus: "condition", verb: "si viaggia ← viaggiare" },
       ],
       translation: "در یک ثانیه، اگر با ۵۰ کیلومتر بر ساعت برانی، حدود ۴ متر طی می‌شود.",
-      why: "غلط است. ۵۰ تقسیم بر ۳٫۶ حدود ۱۴ است: با ۵۰ کیلومتر بر ساعت هر ثانیه حدود ۱۴ متر جلو می‌روی، نه ۴ متر.",
+      why: "غلط است (قدم ۱). ۵۰ تقسیم بر ۳٫۶ حدود ۱۴ است: با ۵۰ کیلومتر بر ساعت هر ثانیه حدود ۱۴ متر جلو می‌روی، نه ۴ متر.",
       rule: KMH_TO_MS,
       conceptStep: 1,
     },
@@ -597,7 +610,7 @@ const lessonReazione: Lesson = {
         { it: "con la velocità", fa: "با سرعت" },
       ],
       translation: "مسافتی که در طولِ زمانِ واکنش طی می‌شود، با سرعت تغییر نمی‌کند.",
-      why: "غلط است. در زمانِ واکنش با همان سرعت جلو می‌روی؛ پس سرعتِ دو برابر یعنی مسافتِ واکنشِ دو برابر، همان پیش‌بینیِ این درس.",
+      why: "غلط است (قدم ۱). در زمانِ واکنش با همان سرعت جلو می‌روی؛ پس سرعتِ دو برابر یعنی مسافتِ واکنشِ دو برابر، همان پیش‌بینیِ این درس.",
       rule: `${KMH_TO_MS}; spazio = v · t`,
       conceptStep: 1,
     },
@@ -611,7 +624,7 @@ const lessonReazione: Lesson = {
         { it: "dalla accensione di una sigaretta", fa: "با روشن کردنِ سیگار" },
       ],
       translation: "حواس‌پرتیِ راننده می‌تواند با روشن کردنِ سیگار ایجاد شود.",
-      why: "درست است. هر کاری که دست، چشم یا ذهن را از رانندگی بگیرد حواس‌پرتی است و زمانِ واکنش را بلند می‌کند.",
+      why: "درست است (قدم ۲). هر کاری که دست، چشم یا ذهن را از رانندگی بگیرد حواس‌پرتی است و زمانِ واکنش را بلند می‌کند.",
       rule: PROGRAMMA,
       conceptStep: 2,
     },
@@ -637,7 +650,7 @@ const lessonFrenatura: Lesson = {
       objective:
         "بعد از این درس، مسافتِ ترمز و کل مسافتِ توقف را از هم جدا می‌کنی، می‌دانی چرا با دو برابر شدنِ سرعت ترمز چهار برابر می‌شود، و چه چیزهایی ترمز را بلندتر یا کوتاه‌تر می‌کنند.",
       why:
-        "حدود ۴۰ جمله‌ی بانک همین را می‌پرسند، با تله‌هایی مثلِ «دو برابر» به‌جای «چهار برابر» یا «سربالایی» به‌جای «سرازیری».",
+        "۳۹ سؤال، با تله‌هایی مثلِ «دو برابر» به‌جای «چهار برابر» یا «سربالایی» به‌جای «سرازیری».",
     },
     {
       kind: "stopping",
@@ -834,7 +847,7 @@ const lessonFrenatura: Lesson = {
         { it: "più quello percorso durante la frenata", fa: "به‌علاوه‌ی مسافتِ طی‌شده حینِ ترمز" },
       ],
       translation: "کل مسافتِ توقف برابر است با مسافتِ طی‌شده در زمانِ واکنش، به‌علاوه‌ی مسافتِ طی‌شده حینِ ترمز.",
-      why: "درست است. همان دو بخشی که در کاوشگر دیدی: قبل از ترمز (خط‌چین) و حینِ ترمز (هاشور). جمعشان کل مسافتِ توقف است.",
+      why: "درست است (قدم ۱). همان دو بخشی که در کاوشگر دیدی: قبل از ترمز (خط‌چین) و حینِ ترمز (هاشور). جمعشان کل مسافتِ توقف است.",
       rule: "Comune di Genova, «Determinazione dello spazio di arresto»",
       conceptStep: 1,
     },
@@ -848,7 +861,7 @@ const lessonFrenatura: Lesson = {
         { it: "durante la frenata", fa: "حینِ ترمز" },
       ],
       translation: "کل مسافتِ توقف برابر است با مسافتِ طی‌شده حینِ ترمز.",
-      why: "غلط است. بخشِ قبل از ترمز جا افتاده: در زمانِ واکنش هم خودرو با همان سرعت جلو می‌رود. کل مسافت = واکنش + ترمز.",
+      why: "غلط است (قدم ۱). بخشِ قبل از ترمز جا افتاده: در زمانِ واکنش هم خودرو با همان سرعت جلو می‌رود. کل مسافت = واکنش + ترمز.",
       rule: "Comune di Genova, «Determinazione dello spazio di arresto»",
       conceptStep: 1,
     },
@@ -862,7 +875,7 @@ const lessonFrenatura: Lesson = {
         { it: "se la velocità si triplica", fa: "اگر سرعت سه برابر شود", focus: "condition", verb: "si triplica ← triplicare" },
       ],
       translation: "اگر سرعت سه برابر شود، مسافتِ ترمز نُه برابر می‌شود.",
-      why: "درست است. ۳ × ۳ = ۹: مسافتِ ترمز با توانِ دومِ سرعت رشد می‌کند.",
+      why: "درست است (قدم ۱). ۳ × ۳ = ۹: مسافتِ ترمز با توانِ دومِ سرعت رشد می‌کند.",
       rule: "spazio di frenatura = v² / (2·μ·g)",
       conceptStep: 1,
     },
@@ -879,7 +892,7 @@ const lessonFrenatura: Lesson = {
       ],
       translation: "تابلوی نشان‌داده‌شده از قسمتی از جاده خبر می‌دهد که در آن مسافتِ ترمزِ خودرو بیشتر می‌شود.",
       why:
-        "غلط است. این تابلوی SALITA RIPIDA (سربالاییِ تند) است. در سربالایی وزنِ خودرو هم به کم شدنِ سرعت کمک می‌کند؛ مسافتِ ترمز کمی کوتاه‌تر می‌شود، نه بلندتر.",
+        "غلط است (قدم ۲). این تابلوی SALITA RIPIDA (سربالاییِ تند) است. در سربالایی وزنِ خودرو هم به کم شدنِ سرعت کمک می‌کند؛ مسافتِ ترمز کمی کوتاه‌تر می‌شود، نه بلندتر.",
       rule: "Banca dati ministeriale 4291–4292, 4296–4297",
       conceptStep: 2,
     },
@@ -895,7 +908,7 @@ const lessonFrenatura: Lesson = {
         { it: "lo spazio di frenatura del veicolo", fa: "مسافتِ ترمزِ خودرو" },
       ],
       translation: "تابلوی نشان‌داده‌شده از قسمتی از جاده خبر می‌دهد که روی آن مسافتِ ترمزِ خودرو بیشتر می‌شود.",
-      why: "درست است. این تابلوی DISCESA PERICOLOSA (سرازیریِ خطرناک) است. در سرازیری وزنِ خودرو آن را به جلو می‌کشد و ترمز طولانی‌تر می‌شود.",
+      why: "درست است (قدم ۲). این تابلوی DISCESA PERICOLOSA (سرازیریِ خطرناک) است. در سرازیری وزنِ خودرو آن را به جلو می‌کشد و ترمز طولانی‌تر می‌شود.",
       rule: "Banca dati ministeriale 4291",
       conceptStep: 2,
     },
@@ -932,7 +945,7 @@ const lessonDistanza: Lesson = {
       objective:
         "بعد از این درس می‌دانی فاصله‌ی ایمنی دقیقاً چیست، چرا با کل مسافتِ توقف یکی نیست، کمترین مقدارش چقدر است و کِی باید بیشترش کنی.",
       why:
-        "بیش از ۱۵۰ جمله‌ی بانک درباره‌ی فاصله‌ی ایمنی است. بیشترشان یا عددِ «distanza minima» را می‌پرسند، یا اینکه این فاصله به چه چیزهایی بستگی دارد و به چه چیزهایی نه.",
+        "۸۱ سؤال؛ بزرگ‌ترین درسِ این فصل. بیشترشان یا عددِ «distanza minima» را می‌پرسند، یا اینکه این فاصله به چه چیزهایی بستگی دارد و به چه چیزهایی نه. دو عددِ ثابتِ قانون (۲۰ و ۱۰۰ متر) را در درسِ ۴ می‌بینی.",
       rule: `${CDS_149} c.1`,
     },
     {
@@ -961,14 +974,14 @@ const lessonDistanza: Lesson = {
         },
       ],
       takeaway:
-        "فاصله‌ی ایمنی همان کل مسافتِ توقف نیست. کمترینش مسافتِ واکنشِ توست، و هیچ‌وقت کمتر از آن، حتی پشتِ کامیون. اگر خودروی جلو ناگهان بایستد، مثلاً تصادف کند، به کل مسافتِ توقفت نیاز داری. قانون عددی نمی‌دهد؛ می‌گوید فاصله باید «در هر حال» توقفِ به‌موقع را تضمین کند.",
+        "فاصله‌ی ایمنی همان کل مسافتِ توقف نیست. کمترینش مسافتِ واکنشِ توست، و هیچ‌وقت کمتر از آن، حتی پشتِ کامیون. اگر خودروی جلو ناگهان بایستد، مثلاً تصادف کند، به کل مسافتِ توقفت نیاز داری. قانون عددی نمی‌دهد؛ می‌گوید فاصله باید «در هر حال» توقفِ به‌موقع را تضمین کند. عددهای بانک برای کمترین فاصله همان مترهای یک ثانیه‌اند: ۳۰ → حدود ۹ (دقیقش ۸٫۳)، ۵۰ → ۱۴، ۱۰۰ → ۲۸، ۱۳۰ → ۳۶، ۱۵۰ → ۴۲ متر.",
       rule: `${CDS_149} c.1; Banca dati ministeriale 4258–4262, 4335, 4341`,
     },
     {
       kind: "factors",
       title: "فاصله را با چه چیزی بیشتر کنی؟",
       body:
-        "فاصله‌ی ایمنی عددِ ثابتی نیست و در هر سرعتی لازم است. قانون فقط دو مورد عددی دارد: بیرون از آبادی، وقتی سبقت فقط برای گروهی از خودروها ممنوع شده، بین همان خودروها دست‌کم ۱۰۰ متر (به‌جز جاده‌هایی که در هر جهت دو خط یا بیشتر دارند)؛ و پشتِ ماشینِ برف‌روب یا نمک‌پاشِ در حالِ کار، دست‌کم ۲۰ متر. بقیه به شرایط بستگی دارد:",
+        "فاصله‌ی ایمنی عددِ ثابتی نیست و در هر سرعتی لازم است. قانون فقط دو جا عدد می‌گذارد (۲۰ متر پشتِ برف‌روب و نمک‌پاش، ۱۰۰ متر بینِ وسیله‌هایی که سبقتشان ممنوع شده؛ درسِ ۴). بقیه به شرایط بستگی دارد، یعنی به خودرو، جاده و حالِ تو، نه به خودروهای پشتِ سر:",
       columns: [
         {
           title: "بستگی دارد (VERO)",
@@ -1136,7 +1149,7 @@ const lessonDistanza: Lesson = {
         { it: "deve essere di circa 14 metri", fa: "باید حدود ۱۴ متر باشد", verb: "deve ← dovere" },
       ],
       translation: "اگر با ۵۰ کیلومتر بر ساعت برانی، کمترین فاصله‌ی ایمنی باید حدود ۱۴ متر باشد.",
-      why: "درست است. کمترین فاصله مسافتی است که در زمانِ واکنش (حدود ۱ ثانیه) می‌روی: ۵۰ تقسیم بر ۳٫۶، یعنی حدود ۱۴ متر.",
+      why: "درست است (قدم ۱). کمترین فاصله مسافتی است که در زمانِ واکنش (حدود ۱ ثانیه) می‌روی: ۵۰ تقسیم بر ۳٫۶، یعنی حدود ۱۴ متر.",
       rule: `${KMH_TO_MS}; Banca dati ministeriale 4335`,
       conceptStep: 1,
     },
@@ -1150,7 +1163,7 @@ const lessonDistanza: Lesson = {
         { it: "allo spazio percorso nel tempo di reazione", fa: "از مسافتی که در زمانِ واکنش طی می‌شود" },
       ],
       translation: "فاصله‌ی ایمنی می‌تواند از مسافتی که در زمانِ واکنش طی می‌شود کمتر باشد.",
-      why: "غلط است. اگر کمتر باشد، پیش از آنکه حتی ترمز را فشار دهی به خودروی جلو می‌رسی. مسافتِ واکنش کفِ فاصله است.",
+      why: "غلط است (قدم ۱). اگر کمتر باشد، پیش از آنکه حتی ترمز را فشار دهی به خودروی جلو می‌رسی. مسافتِ واکنش کفِ فاصله است.",
       rule: `${CDS_149} c.1`,
       conceptStep: 1,
     },
@@ -1164,7 +1177,7 @@ const lessonDistanza: Lesson = {
       ],
       translation: "فاصله‌ی ایمنی فاصله‌ای ثابت است.",
       why:
-        "غلط است. با سرعت، چسبندگیِ جاده، لاستیک، بار، ترمز و حالِ راننده عوض می‌شود. فقط دو مورد عدد دارند: ۱۰۰ متر بینِ خودروهایی که سبقتشان ممنوع شده، و ۲۰ متر پشتِ ماشینِ برف‌روب.",
+        "غلط است (قدم ۲). با سرعت، چسبندگیِ جاده، لاستیک، بار، ترمز و حالِ راننده عوض می‌شود. فقط دو مورد عدد دارند: ۱۰۰ متر بینِ خودروهایی که سبقتشان ممنوع شده، و ۲۰ متر پشتِ ماشینِ برف‌روب.",
       rule: `${CDS_149} c.1–3`,
       conceptStep: 2,
     },
@@ -1183,7 +1196,7 @@ const lessonDistanza: Lesson = {
       ],
       translation: "وقتی این تابلو هست، لازم است سرعت را کم کنی و در نظر داشته باشی که در صورتِ یخ‌زدگی، فاصله‌ی ایمنی بیشتر می‌شود.",
       why:
-        "درست است. این تابلوی STRADA SDRUCCIOLEVOLE (جاده‌ی لغزنده) است. روی یخ چسبندگی خیلی کم است، پس هم ترمز طولانی‌تر می‌شود و هم فاصله‌ای که باید نگه داری.",
+        "درست است (قدم ۲). این تابلوی STRADA SDRUCCIOLEVOLE (جاده‌ی لغزنده) است. روی یخ چسبندگی خیلی کم است، پس هم ترمز طولانی‌تر می‌شود و هم فاصله‌ای که باید نگه داری.",
       rule: `${CDS_149} c.1; Banca dati ministeriale 6402`,
       conceptStep: 2,
     },
@@ -1201,7 +1214,7 @@ const lessonDistanza: Lesson = {
       ],
       translation: "وقتی در آزادراه رانندگی می‌کنی، می‌توانی فاصله‌ی ایمنی را کم کنی، چون انتظار نمی‌رود خودروی جلو ناگهان ترمز کند.",
       why:
-        "غلط است. در آزادراه سرعت بالاست، پس هم مسافتِ واکنش و هم مسافتِ ترمز بلندترند، و خودروی جلو هر لحظه ممکن است ناگهان ترمز کند یا بایستد. فاصله باید بیشتر باشد، نه کمتر.",
+        "غلط است (قدم ۱). در آزادراه سرعت بالاست، پس هم مسافتِ واکنش و هم مسافتِ ترمز بلندترند، و خودروی جلو هر لحظه ممکن است ناگهان ترمز کند یا بایستد. فاصله باید بیشتر باشد، نه کمتر.",
       rule: `${CDS_149} c.1`,
       conceptStep: 1,
     },
@@ -1212,18 +1225,20 @@ const lessonDistanza: Lesson = {
       sourceIds: [
         // what the gap is for, and its minimum (reaction distance)
         "4207", "4227", "4232", "4233", "4237", "4246", "4251", ...range(4253, 4267),
-        "4334", "4335", "4336", "4340", "4341", "6451",
+        "4334", "4335", "4336", "4340", "6451",
       ],
     },
     {
       step: 2,
       sourceIds: [
-        // what it depends on, and the only two fixed numbers (art. 149 c.2–3)
-        ...range(4208, 4226), "4228", "4229", "4230", "4231", "4234", "4235", "4236",
-        "4238", "4239", "4240", "4243", "4244", "4245", "4247", "4248", "4249",
-        ...range(4314, 4331), "4337", "4338",
+        // what it depends on and what not (art. 149 c.1); the fixed numbers
+        // (4216, 4217, 4221, 4228–4231, 4247, 4248, 4338) are lesson 4's
+        ...range(4208, 4215), ...range(4218, 4220), ...range(4222, 4226), "4234", "4235", "4236",
+        "4238", "4239", "4240", "4241", "4242", "4243", "4244", "4245", "4249",
+        ...range(4314, 4331), "4337",
         // #363 (distance in a queue) is a Chapter 1 question: mapped in lessons-definizioni.ts.
-        "4454", "5693", "5694", "5703", "6375", "6394", "6402", "6463",
+        // Unstable loads ahead (#5693, 5694, 5703) moved to lesson 4 on 2026-11-14.
+        "4454", "6375", "6394", "6402", "6463",
         // STRADA SDRUCCIOLEVOLE (24): practised above; #890, 968, 972 are mapped in chapter 2. Rain panel (139)
         "963", "3871",
       ],
@@ -1235,15 +1250,23 @@ export const VELOCITA_CHAPTER: Chapter = {
   id: "velocita-distanza-arresto",
   numbers: [12],
   topicIds: [11],
-  nameIt: "Distanza di sicurezza e arresto",
+  nameIt: "Distanza di sicurezza",
   titleFa: "فاصله‌ی ایمنی و توقف",
   summaryFa:
-    "چقدر طول می‌کشد تا بایستی؟ سه درس کوتاه: مسافتِ واکنش، ترمز و کل مسافتِ توقف، و فاصله تا خودروی جلو. سرعتِ مناسب را در فصلِ ۱۱ دیدی.",
-  reviewedOn: "2026-10-10",
+    "چقدر طول می‌کشد تا بایستی، و چقدر باید از خودروی جلو فاصله بگیری؟ چهار درسِ کوتاه: مسافتِ واکنش، ترمز و کل مسافتِ توقف، فاصله‌ی ایمنی و این‌که به چه بستگی دارد، و دو عددِ ثابتِ قانون. یک مرور در پایان.",
+  reviewedOn: "2026-11-14",
   sources: [
     {
       label: "Codice della Strada (D.Lgs. 285/1992), artt. 141, 149 — testo vigente, agg. 24/04/2026",
       url: "https://www.normattiva.it/uri-res/N2Ls?urn:nir:stato:decreto.legislativo:1992-04-30;285",
+    },
+    {
+      label: "Legge in Chiaro: CdS art. 149 c.1–3 (distanza di sicurezza; 100 m, 20 m; agg. 29/10/2026), letto il 14/11/2026",
+      url: "https://leggeinchiaro.it/articolo-149-codice-della-strada/",
+    },
+    {
+      label: "Legge in Chiaro: CdS art. 176 c.1 lett. c (corsia di emergenza; agg. 27/10/2026), letto il 14/11/2026",
+      url: "https://leggeinchiaro.it/articolo-176-codice-della-strada/",
     },
     {
       label: "ACI, Codice della Strada art. 149 (pagina aggiornata il 9/10/2026)",
@@ -1266,9 +1289,9 @@ export const VELOCITA_CHAPTER: Chapter = {
       url: "https://cdn.who.int/media/docs/default-source/infographics-pdf/road-safety/speed-management-infographic-en.pdf",
     },
     {
-      label: "Question bank: Ed0ardo/QuizPatenteB (2023)",
+      label: "Question bank: Ed0ardo/QuizPatenteB (2023), group «distanza-di-sicurezza»",
       url: "https://github.com/Ed0ardo/QuizPatenteB",
     },
   ],
-  lessons: [lessonReazione, lessonFrenatura, lessonDistanza],
+  lessons: [lessonReazione, lessonFrenatura, lessonDistanza, lessonDistanzaCasi, reviewDistanza],
 };
