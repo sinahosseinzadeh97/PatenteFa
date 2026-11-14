@@ -15,7 +15,8 @@ import {
   type PredictionClaim,
 } from "../src/content/lessons.js";
 import { INCROCI_CHAPTER } from "../src/content/lessons-incroci.js";
-import { VELOCITA_CHAPTER } from "../src/content/lessons-velocita.js";
+import { VELOCITA_CHAPTER, lessonAdeguata } from "../src/content/lessons-velocita.js";
+import { LIMITI_CHAPTER } from "../src/content/lessons-limiti.js";
 import { INTEGRATIVI_CHAPTER } from "../src/content/lessons-integrativi.js";
 import { buildTodayPath, summarizeLessons } from "../src/lib/learning.js";
 import {
@@ -165,9 +166,12 @@ test("the explorer table covers every offered setting once, rounded to centimetr
 
 type StoppingStep = Extract<LessonStep, { kind: "stopping" }>;
 type FactorsStep = Extract<LessonStep, { kind: "factors" }>;
+/** Chapter 12 (the Velocità module since chapter 11 took its first lesson). */
 const LESSONS = VELOCITA_CHAPTER.lessons;
+/** Every lesson with the stopping explorer: chapter 11's lesson 1 and chapter 12. */
+const EXPLORER_LESSONS = [lessonAdeguata, ...LESSONS];
 const stepsOf = <K extends LessonStep["kind"]>(kind: K) =>
-  LESSONS.flatMap((lesson) => lesson.steps.filter((s): s is Extract<LessonStep, { kind: K }> => s.kind === kind).map((step) => ({ lesson, step })));
+  EXPLORER_LESSONS.flatMap((lesson) => lesson.steps.filter((s): s is Extract<LessonStep, { kind: K }> => s.kind === kind).map((step) => ({ lesson, step })));
 
 function part(e: StoppingEstimate, which: DistancePart): number | null {
   if (which === "reaction") return e.reactionM;
@@ -220,11 +224,11 @@ test("every setting the explorer starts from or compares is one the model table 
 });
 
 test("factor lists are the bank's own answers: VERO beside VERO, FALSO beside FALSO", () => {
-  const practice = new Set(LESSONS.flatMap((l) => l.practice.map((q) => q.sourceId)));
-  const traps = new Set(LESSONS.flatMap((l) => l.steps.flatMap((s) => (s.kind === "trap" ? s.examples.map((e) => e.sourceId) : []))));
+  const practice = new Set(EXPLORER_LESSONS.flatMap((l) => l.practice.map((q) => q.sourceId)));
+  const traps = new Set(EXPLORER_LESSONS.flatMap((l) => l.steps.flatMap((s) => (s.kind === "trap" ? s.examples.map((e) => e.sourceId) : []))));
   const factors = stepsOf("factors");
   assert.equal(factors.length, 4);
-  for (const { lesson, step } of factors as { lesson: (typeof LESSONS)[number]; step: FactorsStep }[]) {
+  for (const { lesson, step } of factors as { lesson: (typeof EXPLORER_LESSONS)[number]; step: FactorsStep }[]) {
     step.columns.forEach((column, i) => {
       assert.ok(column.items.length >= 4, `${lesson.id}: column ${i} has enough items`);
       for (const item of column.items) {
@@ -245,8 +249,14 @@ test("mistakes route to the section that teaches them; out-of-scope questions st
   assert.deepEqual([link("896")?.lessonId, link("896")?.step], ["frenatura-e-arresto", 2], "SALITA RIPIDA sign → braking factors");
   assert.deepEqual([link("4336")?.lessonId, link("4336")?.step], ["distanza-di-sicurezza", 1]);
   assert.deepEqual([link("4216")?.lessonId, link("4216")?.step], ["distanza-di-sicurezza", 2], "20 m from snowplows");
-  for (const id of ["4134", "4153", "4159", "4166", "4332"]) assert.equal(link(id), null, `${id} is out of scope`);
-  assert.deepEqual(VELOCITA_CHAPTER.topicIds, [10, 11]);
+  // Numeric limits, junction liability, level crossings and long descents are chapter 11's other lessons now.
+  assert.equal(link("4134")?.lessonId, "limiti-tipo-strada");
+  assert.equal(link("4153")?.lessonId, "velocita-rischi-prevedibili");
+  assert.equal(link("4159")?.lessonId, "passaggio-livello-emergenza");
+  assert.equal(link("4166")?.lessonId, "discesa-folle-servofreno");
+  assert.equal(link("4332"), null, "4332 is out of scope");
+  assert.deepEqual(VELOCITA_CHAPTER.topicIds, [11]);
+  assert.deepEqual(LIMITI_CHAPTER.topicIds, [10]);
 });
 
 test("after the first two chapters, today's path recommends this chapter, never a completed lesson", () => {
@@ -301,12 +311,13 @@ test("the chapter is listed in official order, opens directly, and ships the mod
   assert.equal(home.body.chapters.length, CHAPTERS.length);
   const listed = home.body.chapters[CHAPTERS.indexOf(VELOCITA_CHAPTER)];
   assert.equal(listed.id, VELOCITA_CHAPTER.id);
-  assert.deepEqual(listed.topicIds, [10, 11]);
-  assert.equal(listed.lessons.length, 4);
+  assert.deepEqual(listed.topicIds, [11]);
+  assert.deepEqual(listed.numbers, [12]);
+  assert.equal(listed.lessons.length, 3);
 
   const lesson = await call(8001, "GET", `/learn/lessons/${LESSONS[2].id}`);
   assert.equal(lesson.status, 200);
-  assert.deepEqual(lesson.body.position, { index: 3, total: 4, review: false });
+  assert.deepEqual(lesson.body.position, { index: 3, total: 3, review: false });
   assert.equal(lesson.body.lesson.practice.length, 5);
   assert.equal(lesson.body.stopping.table.length, SPEEDS_KMH.length * REACTION_TIMES_S.length * SURFACES.length);
   assert.equal(lesson.body.stopping.friction, DRY_FRICTION);
@@ -319,31 +330,31 @@ test("the chapter is listed in official order, opens directly, and ships the mod
 
 test("'next lesson' skips lessons the learner already completed", async () => {
   const { call, raw } = setup();
-  raw.prepare(`INSERT INTO lesson_progress (user_id, lesson_id, step, completed_at) VALUES (1, ?, 10, datetime('now'))`).run(LESSONS[0].id);
-  // Course order: chapter 10 (pannelli integrativi) is followed by chapters 11–12.
+  raw.prepare(`INSERT INTO lesson_progress (user_id, lesson_id, step, completed_at) VALUES (1, ?, 10, datetime('now'))`).run(LIMITI_CHAPTER.lessons[0].id);
+  // Course order: chapter 10 (pannelli integrativi) is followed by chapter 11, whose lesson 1 has the explorer.
   const lastIncroci = INTEGRATIVI_CHAPTER.lessons.at(-1) as (typeof INTEGRATIVI_CHAPTER.lessons)[number];
   const opened = await call(8001, "GET", `/learn/lessons/${lastIncroci.id}`);
   assert.deepEqual(opened.body.next, {
-    lessonId: LESSONS[1].id,
-    titleFa: LESSONS[1].titleFa,
-    chapterTitleFa: VELOCITA_CHAPTER.titleFa,
-    chapterNumbers: VELOCITA_CHAPTER.numbers,
+    lessonId: LIMITI_CHAPTER.lessons[1].id,
+    titleFa: LIMITI_CHAPTER.lessons[1].titleFa,
+    chapterTitleFa: LIMITI_CHAPTER.titleFa,
+    chapterNumbers: [11],
   });
 
   // Finishing it the real way gives the same answer.
   for (const q of opened.body.lesson.practice) await call(8001, "POST", `/learn/lessons/${lastIncroci.id}/answer`, { questionId: q.questionId, answer: q.correctAnswer });
   const finished = await call(8001, "POST", `/learn/lessons/${lastIncroci.id}/complete`);
   assert.equal(finished.status, 200);
-  assert.equal(finished.body.next.lessonId, LESSONS[1].id);
+  assert.equal(finished.body.next.lessonId, LIMITI_CHAPTER.lessons[1].id);
 
   // Another learner, with nothing completed, is pointed at lesson 1.
   const other = await call(8002, "GET", `/learn/lessons/${lastIncroci.id}`);
-  assert.equal(other.body.next.lessonId, LESSONS[0].id);
+  assert.equal(other.body.next.lessonId, LIMITI_CHAPTER.lessons[0].id);
 });
 
 test("practice in this chapter is stored per learner and a wrong answer is queued for review once", async () => {
   const { call, raw } = setup();
-  const lesson = LESSONS[3];
+  const lesson = LESSONS[2];
   const opened = await call(8001, "GET", `/learn/lessons/${lesson.id}`);
   const q = opened.body.lesson.practice[0];
   const wrong = 1 - q.correctAnswer;
@@ -366,7 +377,7 @@ function loadExplorer(reduce = false) {
     if (!elements.has(id)) elements.set(id, { id, innerHTML: "", textContent: "", hidden: false, disabled: false, focus() {}, scrollIntoView() {}, querySelector: () => null });
     return elements.get(id)!;
   };
-  const steps = LESSONS.flatMap((l) => l.steps);
+  const steps = EXPLORER_LESSONS.flatMap((l) => l.steps);
   const sandbox: Record<string, any> = {
     window: { matchMedia: () => ({ matches: reduce }) },
     document: { getElementById: element, querySelector: () => null, querySelectorAll: () => [] },
