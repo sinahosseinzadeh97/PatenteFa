@@ -82,6 +82,20 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | segnale raffigurato | تابلوی نشان‌داده‌شده | |
 | pannello integrativo | پنل تکمیلی | |
 
+## Junctions (chapter 14)
+
+`incrocio` / `intersezione` = تقاطع, `precedenza` = حق تقدم and `filobus` = اتوبوس برقی follow the rows above.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| tram, veicolo su rotaie | تراموا، وسیله‌ی ریلی | |
+| centro dell'incrocio | مرکزِ تقاطع | |
+| svoltare a sinistra / a destra | به چپ / به راست پیچیدن | |
+| impegnare l'incrocio | وارد تقاطع شدن | |
+| disimpegnare l'incrocio | از تقاطع بیرون رفتن | |
+| avere la destra libera / occupata | راستِ خالی / اشغال داشتن | |
+| stallo (everyone has someone on the right) | گره | |
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

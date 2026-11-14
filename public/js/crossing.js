@@ -155,7 +155,8 @@
 
   function crossingSvg(crossing) {
     var labels = crossing.vehicles.map(function(v) {
-      return v.id + ': ' + KIND_FA[v.kind] + '، از ' + sideOf(arm(crossing, v.from).angle) + '، ' + (v.leaving ? 'در حال خروج' : MOVE_FA[v.move]);
+      return v.id + ': ' + KIND_FA[v.kind] + '، از ' + sideOf(arm(crossing, v.from).angle) + '، ' + (v.leaving ? 'در حال خروج' : MOVE_FA[v.move]) +
+        (v.id === crossing.centre ? '، اول تا مرکز جلو می‌رود و منتظر می‌ماند' : '');
     }).join('؛ ');
     var paths = crossing.vehicles.filter(function(v) { return !v.leaving; }).map(function(v) {
       return '<path class="xg-path" data-path="' + esc(v.id) + '" d="' + geometry(crossing, v).d + '" marker-end="url(#xg-arrow)"/>';
@@ -174,7 +175,8 @@
     var rows = crossing.vehicles.map(function(v) {
       var from = arm(crossing, v.from);
       return '<li><span class="xing-letter" dir="ltr">' + esc(v.id) + '</span><span>' + esc(KIND_FA[v.kind]) + '، از ' + esc(sideOf(from.angle)) +
-        '، ' + esc(v.leaving ? 'از تقاطع بیرون می‌رود (در ترتیب نیست)' : MOVE_FA[v.move]) + '</span></li>';
+        '، ' + esc(v.leaving ? 'از تقاطع بیرون می‌رود (در ترتیب نیست)' : MOVE_FA[v.move]) +
+        (v.id === crossing.centre ? esc('؛ اول تا مرکزِ تقاطع جلو می‌رود، می‌ایستد و آخر بیرون می‌رود') : '') + '</span></li>';
     });
     crossing.arms.forEach(function(a) {
       if (!a.sign) return;
@@ -454,6 +456,21 @@
     el.setAttribute('transform', 'translate(' + p.x.toFixed(1) + ' ' + p.y.toFixed(1) + ')');
   }
 
+  /**
+   * Where on its path a deadlock left-turner waits: the point nearest the
+   * junction centre, which in these drawings is midway between the cross lane
+   * it has already entered and the oncoming lane it must give way to.
+   */
+  function holdT(pathEl) {
+    var len = pathEl.getTotalLength(), best = 0, bestD = Infinity;
+    for (var i = 0; i <= 100; i++) {
+      var p = pathEl.getPointAtLength(len * i / 100);
+      var d = p.x * p.x + p.y * p.y;
+      if (d < bestD) { bestD = d; best = i / 100; }
+    }
+    return best;
+  }
+
   function placeLeaving(crossing, el, v) {
     var to = arm(crossing, v.to);
     var p = toWorld(to, junction(crossing) + 70, laneY(v, false));
@@ -521,14 +538,16 @@
     setScene(function(v, el, path) {
       if (v.leaving) { cls(el, 'is-dim', true); return; }
       var p = phaseOfVehicle[v.id];
+      // A deadlock left-turner (crossing.centre) is already waiting at the centre when the explanation starts.
+      var from = v.id === crossing.centre ? holdT(path) : 0;
       cls(el, 'is-done', p < i);
       cls(el, 'is-active', p === i);
-      cls(el, 'is-dim', p > i);
+      cls(el, 'is-dim', p > i && !from);
       cls(path, 'is-active', p === i);
       if (p < i) place(el, path, 1);
-      else if (p > i) place(el, path, 0);
-      else if (animate && !reduceMotion.matches) moving.push({ el: el, path: path });
-      else place(el, path, 0.5);
+      else if (p > i) place(el, path, from);
+      else if (animate && !reduceMotion.matches) moving.push({ el: el, path: path, from: from });
+      else place(el, path, from + (1 - from) / 2);
     });
     if (!moving.length) return;
     var started = null;
@@ -538,7 +557,7 @@
       if (started === null) started = now;
       var t = Math.min(1, (now - started) / STEP_MS);
       var eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-      moving.forEach(function(m) { place(m.el, m.path, eased); });
+      moving.forEach(function(m) { place(m.el, m.path, m.from + (1 - m.from) * eased); });
       if (t < 1) current.raf = requestAnimationFrame(frame);
     }
     current.raf = requestAnimationFrame(frame);
