@@ -197,8 +197,10 @@ test("the manoeuvre runs check → signal and move left → pass → mirror and 
 
 // ── Chapter integration ──────────────────────────────────────────────────────
 
-test("the chapter is last (official chapter 15), offered on the overtaking topic, with three lessons; the centre lines are chapter 6", () => {
-  assert.equal(CHAPTERS.at(-1), SORPASSO_CHAPTER);
+test("the chapter follows chapter 14 (official chapter 15), offered on the overtaking topic, with three lessons; the centre lines are chapter 6", () => {
+  const at = CHAPTERS.indexOf(SORPASSO_CHAPTER);
+  assert.deepEqual(CHAPTERS[at - 1].numbers, [14], "chapter 14 comes right before");
+  assert.ok(CHAPTERS.slice(at + 1).every((c) => c.numbers[0] > 15), "later chapters come after");
   assert.deepEqual(SORPASSO_CHAPTER.numbers, [15]);
   assert.deepEqual(SORPASSO_CHAPTER.topicIds, [12]);
   assert.deepEqual(SORPASSO_CHAPTER.lessons, [L2, L3, L4]);
@@ -312,14 +314,14 @@ test("the assess endpoint judges right, wrong and 'not enough information' answe
 test("the chapter is listed, opens directly, and the last intersections lesson (chapter 14) hands over to it", async () => {
   const { call } = setup();
   const home = await call(9401, "GET", "/learn");
-  assert.equal(home.body.chapters.at(-1).id, SORPASSO_CHAPTER.id);
-  assert.equal(home.body.chapters.at(-1).lessons.length, 3);
+  const listed = home.body.chapters.find((c: { id: string }) => c.id === SORPASSO_CHAPTER.id);
+  assert.equal(listed.lessons.length, 3);
   const lesson = await call(9401, "GET", `/learn/lessons/${L3.id}`);
   assert.equal(lesson.status, 200);
   assert.deepEqual(lesson.body.position, { index: 2, total: 3, review: false });
   assert.equal(lesson.body.lesson.practice.length, L3.practice.length);
   assert.equal(lesson.body.stopping, null);
-  const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS.at(-2)!.lessons.at(-1)!.id}`);
+  const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS[CHAPTERS.indexOf(SORPASSO_CHAPTER) - 1].lessons.at(-1)!.id}`);
   assert.deepEqual(lastIncroci.body.next, { lessonId: L2.id, titleFa: L2.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa, chapterNumbers: [15] });
 });
 
