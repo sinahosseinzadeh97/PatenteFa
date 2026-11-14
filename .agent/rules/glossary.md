@@ -3,6 +3,8 @@
 One Italian term gets one Persian headword, in every chapter. Chapters were written
 one at a time with no shared list, and drifted: `ciclomotore` was «موپد» in
 chapters 1, 2 and 7 and «موتور گازی» in 3 and 4, and learners reported it.
+`autostrada` was «بزرگراه» in chapters 7, 8 and 11; in Iranian road classification
+that is a lower class than «آزادراه», and the exam keeps the two apart.
 
 ## Rules
 
@@ -41,7 +43,7 @@ chapters 1, 2 and 7 and «موتور گازی» in 3 and 4, and learners reporte
 
 | Italiano | فارسی | Never write |
 |---|---|---|
-| autostrada | آزادراه | |
+| autostrada | آزادراه | بزرگراه |
 | strada extraurbana principale | جاده‌ی برون‌شهری اصلی | |
 | centro abitato | آبادی | |
 | carreggiata | سواره‌رو | |
@@ -73,9 +75,6 @@ chapters 1, 2 and 7 and «موتور گازی» in 3 and 4, and learners reporte
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.
 
-- **autostrada:** chapters 7, 8 and 11 write «بزرگراه» (about 117 times in 11 files).
-  In Iranian road classification «بزرگراه» is a lower class than «آزادراه», and the
-  exam separates autostrada from strada extraurbana principale.
 - **attraversamento pedonale:** some lessons write «خط عابر پیاده», which is closer
   to *strisce pedonali*.
 - **segnale raffigurato:** some lessons write «تابلوی تصویر».
