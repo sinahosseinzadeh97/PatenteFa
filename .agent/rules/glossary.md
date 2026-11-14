@@ -103,6 +103,19 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | impianto frenante | سیستمِ ترمز | |
 | guarnizioni dei freni | لنتِ ترمز | |
 | cinture di sicurezza | کمربندِ ایمنی | |
+## Overtaking (chapter 15)
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| tram | تراموا | |
+| sede riservata | مسیرِ جدا | |
+| corsia riservata | خطِ ویژه | |
+| corsia di accelerazione | خطِ شتاب | |
+| corsia di decelerazione | خطِ کاهشِ سرعت | |
+| corsia di sorpasso | خطِ سبقت | |
+| in servizio di emergenza | در مأموریتِ اضطراری | |
+| veicolo a trazione animale | گاری | |
+| piazzola di sosta | پارکینگِ کوچکِ کنارِ راه | |
 
 ## Open conflicts (content not yet aligned)
 
@@ -114,3 +127,5 @@ Recorded 2026-11-14. Each one moves into «Never write» once the content is fix
 - **tamponamento:** chapter 12 L3 writes «زدن به عقبِ خودروی جلو», chapter 10's review «تصادف از پشت». Pick one.
 - **segnalazione luminosa di pericolo:** chapter 18 writes «چراغِ خطر (چهار راهنما با هم)»; chapter 11 L5 and
   chapter 15 L4 write «فلاشر». Align them, then add «فلاشر» to Never write.
+- **dosso:** chapter 15 (L2, L6) writes «قله‌ی سربالایی»; the chapter 13 work in progress uses «برآمدگی». In
+  overtaking, a dosso is a blind crest, not a speed bump, and «برآمدگی» alone reads as the bump. Pick one.
