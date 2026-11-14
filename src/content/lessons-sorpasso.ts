@@ -18,14 +18,26 @@
  *    art. 154 c.1–2), with playback, replay and manual steps; static under
  *    reduced motion.
  *
+ * Chapter 15 has seven lessons and a review. L1–L3 are defined here and keep
+ * their ids and step kinds (saved progress points into them); L4–L7 and the
+ * review live in src/content/ch15-*.ts. Every question of the bank's
+ * "sorpasso" group (source ids 5136–5291) maps to one chapter-15 section,
+ * except four centre-line statements that chapter 6's lessonStrisce teaches
+ * (tests/chapter15.test.ts; map in docs/chapter-15-coverage.md).
+ *
  * Sources reviewed 2026-10-10 on Normattiva (testo vigente): CdS artt. 40,
  * 148, 154 (agg. 24/04/2026); DPR 495/1992 artt. 104, 116, 119
- * (agg. 24/02/2025). Not covered, and left unmapped on purpose: overtaking on
- * the right and trams (art. 148 c.7–9), a second overtake on multi-lane roads
- * (c.6), motorways, trucks over 3.5 t and their signs (c.14, figs II.52/II.73),
- * cyclists' and pedestrians' special cases, and headlight or horn signals.
+ * (agg. 24/02/2025). Re-read 2026-11-14 for chapter 15: CdS artt. 148, 153,
+ * 176, 177 (Brocardi, agg. 25/04/2026; ACI art. 148, agg. 14/11/2026) and
+ * DPR 495/1992 art. 347 (leggeinchiaro.it, agg. 29/10/2026). Still out of
+ * scope: trucks over 3.5 t (c.14, taught by chapter 3).
  */
 import type { Chapter, Lesson, LineMarking, SignRef } from "./lessons.js";
+import { lessonSorpassoAutostrada } from "./ch15-autostrada.js";
+import { lessonSorpassoDestra } from "./ch15-destra.js";
+import { lessonSorpassoDivieti } from "./ch15-divieti.js";
+import { lessonSorpassoIncroci } from "./ch15-incroci.js";
+import { reviewSorpasso } from "./ch15-ripasso.js";
 import { SCENE_BEHIND, SCENE_MIXED, SCENE_SIGN, SCENE_TRUCK } from "./overtaking.js";
 
 const SIGN = "Il segnale raffigurato";
@@ -360,13 +372,14 @@ const lessonSegnali: Lesson = {
       objective:
         "بعد از این درس می‌دانی تابلوی DIVIETO DI SORPASSO سبقت از چه چیزی را ممنوع می‌کند و کجا تمام می‌شود، و وقتی تابلو و خط هر دو هستند، چطور هر دو را با هم می‌خوانی.",
       why:
-        "حدود ۳۰ جمله‌ی بانک سؤال درباره‌ی همین دو تابلوست و بیشترشان یک چیز را می‌سنجند: این تابلو سبقت از وسیله‌های موتوری را منع می‌کند، نه از هر وسیله‌ای.",
+        "۳۳ سؤال: ۳۱ جمله درباره‌ی همین دو تابلو (در فصل‌های ۳ و ۱۰ هم پرسیده می‌شوند)، و دو جمله از همین فصل که می‌گویند پیش از سبقت باید مطمئن شوی هیچ تابلویی آن را ممنوع نکرده است. بیشترشان یک چیز را می‌سنجند: این تابلو سبقت از وسیله‌های موتوری را منع می‌کند، نه از هر وسیله‌ای.",
       rule: "DPR 495/1992, art. 116 c.1 lett. c; art. 119 c.1 lett. c",
     },
     {
       kind: "compare",
       title: "شروع و پایانِ ممنوعیت",
-      body: "تابلوهای ممنوعیت بعد از هر تقاطع دوباره نصب می‌شوند، و پایانِ این یکی تابلوی مخصوصِ خودش را دارد.",
+      body:
+        "پیش از هر سبقت، یکی از کارهای اجباری همین است: مطمئن شو هیچ تابلویی سبقت را ممنوع نکرده باشد. تابلوهای ممنوعیت بعد از هر تقاطع دوباره نصب می‌شوند، و پایانِ این یکی تابلوی مخصوصِ خودش را دارد.",
       items: [DIVIETO, FINE_DIVIETO],
       rows: [
         { label: "شکل", values: ["دایره با حاشیه‌ی قرمز؛ دو خودرو، یکی قرمز", "دایره‌ی سفید با نوارِ سیاهِ مورب؛ دو خودروی خاکستری"] },
@@ -472,7 +485,7 @@ const lessonSegnali: Lesson = {
         { it: "entro la semicarreggiata", fa: "در نیمه‌ی سواره‌روی خودت" },
       ],
       translation: "تابلوی نشان‌داده‌شده سبقتِ خودروهای موتوری از یکدیگر را ممنوع می‌کند، حتی اگر این کار در نیمه‌ی سواره‌روی خودت انجام‌شدنی باشد.",
-      why: "درست است. قانون صریح است: ممنوعیت حتی وقتی هست که سبقت در نیمه‌ی خودت جا شود و به سمتِ مقابل نروی.",
+      why: "درست است (قدم ۱). قانون صریح است: ممنوعیت حتی وقتی هست که سبقت در نیمه‌ی خودت جا شود و به سمتِ مقابل نروی.",
       rule: "DPR 495/1992, art. 116 c.1 lett. c",
       conceptStep: 1,
     },
@@ -488,7 +501,7 @@ const lessonSegnali: Lesson = {
         { it: "che procedono molto lentamente", fa: "که خیلی آهسته می‌روند", verb: "procedono ← procedere" },
       ],
       translation: "وقتی این تابلو هست، سبقت از وسیله‌های موتوری‌ای که خیلی آهسته می‌روند مجاز است.",
-      why: "غلط است. تابلو برای وسیله‌ی کند استثنا ندارد. تنها استثنای وسیله‌های موتوری موتورسیکلت و موتور گازی است.",
+      why: "غلط است (قدم ۱). تابلو برای وسیله‌ی کند استثنا ندارد. تنها استثنای وسیله‌های موتوری موتورسیکلت و موتور گازی است.",
       rule: "DPR 495/1992, art. 116 c.1 lett. c",
       conceptStep: 1,
     },
@@ -506,7 +519,7 @@ const lessonSegnali: Lesson = {
       ],
       translation: "وقتی این تابلو هست، اگر برای سبقت باید از خطِ ممتد عبور کرد، سبقت ممنوع است.",
       why:
-        "درست است. این تابلوی پایانِ ممنوعیتِ سبقت است، ولی فقط ممنوعیتِ تابلو را تمام می‌کند. خطِ ممتد قاعده‌ی خودش را دارد و هنوز نباید از آن عبور کنی.",
+        "درست است (قدم ۱). این تابلوی پایانِ ممنوعیتِ سبقت است، ولی فقط ممنوعیتِ تابلو را تمام می‌کند. خطِ ممتد قاعده‌ی خودش را دارد و هنوز نباید از آن عبور کنی.",
       rule: `DPR 495/1992, art. 119 c.1 lett. c; ${CDS_40} c.8`,
       conceptStep: 1,
     },
@@ -522,7 +535,7 @@ const lessonSegnali: Lesson = {
       ],
       translation: "تابلوی نشان‌داده‌شده اجازه می‌دهد از دوچرخه‌ها سبقت بگیری.",
       why:
-        "درست است. ممنوعیتِ این تابلو فقط وسیله‌های موتوری را می‌گیرد و دوچرخه موتور ندارد. فاصله‌ی جانبیِ کافی و بقیه‌ی قواعدِ سبقت سرِ جایشان است.",
+        "درست است (قدم ۱). ممنوعیتِ این تابلو فقط وسیله‌های موتوری را می‌گیرد و دوچرخه موتور ندارد. فاصله‌ی جانبیِ کافی و بقیه‌ی قواعدِ سبقت سرِ جایشان است.",
       rule: "DPR 495/1992, art. 116 c.1 lett. c",
       conceptStep: 1,
     },
@@ -536,6 +549,8 @@ const lessonSegnali: Lesson = {
         "1242", "1243", "1244", "1245", "1247", "1248", "1249", "1250", "1252", "1256", "1258", "1259", "1260", "1261",
         // FINE DIVIETO DI SORPASSO (img 82)
         "1554", "1555", "1556", "1561", "3784",
+        // Chapter 15: before overtaking, check that no sign forbids it (moved here from sorpasso-valutare on 2026-11-14)
+        "5145", "5199",
       ],
     },
   ],
@@ -558,7 +573,7 @@ const lessonValutare: Lesson = {
       objective:
         "بعد از این درس پیش از هر سبقت چهار چیز را می‌سنجی (دید، رانندهٔ جلویی، پشتِ سر، فضای خالیِ جلو) و جاهایی را می‌شناسی که سبقت در آن‌ها از اساس ممنوع است.",
       why:
-        "قانون یک فهرستِ بررسی دارد و بانک سؤال تک‌تکِ آن را می‌پرسد. دامِ رایج این است که فقط یکی را ببینی: فقط خودروی روبه‌رو، یا فقط تابلو.",
+        "۶۰ سؤال. قانون یک فهرستِ بررسی دارد و بانک سؤال تک‌تکِ آن را می‌پرسد. دامِ رایج این است که فقط یکی را ببینی: فقط خودروی روبه‌رو، یا فقط تابلو.",
       rule: `${CDS_148} c.2, c.10–13`,
     },
     {
@@ -610,6 +625,13 @@ const lessonValutare: Lesson = {
               it: "accelera",
               sourceId: "5193",
               textIt: "Lo spazio necessario al sorpasso aumenta se il veicolo da sorpassare accelera",
+              answer: 1,
+            },
+            {
+              fa: "فرقِ سرعتِ کم: هرچه آهسته‌تر از او جلو بزنی، راهِ بیشتری در سمتِ مقابل می‌مانی",
+              it: "poca differenza di velocità",
+              sourceId: "5196",
+              textIt: "Lo spazio necessario al sorpasso è maggiore se vi è poca differenza di velocità tra i veicoli",
               answer: 1,
             },
             {
@@ -719,7 +741,7 @@ const lessonValutare: Lesson = {
         },
       ],
       takeaway:
-        "پیچ و قله استثنا دارند: روی جاده‌ای با دو سواره‌روی جدا، یک‌طرفه، یا با دست‌کم دو خطِ عبورِ هم‌جهتِ خط‌کشی‌شده، سبقت آن‌جا هم ممنوع نیست؛ در سرازیریِ بعد از قله هم، وقتی دوباره دید داری، بانک سؤال سبقت را مجاز می‌داند. در جاده‌ی دوطرفه‌ی دوخطه، نزدیکِ پیچ و قله هیچ استثنایی نیست: نه برای موتورسیکلت، نه برای وسیله‌ی خیلی کند، نه در روز.",
+        "تقاطع، گذرگاهِ راه‌آهن و عابر را با استثناهایشان در درسِ ۵ کامل می‌بینی. پیچ و قله استثنا دارند: روی جاده‌ای با دو سواره‌روی جدا، یک‌طرفه، یا با دست‌کم دو خطِ عبورِ هم‌جهتِ خط‌کشی‌شده، سبقت آن‌جا هم ممنوع نیست؛ در سرازیریِ بعد از قله هم، وقتی دوباره دید داری، بانک سؤال سبقت را مجاز می‌داند. در جاده‌ی دوطرفه‌ی دوخطه، نزدیکِ پیچ و قله هیچ استثنایی نیست: نه برای موتورسیکلت، نه برای وسیله‌ی خیلی کند، نه در روز.",
       rule: `${CDS_148} c.10–13`,
     },
     {
@@ -796,7 +818,7 @@ const lessonValutare: Lesson = {
         { it: "per completarla in sicurezza", fa: "برای اینکه با ایمنی تمامش کنی" },
       ],
       translation: "اگر فضایی که دیده می‌شود برای تمام کردنِ ایمنِ سبقت کافی نباشد، سبقت نباید انجام شود.",
-      why: "درست است. اگر نمی‌بینی که جاده تا پایانِ سبقت خالی است، شروعش نکن. مثلِ صحنه‌ی کامیون: همین که نمی‌بینی، جواب «الان نه» است.",
+      why: "درست است (قدم ۱). اگر نمی‌بینی که جاده تا پایانِ سبقت خالی است، شروعش نکن. مثلِ صحنه‌ی کامیون: همین که نمی‌بینی، جواب «الان نه» است.",
       rule: `${CDS_148} c.2 lett. a, d`,
       conceptStep: 1,
     },
@@ -813,7 +835,7 @@ const lessonValutare: Lesson = {
       ],
       translation: "راننده‌ای که می‌خواهد سبقت بگیرد باید مطمئن شود که راننده‌ی پشتِ سرش روی همان سواره‌رو سبقت را شروع نکرده باشد.",
       why:
-        "درست است. اگر کسی از پشت سبقت را شروع کرده، جایی را که تو می‌خواهی بروی گرفته است. برای همین پیش از سبقت آینه‌ها را نگاه می‌کنی و یک نگاهِ سریع هم به کنار می‌اندازی.",
+        "درست است (قدم ۱). اگر کسی از پشت سبقت را شروع کرده، جایی را که تو می‌خواهی بروی گرفته است. برای همین پیش از سبقت آینه‌ها را نگاه می‌کنی و یک نگاهِ سریع هم به کنار می‌اندازی.",
       rule: `${CDS_148} c.2 lett. c`,
       conceptStep: 1,
     },
@@ -828,7 +850,7 @@ const lessonValutare: Lesson = {
         { it: "a doppio senso di marcia", fa: "و دوطرفه" },
       ],
       translation: "در جاده‌های دوخطه‌ی دوطرفه، سبقت نزدیکِ قله‌های سربالایی ممنوع است.",
-      why: "درست است. پشتِ قله دیده نمی‌شود و ممکن است کسی از روبه‌رو بیاید. در جاده‌ی دوطرفه‌ی دوخطه این ممنوعیت استثنا ندارد.",
+      why: "درست است (قدم ۲). پشتِ قله دیده نمی‌شود و ممکن است کسی از روبه‌رو بیاید. در جاده‌ی دوطرفه‌ی دوخطه این ممنوعیت استثنا ندارد.",
       rule: `${CDS_148} c.10`,
       conceptStep: 2,
     },
@@ -841,7 +863,7 @@ const lessonValutare: Lesson = {
         { it: "nelle strade a senso unico", fa: "در جاده‌های یک‌طرفه" },
       ],
       translation: "در جاده‌های یک‌طرفه سبقت ممنوع است.",
-      why: "غلط است. یک‌طرفه بودن به‌خودیِ‌خود سبقت را ممنوع نمی‌کند، چون کسی از روبه‌رو نمی‌آید. بقیه‌ی قواعد و بررسی‌ها البته سرِ جایشان است.",
+      why: "غلط است (قدم ۲). یک‌طرفه بودن به‌خودیِ‌خود سبقت را ممنوع نمی‌کند، چون کسی از روبه‌رو نمی‌آید. بقیه‌ی قواعد و بررسی‌ها البته سرِ جایشان است.",
       rule: `${CDS_148} c.3, c.10`,
       conceptStep: 2,
     },
@@ -851,8 +873,9 @@ const lessonValutare: Lesson = {
       step: 1,
       sourceIds: [
         // The art. 148 c.2 checks, and what does not replace them
-        "5136", "5137", "5138", "5139", "5140", "5142", "5143", "5144", "5145", "5146", "5147", "5148",
-        "5155", "5156", "5161", "5193", "5194", "5195", "5199", "5200", "5216", "5217", "5249", "5252", "5253", "5265",
+        "5136", "5137", "5138", "5139", "5140", "5141", "5142", "5143", "5144", "5146", "5147", "5148",
+        "5155", "5156", "5161", "5193", "5194", "5195", "5196", "5200", "5216", "5217", "5249", "5252", "5253", "5265",
+        // 5145 and 5199 (no sign forbids it) moved to sorpasso-segnali on 2026-11-14
         "4367", "2582",
       ],
     },
@@ -883,7 +906,7 @@ const lessonFasi: Lesson = {
       title: "هدف این درس",
       objective:
         "بعد از این درس سبقت را به ترتیبِ درستش انجام می‌دهی (بررسی، راهنما، عبور، آینه، برگشت) و می‌دانی رانندهٔ جلویی، که از او سبقت می‌گیری، چه وظیفه‌ای دارد و چه وظیفه‌ای ندارد.",
-      why: "بانک سؤال هم از کسی که سبقت می‌گیرد می‌پرسد و هم از کسی که از او سبقت می‌گیرند. بیشترِ دام‌ها در ترتیبِ کارها و در وظیفه‌ی رانندهٔ دوم است.",
+      why: "۴۷ سؤال. بانک سؤال هم از کسی که سبقت می‌گیرد می‌پرسد و هم از کسی که از او سبقت می‌گیرند. بیشترِ دام‌ها در ترتیبِ کارها، در سرعتِ حینِ سبقت و در وظیفه‌ی رانندهٔ دوم است.",
       rule: `${CDS_148} c.3–5; ${CDS_154} c.1–2`,
     },
     {
@@ -903,9 +926,10 @@ const lessonFasi: Lesson = {
         },
         {
           title: "راهنمای چپ، بعد به چپ",
-          you: "راهنمای چپ را با فاصله‌ی کافی بزن، بعد به خطِ عبورِ چپ برو. راهنما تا وقتی کامل به چپ رفته‌ای روشن می‌ماند. بوق زدن اجباری نیست.",
+          you:
+            "راهنمای چپ را با فاصله‌ی کافی بزن، بعد به خطِ عبورِ چپ برو. راهنما تا وقتی کامل به چپ رفته‌ای روشن می‌ماند. بوق زدن اجباری نیست. برای خبر دادن به رانندهٔ جلویی می‌توانی نورِ بالا را چند بار کوتاه روشن و خاموش کنی، در روز یا شب، حتی در شهر: اجازه است، نه اجبار.",
           other: "حالا که سبقت را می‌بیند، نباید شتاب بگیرد.",
-          rule: `${CDS_148} c.3; ${CDS_154} c.1 lett. b, c.2`,
+          rule: `${CDS_148} c.3; ${CDS_154} c.1 lett. b, c.2; Codice della Strada, art. 153 c.4`,
           pose: { you: [30, 1], other: [44, 0] },
           indicator: "left",
           marks: [],
@@ -913,9 +937,9 @@ const lessonFasi: Lesson = {
         {
           title: "سریع و با فاصله‌ی جانبیِ کافی رد شو",
           you:
-            "با سرعتِ کافی، در حدِ مجاز، رد شو تا کمترین زمان را کنارِ او و در خطِ عبورِ مقابل باشی، و فاصله‌ی جانبیِ کافی بگذار. برای دوچرخه، قانونِ فعلی هر جا جاده اجازه بدهد دست‌کم ۱٫۵ متر می‌خواهد. بیش از لازم در خطِ عبورِ چپ نمان.",
+            "سرعتت را با سرعتِ او تنظیم کن: آن‌قدر بیشتر که زود رد شوی و کمترین زمان را کنارِ او و در خطِ عبورِ مقابل باشی. ولی هیچ‌وقت بیش از حدِ مجاز، حتی برای چند ثانیه و حتی در شهر؛ قانون هم نسبتی مثلِ «دو برابرِ او» نمی‌خواهد. فاصله‌ی جانبیِ کافی بگذار، نه «چسبیده به راست». برای دوچرخه، قانونِ فعلی هر جا جاده اجازه بدهد دست‌کم ۱٫۵ متر می‌خواهد. بیش از لازم در خطِ عبورِ چپ نمان.",
           other: "کمک می‌کند: شتاب نمی‌گیرد، و در جاده‌ای که در هر جهت یک خطِ عبور دارد تا جای ممکن کنارِ لبه‌ی راست می‌ماند.",
-          rule: `${CDS_148} c.3, c.4, c.9-bis`,
+          rule: `${CDS_148} c.3, c.4, c.9-bis; Codice della Strada, art. 142`,
           pose: { you: [70, 1], other: [58, 0] },
           indicator: "off",
           marks: ["gap"],
@@ -974,6 +998,13 @@ const lessonFasi: Lesson = {
               textIt: "Se si viene sorpassati mentre sopraggiunge un veicolo dal senso opposto, occorre spostarsi il più vicino possibile al margine destro della carreggiata",
               answer: 1,
             },
+            {
+              fa: "در همان حالت، کم کردنِ سرعت توصیه می‌شود تا او زودتر برگردد",
+              it: "è consigliabile ridurre la velocità",
+              sourceId: "5276",
+              textIt: "Se si viene sorpassati mentre sopraggiunge un veicolo dal senso opposto, è consigliabile ridurre la velocità",
+              answer: 1,
+            },
           ],
         },
         {
@@ -996,11 +1027,34 @@ const lessonFasi: Lesson = {
                 "Il conducente del veicolo da sorpassare ha l'obbligo di azionare la segnalazione luminosa di pericolo(lampeggio simultaneo di tutte le frecce) per segnalare che la strada è sgombra",
               answer: 0,
             },
+            {
+              fa: "وقتی کسی از روبه‌رو می‌آید، به‌عنوانِ هشدار نورِ بالا را روشن نگه دارد",
+              it: "proiettori abbaglianti",
+              sourceId: "5281",
+              textIt:
+                "Se si viene sorpassati mentre sopraggiunge un veicolo dal senso opposto, occorre tenere accesi i proiettori abbaglianti, come segnale di pericolo",
+              answer: 0,
+            },
+            {
+              fa: "به‌عنوانِ هشدار راهنمای راست بزند",
+              it: "indicatore di direzione destro",
+              sourceId: "5283",
+              textIt:
+                "Se si viene sorpassati mentre sopraggiunge un veicolo dal senso opposto, occorre azionare l'indicatore di direzione destro, come segnale di pericolo",
+              answer: 0,
+            },
+            {
+              fa: "مجبور باشد درست همان سرعت را نگه دارد",
+              it: "mantenere la stessa velocità",
+              sourceId: "5282",
+              textIt: "Se si viene sorpassati mentre sopraggiunge un veicolo dal senso opposto, si ha l'obbligo di mantenere la stessa velocità",
+              answer: 0,
+            },
           ],
         },
       ],
       takeaway:
-        "رانندهٔ جلویی با یک کارِ ساده کمک می‌کند: شتاب نگیرد و راست بماند. لازم نیست همیشه سرعتش را کم کند؛ فقط اگر وسیله‌اش کند یا بزرگ است و سبقت از او سخت است، باید آهسته کند و در صورتِ لزوم کنار بکشد.",
+        "اگر هم‌زمان کسی از روبه‌رو می‌آید: به راست برو و بهتر است کمی آهسته کنی تا او زودتر برگردد. نورِ بالا روبه‌رویی را خیره می‌کند و راهنمای راست یعنی «می‌پیچم»؛ هیچ‌کدام هشدار نیست. رانندهٔ جلویی با یک کارِ ساده کمک می‌کند: شتاب نگیرد و راست بماند. لازم نیست همیشه سرعتش را کم کند؛ فقط اگر وسیله‌اش کند یا بزرگ است و سبقت از او سخت است، باید آهسته کند و در صورتِ لزوم کنار بکشد.",
       rule: `${CDS_148} c.4, c.5`,
     },
     {
@@ -1070,7 +1124,7 @@ const lessonFasi: Lesson = {
         { it: "rientrando nella corsia di marcia normale", fa: "و به خطِ عبورِ عادی برمی‌گردی", verb: "rientrando ← rientrare" },
       ],
       translation: "استفاده از چراغ راهنما وقتی سبقت را شروع می‌کنی لازم است، اما وقتی تمامش می‌کنی و به خطِ عبورِ عادی برمی‌گردی لازم نیست.",
-      why: "غلط است. برگشتن به راست هم عوض کردنِ خطِ عبور است و باید با راهنما خبرش را بدهی؛ راهنما تا پایانِ همین حرکت روشن می‌ماند.",
+      why: "غلط است (قدم ۱). برگشتن به راست هم عوض کردنِ خطِ عبور است و باید با راهنما خبرش را بدهی؛ راهنما تا پایانِ همین حرکت روشن می‌ماند.",
       rule: `${CDS_154} c.1 lett. b, c.2`,
       conceptStep: 1,
     },
@@ -1086,7 +1140,7 @@ const lessonFasi: Lesson = {
         { it: "attraverso gli specchietti retrovisori", fa: "در آینه‌ها" },
       ],
       translation: "پیش از برگشتن به خطِ عبورِ راست بعد از سبقت، لازم است جای وسیله‌ای را که از آن سبقت گرفته‌ای در آینه‌ها بررسی کنی.",
-      why: "درست است. تا در آینه نبینی که با فاصله پشتِ سرت است، نمی‌دانی برگشتنت راهِ او را می‌بُرد یا نه.",
+      why: "درست است (قدم ۱). تا در آینه نبینی که با فاصله پشتِ سرت است، نمی‌دانی برگشتنت راهِ او را می‌بُرد یا نه.",
       rule: `${CDS_148} c.3`,
       conceptStep: 1,
     },
@@ -1099,7 +1153,7 @@ const lessonFasi: Lesson = {
         { it: "non bisogna accelerare", fa: "نباید شتاب گرفت", focus: "negation", verb: "bisogna ← bisognare" },
       ],
       translation: "هنگامِ سبقت نباید شتاب گرفت.",
-      why: "غلط است. قانون می‌گوید باید «سریع» بگذری تا مدتِ کمتری کنارِ او و در خطِ عبورِ مقابل باشی، در حدِ مجاز. کسی که نباید شتاب بگیرد رانندهٔ جلویی است.",
+      why: "غلط است (قدم ۱). قانون می‌گوید باید «سریع» بگذری تا مدتِ کمتری کنارِ او و در خطِ عبورِ مقابل باشی، در حدِ مجاز. کسی که نباید شتاب بگیرد رانندهٔ جلویی است.",
       rule: `${CDS_148} c.3, c.4`,
       conceptStep: 1,
     },
@@ -1113,7 +1167,7 @@ const lessonFasi: Lesson = {
         { it: "e non accelerare", fa: "و شتاب نگیرد", focus: "negation" },
       ],
       translation: "رانندهٔ وسیله‌ای که از آن سبقت می‌گیرند باید سبقت را آسان کند و شتاب نگیرد.",
-      why: "درست است. این وظیفه‌ی رانندهٔ دوم است: کمک کند، شتاب نگیرد و در جاده‌ی یک‌خطه کنارِ لبه‌ی راست بماند.",
+      why: "درست است (قدم ۲). این وظیفه‌ی رانندهٔ دوم است: کمک کند، شتاب نگیرد و در جاده‌ی یک‌خطه کنارِ لبه‌ی راست بماند.",
       rule: `${CDS_148} c.4`,
       conceptStep: 2,
     },
@@ -1125,6 +1179,8 @@ const lessonFasi: Lesson = {
         // Signal, pass, mirror, return (art. 148 c.3; art. 154)
         "5149", "5150", "5152", "5157", "5158", "5159", "5202", "5203", "5226", "5227", "5228", "5248",
         "5250", "5251", "5254", "5255", "5262", "5912", "5917", "5918", "4690", "4691", "4708", "4711",
+        // speed, lateral gap, high beams, distance before starting (added 2026-11-14)
+        "5151", "5197", "5223", "5224", "5225", "5256",
       ],
     },
     {
@@ -1132,6 +1188,8 @@ const lessonFasi: Lesson = {
       sourceIds: [
         // The driver being overtaken (art. 148 c.4–5)
         "5153", "5154", "5266", "5267", "5268", "5270", "5271", "5272", "5273", "5277", "5278",
+        // being overtaken while a vehicle comes the other way; no racing (added 2026-11-14)
+        "5160", "5269", "5276", "5281", "5282", "5283",
       ],
     },
   ],
@@ -1143,8 +1201,9 @@ export const SORPASSO_CHAPTER: Chapter = {
   topicIds: [12],
   nameIt: "Sorpasso",
   titleFa: "سبقت",
-  summaryFa: "کِی می‌شود سبقت گرفت؟ سه درسِ کوتاه: تابلو و خط با هم، سنجیدنِ دید و ترافیک، و مراحلِ سبقت. خواندنِ خطِ وسط در فصل ۶ است.",
-  reviewedOn: "2026-10-10",
+  summaryFa:
+    "کِی، کجا و از کدام طرف می‌شود سبقت گرفت؟ هفت درسِ کوتاه: تابلو، بررسی‌های پیش از سبقت، مراحلِ سبقت، سبقت از راست و تراموا، تقاطع و راه‌آهن و عابر، ممنوعیت‌های ساختگی و وسیله‌های امدادی، و آزادراه؛ بعد مرورِ فصل. خواندنِ خطِ وسط در فصل ۶ است.",
+  reviewedOn: "2026-11-14",
   sources: [
     {
       label: "Codice della Strada (D.Lgs. 285/1992), artt. 40, 148, 154 — testo vigente, agg. 24/04/2026",
@@ -1163,9 +1222,34 @@ export const SORPASSO_CHAPTER: Chapter = {
       url: "https://aci.gov.it/codice-della-strada/art-40/",
     },
     {
+      label: "Brocardi, Codice della Strada art. 148 «Sorpasso», commi 6–13 (agg. 25/04/2026; letto il 14/11/2026)",
+      url: "https://www.brocardi.it/codice-della-strada/titolo-v/art148.html",
+    },
+    {
+      label: "Brocardi, Codice della Strada art. 153 c.4 (lampeggio dei proiettori di profondità per segnalare il sorpasso; agg. 25/04/2026)",
+      url: "https://www.brocardi.it/codice-della-strada/titolo-v/art153.html",
+    },
+    {
+      label: "Brocardi, Codice della Strada art. 177 c.3 (veicoli in servizio di emergenza; agg. 25/04/2026)",
+      url: "https://www.brocardi.it/codice-della-strada/titolo-v/art177.html",
+    },
+    {
+      label: "Regolamento (DPR 495/1992) art. 347 «Sorpasso», commi 1–3 (leggeinchiaro.it, agg. 29/10/2026)",
+      url: "https://leggeinchiaro.it/articolo-347-regolamento-codice-strada/",
+    },
+    {
       label: "Question bank: Ed0ardo/QuizPatenteB (2023)",
       url: "https://github.com/Ed0ardo/QuizPatenteB",
     },
   ],
-  lessons: [lessonSegnali, lessonValutare, lessonFasi],
+  lessons: [
+    lessonSegnali,
+    lessonValutare,
+    lessonFasi,
+    lessonSorpassoDestra,
+    lessonSorpassoIncroci,
+    lessonSorpassoDivieti,
+    lessonSorpassoAutostrada,
+    reviewSorpasso,
+  ],
 };

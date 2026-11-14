@@ -21,8 +21,9 @@ import { assessAnswer, buildTodayPath, judgeScene, summarizeLessons } from "../s
 import type { AppEnv } from "../src/types.js";
 import { createSqliteD1, signedInitData } from "./helpers/sqlite-d1.js";
 
-// The overtaking material: the centre-line lesson (built here, now chapter 6 lesson 2) and chapter 15's three lessons.
-const LESSONS = [lessonStrisce, ...SORPASSO_CHAPTER.lessons];
+// The overtaking material with its own drawings: the centre-line lesson (built here, now chapter 6 lesson 2) and
+// chapter 15's first three lessons. Chapter 15's later lessons and review are covered by tests/chapter15.test.ts.
+const LESSONS = [lessonStrisce, ...SORPASSO_CHAPTER.lessons.slice(0, 3)];
 const INDEX = CHAPTERS.indexOf(SORPASSO_CHAPTER);
 const [L1, L2, L3, L4] = LESSONS;
 const CHECKS: SafetyCheck[] = ["visibility", "ahead", "behind", "space"];
@@ -198,18 +199,18 @@ test("the manoeuvre runs check → signal and move left → pass → mirror and 
 
 // ── Chapter integration ──────────────────────────────────────────────────────
 
-test("the chapter is official chapter 15, right after chapter 14, offered on the overtaking topic, with three lessons; the centre lines are chapter 6", () => {
+test("the chapter is official chapter 15, right after chapter 14, offered on the overtaking topic; its first three lessons are these; the centre lines are chapter 6", () => {
   assert.deepEqual(CHAPTERS[INDEX - 1].numbers, [14], "chapter 14 comes right before");
   assert.ok(INDEX === CHAPTERS.length - 1 || CHAPTERS[INDEX + 1].numbers[0] > 15, "later chapters come after");
   assert.deepEqual(SORPASSO_CHAPTER.numbers, [15]);
   assert.deepEqual(SORPASSO_CHAPTER.topicIds, [12]);
-  assert.deepEqual(SORPASSO_CHAPTER.lessons, [L2, L3, L4]);
+  assert.deepEqual(SORPASSO_CHAPTER.lessons.slice(0, 3), [L2, L3, L4]);
   assert.deepEqual(CHAPTERS.find((c) => c.lessons.includes(L1))?.numbers, [6]);
   assert.deepEqual(
     LESSONS.map((l) => l.steps.find((s) => ["markings", "assess", "manoeuvre"].includes(s.kind))?.kind),
     ["markings", "assess", "assess", "manoeuvre"]
   );
-  assert.match(SORPASSO_CHAPTER.reviewedOn, /^2026-10-10$/);
+  assert.match(SORPASSO_CHAPTER.reviewedOn, /^2026-11-14$/);
   assert.ok(SORPASSO_CHAPTER.sources.some((s) => s.url.includes("normattiva.it")));
 });
 
@@ -224,7 +225,9 @@ test("mistakes route to the section that teaches them; out-of-scope questions st
   assert.equal(route("5174"), `${L3.id}#2`, "crests → where it is forbidden");
   assert.equal(route("5918"), `${L4.id}#1`, "signal at the end too → the stages");
   assert.equal(route("5153"), `${L4.id}#2`, "the overtaken driver → their duties");
-  for (const id of ["5163", "5165", "5214", "5162", "5223"]) assert.equal(route(id), null, `${id} is out of scope on purpose`);
+  // Out of scope here until 2026-11-14; chapter 15's later lessons teach them now (tests/chapter15.test.ts).
+  for (const id of ["5163", "5165", "5214", "5162"]) assert.match(route(id) ?? "", /^sorpasso-destra-tram#/, `${id} → right side / trams`);
+  assert.equal(route("5223"), `${L4.id}#1`, "flashing high beams → the stages");
   // The heavy-vehicle overtaking ban is out of this chapter's scope but taught by chapter 3.
   assert.equal(lessonLinkForSourceId("1310")?.lessonId, "divieti-sorpasso-veicoli-pesanti");
 });
@@ -314,11 +317,12 @@ test("the assess endpoint judges right, wrong and 'not enough information' answe
 test("the chapter is listed, opens directly, and the last intersections lesson (chapter 14) hands over to it", async () => {
   const { call } = setup();
   const home = await call(9401, "GET", "/learn");
-  assert.equal(home.body.chapters[INDEX].id, SORPASSO_CHAPTER.id);
-  assert.equal(home.body.chapters[INDEX].lessons.length, 3);
+  const listed = home.body.chapters[INDEX];
+  assert.equal(listed.id, SORPASSO_CHAPTER.id);
+  assert.equal(listed.lessons.length, SORPASSO_CHAPTER.lessons.length);
   const lesson = await call(9401, "GET", `/learn/lessons/${L3.id}`);
   assert.equal(lesson.status, 200);
-  assert.deepEqual(lesson.body.position, { index: 2, total: 3, review: false });
+  assert.deepEqual(lesson.body.position, { index: 2, total: SORPASSO_CHAPTER.lessons.filter((l) => !l.review).length, review: false });
   assert.equal(lesson.body.lesson.practice.length, L3.practice.length);
   assert.equal(lesson.body.stopping, null);
   const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS[INDEX - 1].lessons.at(-1)!.id}`);
