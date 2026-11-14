@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -luci.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -34,6 +34,7 @@ import { INCROCI_CHAPTER } from "./lessons-incroci.js";
 import { INDICAZIONE_CHAPTER } from "./lessons-indicazione.js";
 import { INTEGRATIVI_CHAPTER } from "./lessons-integrativi.js";
 import { LIMITI_CHAPTER } from "./lessons-limiti.js";
+import { LUCI_CHAPTER } from "./lessons-luci.js";
 import { NORME_CHAPTER } from "./lessons-norme.js";
 import { OBBLIGO_CHAPTER } from "./lessons-obbligo.js";
 import { lessonConfluenze, lessonIntersezioniT, lessonSemaforoAgente } from "./ch5-incroci.js";
@@ -1210,6 +1211,7 @@ export const CHAPTERS: Chapter[] = [
   NORME_CHAPTER,
   INCROCI_CHAPTER,
   SORPASSO_CHAPTER,
+  LUCI_CHAPTER,
 ];
 
 export function findLesson(lessonId: string): Lesson | null {

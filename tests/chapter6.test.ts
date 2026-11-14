@@ -232,7 +232,7 @@ test("a learner who finished the centre-line lesson in the overtaking module kee
   }
   assert.equal(chapterOf(home).completed, false, "new material is never marked completed for them");
   const overtaking = home.body.chapters.find((c: { id: string }) => c.id === SORPASSO_CHAPTER.id);
-  assert.equal(overtaking.lessons.length, 3);
+  assert.equal(overtaking.lessons.length, SORPASSO_CHAPTER.lessons.length);
   assert.ok(overtaking.lessons.every((l: { state: string }) => l.state === "not_started"), "chapter 15 shows no progress it did not have");
   const opened = await call(USER_A, "GET", `/learn/lessons/${MOVED.id}`);
   assert.equal(opened.body.progress.state, "completed");
