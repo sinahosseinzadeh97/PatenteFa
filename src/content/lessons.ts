@@ -158,6 +158,12 @@ export interface Crossing {
   /** Per vehicle: why it cannot go earlier (shown when picked too early). */
   waits: Record<string, string>;
   evidence: OrderEvidence[];
+  /**
+   * Deadlock figures only (everyone has someone on the right): the left-turner
+   * that moves to the centre of the junction first, waits there, and finishes
+   * last. `phases` stays the order in which vehicles *finish* crossing.
+   */
+  centre?: string;
 }
 
 /** A distance a prediction option makes a claim about. "gap" is the shortest

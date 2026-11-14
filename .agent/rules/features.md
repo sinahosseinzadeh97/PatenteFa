@@ -323,7 +323,7 @@ Codice della Strada artt. 140, 145; DPR 495/1992 artt. 81 c.7, 105–114 (Normat
 ### 22.2 Rules future changes must keep
 - **The order is the bank's, proven in tests.** Each scenario's `phases` must follow from its VERO `evidence` statements alone, and contradict every FALSO one (`tests/crossings.test.ts`). `move` must match the arm angles. Evidence snapshots are checked by `npm run verify:lessons`.
 - **Never annotate or animate the bank's raster figures.** They carry a third-party mark (patentati.it) and their licence is not established by the dataset's MIT notice. Show them only as the app already does (question image, "compare with the original"); redraw anything we highlight or move.
-- **Only verified figures.** Circular "everyone has someone on the right" figures (617, 638, 642), complex five-arm figures (634, 651, 652, 654, 657–668) and roundabouts are deliberately unmapped and unused.
+- **Only verified figures.** Circular "everyone has someone on the right" figures (617, 638, 642), complex five-arm figures (634, 651, 652, 654, 657–668) and roundabouts are deliberately unmapped and unused. *(Superseded 2026-11-14 by §39: all of them are now mapped and verified; 617, 638, 657, 664 are redrawn.)*
 - **No client copy of the order rule.** `public/js/crossing.js` renders the server verdict; it only uses `phases` to animate the explanation.
 - Left turns are drawn passing with the junction centre on the driver's right (art. 154 c.3 lett. b).
 
@@ -500,6 +500,17 @@ Codice della Strada artt. 40, 148, 154 (Normattiva, testo vigente, agg. 24/04/20
 - No new step kinds or drawings. Core move: three distances, never mixed. Reaction (before the brake; ×speed), braking (after; ×speed², grip, slope), the gap to the car ahead (minimum = your reaction distance, never "= braking distance"). The law gives the gap only two numbers (art. 149 c.2–3: ≥ 100 m between vehicles that alone are banned from overtaking, outside towns, not on 2+ lanes per direction; ≥ 20 m behind working snowploughs and salt spreaders); every other number in a statement is a trap, and no situation (tunnel, motorway, truck ahead) lets the gap shrink.
 - Flags kept open: "30 km/h → circa 9 m" is 8.3 m by the formula; minimum-gap numbers, tunnels, trucks, overtaking and unstable loads have no article of their own (art. 149 c.1 applied); 28 statements (#4208–#4235) are missing their first word in the 2023 dataset and are quoted as-is. No answer-key conflict.
 - Sources: CdS art. 149 (agg. 29/10/2026) and art. 176 c.1 lett. c (agg. 27/10/2026) on leggeinchiaro.it, read 2026-11-14; ACI art. 149; Polizia di Stato and Comune di Genova for reaction time and grip. The bank's 2023 caveat still applies.
+
+## 39. Chapter 14: Precedenza negli incroci (2026-11-14)
+
+- Chapter `precedenza-incroci` (`INCROCI_CHAPTER` in `src/content/lessons-incroci.ts`; id kept), `numbers: [14]`, after chapter 13 in `CHAPTERS` (not moved), `topicIds: [4]`. Bank group `precedenza-incroci`, source ids 4721–5135 (415 questions, 43 groups, one bank figure each). 6 lessons + `ripasso-capitolo-14` (12 questions, two per lesson): L1–L4 kept in `lessons-incroci.ts`, L5 `incroci-a-piu-bracci` in `ch14-irregolari.ts`, L6 `stallo-al-centro` in `ch14-stallo.ts`, review in `ch14-ripasso.ts`.
+- **L1–L4 keep their ids and step kinds** (`leggere-incrocio`, `precedenza-a-destra`, `svolte-e-contemporanei`, `segnali-negli-incroci`; pinned in `tests/chapter14.test.ts`). Never insert, remove or reorder their steps. Learners who finished them keep them; L5, L6 and the review start unstarted.
+- All 415 questions map to exactly one chapter-14 section; no other module maps any. 226 of them routed nowhere before. The module also keeps 13 chapter-13 questions it mapped before (pinned in both chapters). Readable map, reuse notes and flags: `docs/chapter-14-coverage.md`.
+- **Supersedes §22.2 "Only verified figures":** the circular figures (617, 638, 642) and the five/six-arm figures are now taught. Four new redrawings in `src/content/crossings.ts` (657, 664, 617, 638), proven against the bank like the others. `tests/crossings.test.ts` now lets a simultaneous pair share its order ("D and N together" + "N before B" ⇒ "D before B"). 642 stays undrawn: no VERO statement fixes M before A.
+- **One extension, no new step kind:** `Crossing.centre` names the deadlock left-turner. `phases` stays the order of *finishing*; `crossing.js` draws that vehicle already waiting at the centre from the first explanation step. Only a left-turner in the last phase, alone, may be `centre` (tested).
+- Core move: L5, "your right" is every arm on your right-hand side as you drive, counted only if that driver's path crosses yours; L6, when the chain closes on itself the left-turner goes to the centre, waits and finishes last; "ha la precedenza rispetto a" is not "passes first".
+- Flags kept open: no article states the deadlock resolution (the bank's reading, consistent across 617, 638, 642; legal hooks art. 145 c.1–2, art. 154 c.3 lett. b); opposite left turns not yielding to each other is derived from art. 154 c.3 lett. b. No answer-key conflict.
+- Sources: CdS artt. 145, 154 on aci.gov.it (updated 14/11/2026), Normattiva as before; read 2026-11-14. The bank's 2023 caveat still applies.
 
 ## 40. Chapter 15: Sorpasso (2026-11-14)
 
