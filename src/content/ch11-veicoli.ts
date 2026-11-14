@@ -18,7 +18,7 @@ const LIMITE = "Il limite massimo di velocità";
 const LIMITE_FA = "حداکثرِ سرعتِ مجاز";
 const CONTRASSEGNI = "I contrassegni rappresentati in figura";
 const CONTRASSEGNI_FA = "نشان‌های تصویر";
-const ROADS = ["بزرگراه", "برون‌شهریِ اصلی", "برون‌شهریِ فرعی", "داخلِ آبادی"];
+const ROADS = ["آزادراه", "برون‌شهریِ اصلی", "برون‌شهریِ فرعی", "داخلِ آبادی"];
 const NEOPATENTATI = "per coloro che hanno conseguito la patente da meno di";
 const NEOPATENTATI_FA = "برای کسانی که کمتر از … پیش گواهینامه گرفته‌اند";
 
@@ -35,7 +35,7 @@ export const lessonLimitiRimorchi: Lesson = {
       kind: "intro",
       title: "هدف این درس",
       objective:
-        "بعد از این درس می‌دانی کدام وسیله‌ها همان سقفِ سواری را دارند (موتورسیکلت، هر وسیله‌ی تا ۳٫۵ تن، سواری با carrello appendice) و چرا سواری‌ای که یدک می‌کشد به ۸۰ در بزرگراه و ۷۰ بیرونِ آبادی پایین می‌آید.",
+        "بعد از این درس می‌دانی کدام وسیله‌ها همان سقفِ سواری را دارند (موتورسیکلت، هر وسیله‌ی تا ۳٫۵ تن، سواری با carrello appendice) و چرا سواری‌ای که یدک می‌کشد به ۸۰ در آزادراه و ۷۰ بیرونِ آبادی پایین می‌آید.",
       why:
         "۴۷ سؤال؛ بزرگ‌ترین گروهِ این فصل. همه یک الگو دارند: «برای این وسیله روی این جاده سقف چند است؟». اگر بدانی وسیله در کدام خانواده است، عدد را حفظ نمی‌کنی، از درسِ ۲ می‌سازی.",
       rule: `${CDS_142} c.1, c.3`,
@@ -60,7 +60,7 @@ export const lessonLimitiRimorchi: Lesson = {
       kind: "table",
       title: "یدک که بستی: ۸۰ و ۷۰",
       body:
-        "سواری‌ای که یدک (rimorchio) می‌کشد، از نظرِ قانون یک «autotreno» است: دو وسیله‌ی جدا که به هم وصل‌اند. سقفِ همه‌ی این ترکیب‌ها یکی است: بزرگراه ۸۰، بیرونِ آبادی ۷۰. نوعِ یدک (کاروان، قایق، اسب، موتورسیکلت) و وزنش (۷۵۰ یا ۹۰۰ کیلو) عدد را عوض نمی‌کند. خودِ این وسیله‌ها را در فصلِ ۱، درسِ ۸ دیدی.",
+        "سواری‌ای که یدک (rimorchio) می‌کشد، از نظرِ قانون یک «autotreno» است: دو وسیله‌ی جدا که به هم وصل‌اند. سقفِ همه‌ی این ترکیب‌ها یکی است: آزادراه ۸۰، بیرونِ آبادی ۷۰. نوعِ یدک (کاروان، قایق، اسب، موتورسیکلت) و وزنش (۷۵۰ یا ۹۰۰ کیلو) عدد را عوض نمی‌کند. خودِ این وسیله‌ها را در فصلِ ۱، درسِ ۸ دیدی.",
       columns: ROADS,
       rows: [
         { label: "سواری + کاروان", it: "caravan", values: ["۸۰", "۷۰", "۷۰", "۵۰"] },
@@ -68,7 +68,7 @@ export const lessonLimitiRimorchi: Lesson = {
         { label: "کامیون + یدک", it: "autotreno", values: ["۸۰", "۷۰", "۷۰", "۵۰"] },
         { label: "دامِ «سبک»", it: "rimorchio leggero", values: ["۱۳۰ نه", "۸۰ یا ۱۱۰ نه", "۸۰ یا ۹۰ نه", "—"] },
       ],
-      takeaway: "یدک = ۸۰ در بزرگراه، ۷۰ بیرونِ آبادی. carrello appendice یدک حساب نمی‌شود.",
+      takeaway: "یدک = ۸۰ در آزادراه، ۷۰ بیرونِ آبادی. carrello appendice یدک حساب نمی‌شود.",
       rule: `${CDS_142} c.3 lett. e; CdS art. 54 c.1 lett. h, art. 56 c.2`,
     },
     {
@@ -83,10 +83,10 @@ export const lessonLimitiRimorchi: Lesson = {
         { it: "70", fa: "70" },
       ],
       items: [
-        { prompt: "سواری با carrello appendice، بزرگراه", answer: 0, explain: "carrello appendice بخشی از سواری است: ۱۳۰." },
+        { prompt: "سواری با carrello appendice، آزادراه", answer: 0, explain: "carrello appendice بخشی از سواری است: ۱۳۰." },
         { prompt: "موتورسیکلت، برون‌شهریِ اصلی", answer: 1, explain: "موتورسیکلت مثلِ سواری: اصلی ۱۱۰." },
         { prompt: "کمپرِ ۳ تنی، برون‌شهریِ فرعی", answer: 2, explain: "تا ۳٫۵ تن مثلِ سواری: فرعی ۹۰." },
-        { prompt: "سواری با کاروان، بزرگراه", answer: 3, explain: "یدک: بزرگراه ۸۰." },
+        { prompt: "سواری با کاروان، آزادراه", answer: 3, explain: "یدک: آزادراه ۸۰." },
         { prompt: "سواری با یدکِ قایق، برون‌شهریِ اصلی", answer: 4, explain: "یدک: بیرونِ آبادی ۷۰، اصلی هم." },
       ],
       takeaway: "اول بپرس: خانواده‌ی سواری است یا یدک دارد؟ بعد جاده.",
@@ -108,7 +108,7 @@ export const lessonLimitiRimorchi: Lesson = {
     {
       kind: "trap",
       title: "carrello appendice ≠ rimorchio",
-      body: "هر دو جمله درباره‌ی سواری در بزرگراه است که چیزی پشتش بسته:",
+      body: "هر دو جمله درباره‌ی سواری در آزادراه است که چیزی پشتش بسته:",
       examples: [
         {
           sourceId: "4046",
@@ -116,11 +116,11 @@ export const lessonLimitiRimorchi: Lesson = {
           answer: 1,
           chunks: [
             { it: LIMITE, fa: LIMITE_FA },
-            { it: "sulle autostrade", fa: "در بزرگراه‌ها" },
+            { it: "sulle autostrade", fa: "در آزادراه‌ها" },
             { it: "è ordinariamente di 130 km/h", fa: "به‌طورِ معمول ۱۳۰ کیلومتر بر ساعت است", verb: "è ← essere" },
             { it: "per le autovetture con carrello appendice", fa: "برای سواری‌هایی که carrello appendice دارند" },
           ],
-          translation: "حداکثرِ سرعتِ مجاز در بزرگراه‌ها برای سواری‌هایی که carrello appendice دارند به‌طورِ معمول ۱۳۰ کیلومتر بر ساعت است.",
+          translation: "حداکثرِ سرعتِ مجاز در آزادراه‌ها برای سواری‌هایی که carrello appendice دارند به‌طورِ معمول ۱۳۰ کیلومتر بر ساعت است.",
           why: "درست است. carrello appendice بخشی از خودِ سواری حساب می‌شود، پس عددِ سواری.",
         },
         {
@@ -129,12 +129,12 @@ export const lessonLimitiRimorchi: Lesson = {
           answer: 0,
           chunks: [
             { it: LIMITE, fa: LIMITE_FA },
-            { it: "sulle autostrade", fa: "در بزرگراه‌ها" },
+            { it: "sulle autostrade", fa: "در آزادراه‌ها" },
             { it: "è di 130 km/h", fa: "۱۳۰ کیلومتر بر ساعت است", verb: "è ← essere", focus: "contrast" },
             { it: "per le autovetture con rimorchio", fa: "برای سواری‌هایی که یدک دارند" },
           ],
-          translation: "حداکثرِ سرعتِ مجاز در بزرگراه‌ها برای سواری‌هایی که یدک دارند ۱۳۰ کیلومتر بر ساعت است.",
-          why: "غلط است. سواری + rimorchio = autotreno: بزرگراه ۸۰.",
+          translation: "حداکثرِ سرعتِ مجاز در آزادراه‌ها برای سواری‌هایی که یدک دارند ۱۳۰ کیلومتر بر ساعت است.",
+          why: "غلط است. سواری + rimorchio = autotreno: آزادراه ۸۰.",
         },
       ],
       takeaway: "«carrello appendice» = عددِ سواری. «rimorchio»، «caravan»، «rimorchio per …» = ۸۰ و ۷۰.",
@@ -163,12 +163,12 @@ export const lessonLimitiRimorchi: Lesson = {
       answer: 0,
       chunks: [
         { it: LIMITE, fa: LIMITE_FA },
-        { it: "sulle autostrade", fa: "در بزرگراه‌ها" },
+        { it: "sulle autostrade", fa: "در آزادراه‌ها" },
         { it: "è di 90 km/h", fa: "۹۰ کیلومتر بر ساعت است", verb: "è ← essere", focus: "contrast" },
         { it: "per i motocicli", fa: "برای موتورسیکلت‌ها" },
       ],
-      translation: "حداکثرِ سرعتِ مجاز در بزرگراه‌ها برای موتورسیکلت‌ها ۹۰ کیلومتر بر ساعت است.",
-      why: "غلط است (قدم ۱). موتورسیکلت عددهای سواری را دارد: بزرگراه ۱۳۰.",
+      translation: "حداکثرِ سرعتِ مجاز در آزادراه‌ها برای موتورسیکلت‌ها ۹۰ کیلومتر بر ساعت است.",
+      why: "غلط است (قدم ۱). موتورسیکلت عددهای سواری را دارد: آزادراه ۱۳۰.",
       rule: `${CDS_142} c.1`,
       conceptStep: 1,
     },
@@ -178,12 +178,12 @@ export const lessonLimitiRimorchi: Lesson = {
       answer: 1,
       chunks: [
         { it: LIMITE, fa: LIMITE_FA },
-        { it: "sulle autostrade", fa: "در بزرگراه‌ها" },
+        { it: "sulle autostrade", fa: "در آزادراه‌ها" },
         { it: "è di 80 km/h", fa: "۸۰ کیلومتر بر ساعت است", verb: "è ← essere" },
         { it: "per l'autovettura che traina un caravan", fa: "برای سواری‌ای که کاروان می‌کشد", verb: "traina ← trainare" },
       ],
-      translation: "حداکثرِ سرعتِ مجاز در بزرگراه‌ها برای سواری‌ای که کاروان می‌کشد ۸۰ کیلومتر بر ساعت است.",
-      why: "درست است (قدم ۲). کاروان یدک است: بزرگراه ۸۰.",
+      translation: "حداکثرِ سرعتِ مجاز در آزادراه‌ها برای سواری‌ای که کاروان می‌کشد ۸۰ کیلومتر بر ساعت است.",
+      why: "درست است (قدم ۲). کاروان یدک است: آزادراه ۸۰.",
       rule: `${CDS_142} c.3 lett. e`,
       conceptStep: 2,
     },
@@ -198,7 +198,7 @@ export const lessonLimitiRimorchi: Lesson = {
         { it: "per autovetture con rimorchio leggero", fa: "برای سواری‌هایی که یدکِ سبک دارند" },
       ],
       translation: "در جاده‌های برون‌شهریِ اصلی حداکثرِ سرعتِ مجاز برای سواری‌هایی که یدکِ سبک دارند ۸۰ کیلومتر بر ساعت است.",
-      why: "غلط است (قدم ۲). یدک، سبک یا سنگین، بیرونِ آبادی ۷۰ است؛ ۸۰ فقط در بزرگراه.",
+      why: "غلط است (قدم ۲). یدک، سبک یا سنگین، بیرونِ آبادی ۷۰ است؛ ۸۰ فقط در آزادراه.",
       rule: `${CDS_142} c.3 lett. e`,
       conceptStep: 2,
     },
@@ -257,11 +257,11 @@ export const lessonLimitiNeopatentati: Lesson = {
       body: "تا سه سال بعد از گرفتنِ گواهینامه، دو سقفِ پایین‌تر برای خودِ راننده هست، با هر خودرویی:",
       columns: ["سقفِ تو"],
       rows: [
-        { label: "بزرگراه", it: "autostrade", values: ["۱۰۰ km/h (نه ۱۱۰، نه ۱۳۰)"] },
+        { label: "آزادراه", it: "autostrade", values: ["۱۰۰ km/h (نه ۱۱۰، نه ۱۳۰)"] },
         { label: "برون‌شهریِ اصلی", it: "extraurbane principali", values: ["۹۰ km/h (نه ۱۱۰)"] },
         { label: "فرعی و شهر", it: "secondarie · centri abitati", values: ["مثلِ همه: ۹۰ و ۵۰"] },
       ],
-      takeaway: "سه سالِ اول: ۱۰۰ در بزرگراه، ۹۰ در برون‌شهریِ اصلی.",
+      takeaway: "سه سالِ اول: ۱۰۰ در آزادراه، ۹۰ در برون‌شهریِ اصلی.",
       rule: "Codice della Strada, art. 117 c.2",
     },
     {
@@ -289,7 +289,7 @@ export const lessonLimitiNeopatentati: Lesson = {
         { it: "40", fa: "40" },
       ],
       items: [
-        { prompt: "یک سال است گواهینامه گرفته‌ای، بزرگراه", answer: 0, explain: "سه سالِ اول: بزرگراه ۱۰۰." },
+        { prompt: "یک سال است گواهینامه گرفته‌ای، آزادراه", answer: 0, explain: "سه سالِ اول: آزادراه ۱۰۰." },
         { prompt: "دو سال است گواهینامه گرفته‌ای، برون‌شهریِ اصلی", answer: 1, explain: "سه سالِ اول: اصلی ۹۰." },
         { prompt: "چهارچرخِ غیرِ سبک، برون‌شهریِ فرعی", answer: 2, explain: "بیرونِ آبادی ۸۰." },
         { prompt: "موتورگازی، برون‌شهریِ فرعی", answer: 3, explain: "موتورگازی همه‌جا ۴۵." },
@@ -314,33 +314,33 @@ export const lessonLimitiNeopatentati: Lesson = {
     {
       kind: "trap",
       title: "۱۰۰ یا ۱۱۰؟",
-      body: "هر دو جمله درباره‌ی راننده‌ای است که کمتر از سه سال است گواهینامه دارد، در بزرگراه:",
+      body: "هر دو جمله درباره‌ی راننده‌ای است که کمتر از سه سال است گواهینامه دارد، در آزادراه:",
       examples: [
         {
           sourceId: "4037",
           textIt: "Il limite di velocità sulle autostrade per coloro che hanno conseguito la patente da meno di 3 anni è di 100 km/h",
           answer: 1,
           chunks: [
-            { it: "Il limite di velocità sulle autostrade", fa: "سقفِ سرعت در بزرگراه‌ها" },
+            { it: "Il limite di velocità sulle autostrade", fa: "سقفِ سرعت در آزادراه‌ها" },
             { it: NEOPATENTATI, fa: NEOPATENTATI_FA, verb: "hanno conseguito ← conseguire" },
             { it: "3 anni", fa: "۳ سال", focus: "limit" },
             { it: "è di 100 km/h", fa: "۱۰۰ کیلومتر بر ساعت است", verb: "è ← essere" },
           ],
-          translation: "سقفِ سرعت در بزرگراه‌ها برای کسانی که کمتر از ۳ سال پیش گواهینامه گرفته‌اند ۱۰۰ کیلومتر بر ساعت است.",
-          why: "درست است. سه سالِ اول: بزرگراه ۱۰۰.",
+          translation: "سقفِ سرعت در آزادراه‌ها برای کسانی که کمتر از ۳ سال پیش گواهینامه گرفته‌اند ۱۰۰ کیلومتر بر ساعت است.",
+          why: "درست است. سه سالِ اول: آزادراه ۱۰۰.",
         },
         {
           sourceId: "4044",
           textIt: "Il limite di velocità sulle autostrade per coloro che hanno conseguito la patente da meno di tre anni è di 110 km/h",
           answer: 0,
           chunks: [
-            { it: "Il limite di velocità sulle autostrade", fa: "سقفِ سرعت در بزرگراه‌ها" },
+            { it: "Il limite di velocità sulle autostrade", fa: "سقفِ سرعت در آزادراه‌ها" },
             { it: NEOPATENTATI, fa: NEOPATENTATI_FA, verb: "hanno conseguito ← conseguire" },
             { it: "tre anni", fa: "سه سال", focus: "limit" },
             { it: "è di 110 km/h", fa: "۱۱۰ کیلومتر بر ساعت است", verb: "è ← essere", focus: "contrast" },
           ],
-          translation: "سقفِ سرعت در بزرگراه‌ها برای کسانی که کمتر از سه سال پیش گواهینامه گرفته‌اند ۱۱۰ کیلومتر بر ساعت است.",
-          why: "غلط است. ۱۱۰ سقفِ همه در بزرگراهِ بارانی است، نه سقفِ تازه‌کار. تازه‌کار: ۱۰۰.",
+          translation: "سقفِ سرعت در آزادراه‌ها برای کسانی که کمتر از سه سال پیش گواهینامه گرفته‌اند ۱۱۰ کیلومتر بر ساعت است.",
+          why: "غلط است. ۱۱۰ سقفِ همه در آزادراهِ بارانی است، نه سقفِ تازه‌کار. تازه‌کار: ۱۰۰.",
         },
       ],
       takeaway: "تازه‌کار: ۱۰۰ و ۹۰. اگر جمله ۱۱۰ گفت، حتماً غلط است.",

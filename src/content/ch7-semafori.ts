@@ -62,7 +62,7 @@ export const lessonSemaforoVeicolare: Lesson = {
         {
           label: "کجا نیست",
           it: "casello · binari ferroviari",
-          values: ["چراغِ کنارِ ریلِ قطار چیزِ دیگری است: دو چراغِ قرمزِ چشمک‌زن (درس ۷). در «همه‌ی» عوارضی‌های بزرگراه هم چنین چراغی نیست."],
+          values: ["چراغِ کنارِ ریلِ قطار چیزِ دیگری است: دو چراغِ قرمزِ چشمک‌زن (درس ۷). در «همه‌ی» عوارضی‌های آزادراه هم چنین چراغی نیست."],
         },
       ],
       takeaway: "سه دایره‌ی رنگی = چراغِ وسایلِ نقلیه، سرِ تقاطع. برای همه است، اتوبوس و دوچرخه هم.",
@@ -161,9 +161,9 @@ export const lessonSemaforoVeicolare: Lesson = {
       chunks: [
         { it: SEMAFORO, fa: SEMAFORO_FA },
         { it: "si trova", fa: "قرار دارد", verb: "si trova ← trovarsi" },
-        { it: "in tutti i caselli autostradali", fa: "در همه‌ی عوارضی‌های بزرگراه", focus: "always" },
+        { it: "in tutti i caselli autostradali", fa: "در همه‌ی عوارضی‌های آزادراه", focus: "always" },
       ],
-      translation: "چراغِ تصویر در همه‌ی عوارضی‌های بزرگراه قرار دارد.",
+      translation: "چراغِ تصویر در همه‌ی عوارضی‌های آزادراه قرار دارد.",
       why: "غلط است (قدم ۱). جای عادی‌اش تقاطع است. «همه‌ی عوارضی‌ها» ادعای ساختگی است.",
       rule: "DPR 495/1992 art. 158",
       conceptStep: 1,
