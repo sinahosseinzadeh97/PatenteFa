@@ -59,6 +59,17 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | pista ciclabile | مسیر ویژه‌ی دوچرخه | |
 | senso unico | یک‌طرفه | |
 
+## Distance and braking
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| distanza di sicurezza | فاصله‌ی ایمنی | |
+| tempo di reazione | زمانِ واکنش | |
+| spazio di frenatura | مسافتِ ترمز | |
+| spazio (totale) di arresto | کل مسافتِ توقف | |
+| corsia di emergenza | خطِ اضطراری | |
+| galleria | تونل | |
+
 ## Actions and signs
 
 | Italiano | فارسی | Never write |
@@ -78,3 +89,4 @@ Recorded 2026-11-14. Each one moves into «Never write» once the content is fix
 - **attraversamento pedonale:** some lessons write «خط عابر پیاده», which is closer
   to *strisce pedonali*.
 - **segnale raffigurato:** some lessons write «تابلوی تصویر».
+- **tamponamento:** chapter 12 L3 writes «زدن به عقبِ خودروی جلو», chapter 10's review «تصادف از پشت». Pick one.
