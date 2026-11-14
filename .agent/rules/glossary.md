@@ -162,6 +162,30 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | veicolo a trazione animale | گاری | |
 | piazzola di sosta | پارکینگِ کوچکِ کنارِ راه | |
 
+## Stopping and parking (chapter 16)
+
+`sosta` = پارک and `fermata` = توقف کوتاه follow the rows above. The chapter also uses the headwords
+chapters 13 and 18 adopt: `passo carrabile` = ورودیِ خودرو به ملک, `dosso` = برآمدگی,
+`indicatore di direzione` = چراغ راهنما, `specchio retrovisore` = آینه, `luci di posizione` = چراغ‌های موقعیت.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| arresto | ایستادن به خاطرِ ترافیک | |
+| sosta di emergenza | توقفِ اضطراری | |
+| disco orario | دیسکِ ساعت | |
+| parchimetro | پارکومتر | |
+| stallo (di sosta) | جای پارکِ خط‌کشی‌شده | |
+| in seconda fila, in doppia fila | در ردیفِ دوم (دوبل) | |
+| marciapiede rialzato | پیاده‌روی بلند | |
+| area pedonale urbana | منطقه‌ی عابرِ پیاده | |
+| zona a traffico limitato (ZTL) | منطقه‌ی تردد محدود | |
+| scivolo (per persone invalide) | سرازیریِ پیاده‌رو | |
+| distributore di carburante | پمپ‌بنزین | |
+| cassonetto dei rifiuti | سطلِ زباله‌ی شهری | |
+| freno di stazionamento, freno a mano | ترمزِ دستی | |
+| portiera, sportello | درِ خودرو | |
+| sottrazione / decurtazione dei punti | کم شدنِ امتیازِ گواهینامه | |
+
 ## Motorways, load and towing (chapter 17)
 
 | Italiano | فارسی | Never write |

@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -luci.ts, -autostrade.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -fermata.ts, -luci.ts, -autostrade.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -31,6 +31,7 @@ import { AUTOSTRADE_CHAPTER } from "./lessons-autostrade.js";
 import { COMPLEMENTARI_CHAPTER } from "./lessons-complementari.js";
 import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { DIVIETO_CHAPTER } from "./lessons-divieto.js";
+import { FERMATA_CHAPTER } from "./lessons-fermata.js";
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
 import { INDICAZIONE_CHAPTER } from "./lessons-indicazione.js";
 import { INTEGRATIVI_CHAPTER } from "./lessons-integrativi.js";
@@ -1218,6 +1219,7 @@ export const CHAPTERS: Chapter[] = [
   NORME_CHAPTER,
   INCROCI_CHAPTER,
   SORPASSO_CHAPTER,
+  FERMATA_CHAPTER,
   AUTOSTRADE_CHAPTER,
   LUCI_CHAPTER,
 ];
