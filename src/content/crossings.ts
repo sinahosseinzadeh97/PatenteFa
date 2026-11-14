@@ -14,9 +14,11 @@
  *    follows from the VERO statements in `evidence` and contradicts every
  *    FALSO one; `npm run verify:lessons` checks those snapshots against D1.
  *  - Every figure below was read by hand (vehicle, entry arm, exit arm, signs,
- *    rails). Figures whose geometry or order we could not verify with
- *    confidence (e.g. the circular "everyone has someone on the right" cases,
- *    617/638/642) are deliberately not used.
+ *    rails). The circular "everyone has someone on the right" figures (617,
+ *    638) are used since chapter 14 was completed (2026-11-14): `centre` names
+ *    the left-turner that moves to the centre first, and `phases` is the order
+ *    in which vehicles *finish*. 642 stays undrawn: no VERO statement fixes M
+ *    before A, so its order could not be proven from the bank alone.
  *  - Arm angles: 0 = right of the figure, 90 = top. `move` is checked against
  *    the angles in tests, so a typo cannot turn a left turn into a right one.
  */
@@ -434,4 +436,258 @@ export const FIG_655: Crossing = {
   ],
 };
 
-export const CROSSINGS: Crossing[] = [FIG_640, FIG_633, FIG_614, FIG_613, FIG_643, FIG_637, FIG_655];
+
+
+// ── Chapter 14, lessons 5–6 ──────────────────────────────────────────────────
+
+/** The bank's five-arm "Y" junction (figures 657, 659–665): a cross road with two diagonal arms below. */
+const Y5 = [
+  { id: "E", angle: 0 },
+  { id: "N", angle: 90 },
+  { id: "W", angle: 180 },
+  { id: "SW", angle: 235 },
+  { id: "SE", angle: 300 },
+];
+
+/** Figure 657 (same drawing as 659) — R from the right, A and C on the two diagonal arms. */
+export const FIG_657: Crossing = {
+  id: "fig-657",
+  figure: 657,
+  arms: Y5,
+  vehicles: [
+    { id: "R", kind: "car", from: "E", to: "SW", move: "left" },
+    { id: "A", kind: "car", from: "SE", to: "SW", move: "left" },
+    { id: "C", kind: "car", from: "SW", to: "E", move: "right" },
+  ],
+  phases: [["R"], ["A"], ["C"]],
+  explain: [
+    { text: "R از راستِ تصویر رو به چپ می‌راند؛ راستش بالای تصویر است و بازوی بالا خالی است. دو بازوی مورب پایین سمتِ چپِ R هستند. پس R منتظر کسی نیست و اول رد می‌شود." },
+    { text: "A از بازوی مورب پایین-راست رو به بالا-چپ می‌راند. «راستِ» او را از جهتِ حرکتِ خودش پیدا کن: سمت راستِ تصویر است، جایی که R بود. حالا که R رفته، نوبت A است." },
+    { text: "C از بازوی مورب پایین-چپ رو به بالا-راست می‌راند. راستش پایین-راستِ تصویر (A) و راستِ تصویر (R) است و مسیرِ هر دو مسیرِ C را قطع می‌کرد. C آخر رد می‌شود." },
+  ],
+  waits: {
+    A: "A باید صبر کند تا R رد شود: A رو به بالا-چپ می‌راند، پس راستش سمت راستِ تصویر است و R از آنجا می‌آید.",
+    C: "C باید صبر کند تا R و A رد شوند: C رو به بالا-راست می‌راند؛ راستش هم بازوی پایین-راست است (A) و هم راستِ تصویر (R).",
+  },
+  evidence: [
+    {
+      sourceId: "5092",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura i veicoli transitano nel seguente ordine: R, A, C",
+      answer: 1,
+      before: [["R", "A"], ["A", "C"]],
+    },
+    {
+      sourceId: "5089",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura il veicolo A transita dopo il veicolo R",
+      answer: 1,
+      before: [["R", "A"]],
+    },
+    {
+      sourceId: "5094",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura i veicoli R e C transitano contemporaneamente",
+      answer: 0,
+      together: [["R", "C"]],
+    },
+    {
+      sourceId: "5095",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura i veicoli transitano nel seguente ordine: R, C, A",
+      answer: 0,
+      before: [["R", "C"], ["C", "A"]],
+    },
+    {
+      sourceId: "5096",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura il veicolo R deve attendere il transito dei veicoli C e A",
+      answer: 0,
+      before: [["C", "R"], ["A", "R"]],
+    },
+  ],
+};
+
+/** Figure 664 — four vehicles round the five-arm junction: one chain, S → B → L → D. */
+export const FIG_664: Crossing = {
+  id: "fig-664",
+  figure: 664,
+  arms: Y5,
+  vehicles: [
+    { id: "S", kind: "car", from: "N", to: "SW", move: "right" },
+    { id: "B", kind: "car", from: "E", to: "SW", move: "left" },
+    { id: "L", kind: "car", from: "SE", to: "N", move: "right" },
+    { id: "D", kind: "car", from: "SW", to: "N", move: "left" },
+  ],
+  phases: [["S"], ["B"], ["L"], ["D"]],
+  explain: [
+    { text: "S از بالا پایین می‌آید؛ راستش سمت چپِ تصویر است. بازوی چپ خالی است. D در بازوی پایین-چپ هست، ولی S با گردشی کوتاه به راست، نزدیکِ لبه، وارد همان بازو می‌شود و از مسیرِ D رد نمی‌شود (درس ۳). S اول است." },
+    { text: "B از راستِ تصویر رو به چپ می‌راند؛ راستش بالای تصویر است، جایی که S بود. بعد از S نوبت B است." },
+    { text: "L از بازوی پایین-راست رو به بالا می‌راند؛ راستش سمت راستِ تصویر است، جایی که B بود. حالا L." },
+    { text: "D از بازوی پایین-چپ رو به بالا-راست می‌راند؛ راستش بازوی پایین-راست است، جایی که L بود. D آخر است." },
+  ],
+  waits: {
+    B: "B باید صبر کند تا S رد شود: B رو به چپِ تصویر می‌راند، پس راستش بالای تصویر است و S از آنجا می‌آید.",
+    L: "L باید صبر کند تا B رد شود: L رو به بالا می‌راند، پس راستش سمت راستِ تصویر است و B از آنجا می‌آید.",
+    D: "D باید صبر کند تا L رد شود: D رو به بالا-راست می‌راند، پس راستش بازوی پایین-راست است و L از آنجا می‌آید.",
+  },
+  evidence: [
+    {
+      sourceId: "5040",
+      textIt: "Nell'intersezione di figura l'ordine di transito dei veicoli è: S, B, L, D",
+      answer: 1,
+      before: [["S", "B"], ["B", "L"], ["L", "D"]],
+    },
+    {
+      sourceId: "5039",
+      textIt: "Nell'intersezione di figura il veicolo B deve dare la precedenza al veicolo S",
+      answer: 1,
+      before: [["S", "B"]],
+    },
+    {
+      sourceId: "5041",
+      textIt: "Nell'intersezione di figura l'ordine di transito dei veicoli è: S, B, D e L contemporaneamente",
+      answer: 0,
+      before: [["S", "B"], ["B", "D"], ["B", "L"]],
+      together: [["D", "L"]],
+    },
+    {
+      sourceId: "5042",
+      textIt: "Nell'intersezione di figura l'ordine di transito dei veicoli è: S e D contemporaneamente, B, L",
+      answer: 0,
+      together: [["S", "D"]],
+      before: [["S", "B"], ["D", "B"], ["B", "L"]],
+    },
+  ],
+};
+
+/**
+ * Figure 617 — a deadlock: R gives way to N (N is on R's right), N turning left
+ * gives way to A coming the other way, A gives way to R. N moves to the centre
+ * and waits; R, then A, then N finishes.
+ */
+export const FIG_617: Crossing = {
+  id: "fig-617",
+  figure: 617,
+  arms: CROSS,
+  vehicles: [
+    { id: "N", kind: "car", from: "N", to: "E", move: "left" },
+    { id: "R", kind: "car", from: "E", to: "W", move: "straight" },
+    { id: "A", kind: "car", from: "S", to: "N", move: "straight" },
+  ],
+  centre: "N",
+  phases: [["R"], ["A"], ["N"]],
+  explain: [
+    { text: "اول گره را ببین: R باید به N راه بدهد (N راستِ R است)، N چون به چپ می‌پیچد باید به A که روبه‌رویش است راه بدهد، و A باید به R راه بدهد (R راستِ A است). هر کس منتظرِ دیگری است. راهِ حل: N که راستش خالی است و به چپ می‌پیچد، تا مرکزِ تقاطع جلو می‌رود و همان‌جا می‌ایستد. حالا راهِ R باز است؛ R اول تقاطع را تمام می‌کند." },
+    { text: "A فقط منتظرِ R بود. حالا A رد می‌شود. N هنوز در مرکز ایستاده، چون A روبه‌رویش است." },
+    { text: "N پیچیدنش را تمام می‌کند. N اول وارد تقاطع شد، ولی آخر از آن بیرون می‌رود." },
+  ],
+  waits: {
+    A: "A باید صبر کند تا R رد شود: A رو به بالا می‌راند، پس راستش سمت راستِ تصویر است و R از آنجا می‌آید.",
+    N: "N اول تا مرکز می‌رود، ولی پیچیدن را آخر تمام می‌کند: در مرکز به A که روبه‌رویش است راه می‌دهد، و در همین فاصله R رد می‌شود.",
+  },
+  evidence: [
+    {
+      sourceId: "4997",
+      textIt: "Nell'incrocio rappresentato nella figura il conducente del veicolo R conclude per primo l'attraversamento",
+      answer: 1,
+      before: [["R", "A"], ["R", "N"]],
+    },
+    {
+      sourceId: "4991",
+      textIt: "Nell'incrocio rappresentato nella figura il veicolo N può concludere la manovra di svolta a sinistra dopo il transito dei veicoli R e A",
+      answer: 1,
+      before: [["R", "N"], ["A", "N"]],
+    },
+    {
+      sourceId: "4996",
+      textIt: "Nell'incrocio rappresentato nella figura il conducente del veicolo R passa prima del veicolo A",
+      answer: 1,
+      before: [["R", "A"]],
+    },
+    {
+      sourceId: "5005",
+      textIt: "Nell'incrocio rappresentato nella figura il conducente del veicolo R passa dopo il transito del veicolo A",
+      answer: 0,
+      before: [["A", "R"]],
+    },
+    {
+      sourceId: "5001",
+      textIt: "Nell'incrocio rappresentato nella figura il veicolo N passa dopo il transito del veicolo R ma prima che transiti il veicolo A",
+      answer: 0,
+      before: [["R", "N"], ["N", "A"]],
+    },
+    {
+      sourceId: "4998",
+      textIt: "Nell'incrocio rappresentato nella figura il veicolo N attraversa per primo",
+      answer: 0,
+      before: [["N", "R"], ["N", "A"]],
+    },
+  ],
+};
+
+/**
+ * Figure 638 — the same deadlock with four vehicles: B moves to the centre,
+ * R goes, D and N go together (their paths do not cross), B finishes.
+ */
+export const FIG_638: Crossing = {
+  id: "fig-638",
+  figure: 638,
+  arms: [
+    { id: "E", angle: 0 },
+    { id: "N", angle: 90 },
+    { id: "W", angle: 180 },
+    { id: "S", angle: 270, lanes: 2 },
+  ],
+  vehicles: [
+    { id: "B", kind: "car", from: "N", to: "E", move: "left" },
+    { id: "R", kind: "car", from: "E", to: "W", move: "straight" },
+    { id: "D", kind: "car", from: "S", to: "W", move: "left", lane: 0 },
+    { id: "N", kind: "car", from: "S", to: "N", move: "straight", lane: 1 },
+  ],
+  centre: "B",
+  phases: [["R"], ["D", "N"], ["B"]],
+  explain: [
+    { text: "گره: R باید به B راه بدهد (B راستِ R است)، B چون به چپ می‌پیچد باید به N که روبه‌رویش مستقیم می‌آید راه بدهد، و N و D باید به R راه بدهند (R راستِ آن‌هاست). راهِ حل: B تا مرکزِ تقاطع جلو می‌رود و می‌ایستد. حالا R منتظر کسی نیست و اول رد می‌شود." },
+    { text: "D و N هر دو از پایین می‌آیند و فقط منتظرِ R بودند. N مستقیم می‌رود و D از خطِ کنارِ وسط به چپ می‌پیچد؛ مسیرشان قطع نمی‌شود، پس با هم رد می‌شوند. D و B هر دو به چپ می‌پیچند و روبه‌روی هم‌اند: هیچ‌کدام به دیگری راه نمی‌دهد." },
+    { text: "B پیچیدن به چپ را تمام می‌کند. در مرکز فقط منتظرِ N بود که روبه‌رویش مستقیم می‌آمد." },
+  ],
+  waits: {
+    D: "D باید صبر کند تا R رد شود: D رو به بالا می‌راند، پس راستش سمت راستِ تصویر است و R از آنجا می‌آید.",
+    N: "N باید صبر کند تا R رد شود: N رو به بالا می‌راند، پس راستش سمت راستِ تصویر است و R از آنجا می‌آید.",
+    B: "B اول تا مرکز می‌رود، ولی پیچیدن را آخر تمام می‌کند: در مرکز به N که روبه‌رویش مستقیم می‌آید راه می‌دهد.",
+  },
+  evidence: [
+    {
+      sourceId: "4844",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura i veicoli D e N passano contemporaneamente dopo che è passato il veicolo R",
+      answer: 1,
+      together: [["D", "N"]],
+      before: [["R", "D"], ["R", "N"]],
+    },
+    {
+      sourceId: "4841",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura il veicolo B passa dopo il veicolo N",
+      answer: 1,
+      before: [["N", "B"]],
+    },
+    {
+      sourceId: "4842",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura il veicolo D passa dopo il veicolo R",
+      answer: 1,
+      before: [["R", "D"]],
+    },
+    {
+      sourceId: "4855",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura il veicolo R passa per ultimo",
+      answer: 0,
+      before: [["D", "R"], ["N", "R"], ["B", "R"]],
+    },
+    {
+      sourceId: "4851",
+      textIt: "Secondo le norme di precedenza nell'incrocio rappresentato in figura il veicolo N passa per primo",
+      answer: 0,
+      before: [["N", "R"], ["N", "D"], ["N", "B"]],
+    },
+  ],
+};
+
+export const CROSSINGS: Crossing[] = [
+  FIG_640, FIG_633, FIG_614, FIG_613, FIG_643, FIG_637, FIG_655,
+  FIG_657, FIG_664, FIG_617, FIG_638,
+];
