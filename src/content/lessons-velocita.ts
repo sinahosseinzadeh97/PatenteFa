@@ -1,6 +1,9 @@
 /**
  * src/content/lessons-velocita.ts
- * Chapter 3 of the learning path: Velocità, distanza di sicurezza e arresto.
+ * Official chapter 12 (distanza di sicurezza): reaction distance, braking and
+ * stopping distance, following distance. Its first lesson, `velocita-adeguata`,
+ * is exported and taught as lesson 1 of chapter 11 (src/content/lessons-limiti.ts);
+ * until 2026-11-14 this module covered chapters 11 and 12 together.
  * Same trust rules as src/content/lessons.ts — real bank statements by
  * source_id with text + answer snapshots, faithful translations, explicit
  * question → section mappings — plus two step kinds of its own:
@@ -13,9 +16,8 @@
  *
  * Scope (reviewed 2026-10-10 against CdS artt. 141 and 149): adapting speed,
  * reaction distance, braking and total stopping distance, following distance.
- * Not covered: the numeric speed limits (art. 142), level crossings, servo
- * brakes on long descents, and liability after a crash. Their questions are
- * left unmapped on purpose.
+ * The numeric speed limits (art. 142), level crossings, servo brakes on long
+ * descents and liability at junctions are chapter 11's other lessons.
  */
 import type { Chapter, Lesson } from "./lessons.js";
 
@@ -33,7 +35,7 @@ const range = (from: number, to: number) => Array.from({ length: to - from + 1 }
 
 // ── Lesson 1 ──────────────────────────────────────────────────────────────────
 
-const lessonAdeguata: Lesson = {
+export const lessonAdeguata: Lesson = {
   id: "velocita-adeguata",
   titleFa: "سرعتِ مناسبِ همان لحظه",
   titleIt: "VELOCITÀ ADEGUATA",
@@ -252,7 +254,7 @@ const lessonAdeguata: Lesson = {
       ],
       translation: "راننده باید بتواند خودرو را در محدوده‌ی دیدش و در شرایطِ ایمن کامل متوقف کند.",
       why:
-        "درست است. سرعتت باید طوری باشد که پیش از رسیدن به هر مانعی که می‌بینی، کامل بایستی؛ همان چیزی که در پیچِ ۴۰ متری دیدی.",
+        "درست است (قدم ۲). سرعتت باید طوری باشد که پیش از رسیدن به هر مانعی که می‌بینی، کامل بایستی؛ همان چیزی که در پیچِ ۴۰ متری دیدی.",
       rule: `${CDS_141} c.2`,
       conceptStep: 2,
     },
@@ -266,7 +268,7 @@ const lessonAdeguata: Lesson = {
       ],
       translation: "سرعت باید بیرون از آبادی‌ها ملایم باشد.",
       why:
-        "غلط است. «بیرون از آبادی» به‌خودیِ‌خود دلیلِ کم کردنِ سرعت نیست. قانون جاهای مشخصی را نام می‌برد، از جمله عبور از داخلِ آبادی‌ها و جاده‌هایی که کنارشان ساختمان است. بیرونِ شهر هم سرعت را با پیچ، دید و هوا تنظیم می‌کنی، نه با اسمِ جاده.",
+        "غلط است (قدم ۱). «بیرون از آبادی» به‌خودیِ‌خود دلیلِ کم کردنِ سرعت نیست. قانون جاهای مشخصی را نام می‌برد، از جمله عبور از داخلِ آبادی‌ها و جاده‌هایی که کنارشان ساختمان است. بیرونِ شهر هم سرعت را با پیچ، دید و هوا تنظیم می‌کنی، نه با اسمِ جاده.",
       rule: `${CDS_141} c.3`,
       conceptStep: 1,
     },
@@ -282,7 +284,7 @@ const lessonAdeguata: Lesson = {
       ],
       translation: "اگر با حق تقدم از تقاطعی عبور کنی، هیچ اجباری نداری که سرعت را کم کنی.",
       why:
-        "غلط است. نزدیکِ تقاطع همیشه باید سرعت را تنظیم کنی، حتی وقتی حق تقدم با توست. همان چیزی که در فصلِ اول دیدی: حق تقدم، احتیاط را حذف نمی‌کند.",
+        "غلط است (قدم ۱). نزدیکِ تقاطع همیشه باید سرعت را تنظیم کنی، حتی وقتی حق تقدم با توست. همان چیزی که در فصلِ ۵ دیدی: حق تقدم، احتیاط را حذف نمی‌کند.",
       rule: `${CDS_141} c.3; Codice della Strada, art. 145 c.1`,
       conceptStep: 1,
     },
@@ -297,7 +299,7 @@ const lessonAdeguata: Lesson = {
       ],
       translation: "راننده باید سرعت را متناسب با مهارتِ خودش در رانندگی تنظیم کند.",
       why:
-        "غلط است. بانک سؤال مهارت را معیارِ تنظیمِ سرعت نمی‌داند: سرعت را با خودرو، جاده، ترافیک، هوا و حالِ همان لحظه‌ی خودت می‌سنجی. مهارتِ زیاد مجوزِ سرعتِ بیشتر نیست.",
+        "غلط است (قدم ۱). بانک سؤال مهارت را معیارِ تنظیمِ سرعت نمی‌داند: سرعت را با خودرو، جاده، ترافیک، هوا و حالِ همان لحظه‌ی خودت می‌سنجی. مهارتِ زیاد مجوزِ سرعتِ بیشتر نیست.",
       rule: `${CDS_141} c.1`,
       conceptStep: 1,
     },
@@ -316,7 +318,7 @@ const lessonAdeguata: Lesson = {
       ],
       translation: "داخلِ آبادی، اگر توپی ببینی که روی سواره‌رو قِل می‌خورد، باید سرعت را کم کنی تا اگر لازم شد بتوانی بایستی.",
       why:
-        "درست است. ممکن است پشتِ توپ بچه‌ای بدود. سرعت را طوری کم می‌کنی که اگر کسی جلویت آمد، در همان فاصله‌ای که می‌بینی بایستی.",
+        "درست است (قدم ۲). ممکن است پشتِ توپ بچه‌ای بدود. سرعت را طوری کم می‌کنی که اگر کسی جلویت آمد، در همان فاصله‌ای که می‌بینی بایستی.",
       rule: `${CDS_141} c.2`,
       conceptStep: 2,
     },
@@ -1231,12 +1233,12 @@ const lessonDistanza: Lesson = {
 
 export const VELOCITA_CHAPTER: Chapter = {
   id: "velocita-distanza-arresto",
-  numbers: [11, 12],
-  topicIds: [10, 11],
-  nameIt: "Velocità, distanza di sicurezza e arresto",
-  titleFa: "سرعت، فاصله‌ی ایمنی و توقف",
+  numbers: [12],
+  topicIds: [11],
+  nameIt: "Distanza di sicurezza e arresto",
+  titleFa: "فاصله‌ی ایمنی و توقف",
   summaryFa:
-    "چقدر طول می‌کشد تا بایستی؟ چهار درس کوتاه: سرعتِ مناسب، مسافتِ واکنش، ترمز و کل مسافتِ توقف، و فاصله تا خودروی جلو.",
+    "چقدر طول می‌کشد تا بایستی؟ سه درس کوتاه: مسافتِ واکنش، ترمز و کل مسافتِ توقف، و فاصله تا خودروی جلو. سرعتِ مناسب را در فصلِ ۱۱ دیدی.",
   reviewedOn: "2026-10-10",
   sources: [
     {
@@ -1268,5 +1270,5 @@ export const VELOCITA_CHAPTER: Chapter = {
       url: "https://github.com/Ed0ardo/QuizPatenteB",
     },
   ],
-  lessons: [lessonAdeguata, lessonReazione, lessonFrenatura, lessonDistanza],
+  lessons: [lessonReazione, lessonFrenatura, lessonDistanza],
 };
