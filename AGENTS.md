@@ -6,8 +6,9 @@
 > - `features.md` — UX & feature specs
 > - `build-plan.md` — repo layout, env vars, build phases
 > - `design.md` — UI design tokens, aesthetics & component styling
+> - `glossary.md` — one Persian word per Italian term in lesson content
 
-Read all five before making any significant changes.
+Read all six before making any significant changes.
 
 ## Key facts for any agent
 
