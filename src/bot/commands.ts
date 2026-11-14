@@ -6,6 +6,7 @@
 import {
   sendMessage,
   buildMiniAppButton,
+  sendWelcomeGuide,
   buildUrlButton,
   answerCallbackQuery,
   editMessageText,
@@ -180,13 +181,7 @@ export async function handleUpdate(
         });
       }
 
-      // Send private notification to approved user
-      await sendMessage(ctx.token, {
-        chat_id: targetUserId,
-        text: `🎉 <b>تبریک! حساب کاربری شما تایید شد.</b>\n\nاکنون می‌توانید مینی‌اپ پتنت فارسی را باز کرده و تمرینات را آغاز کنید. 🚗`,
-        parse_mode: "HTML",
-        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", ctx.miniAppUrl),
-      });
+      await sendWelcomeGuide(ctx.token, targetUserId, ctx.miniAppUrl);
       return;
     }
 
@@ -249,12 +244,7 @@ export async function handleUpdate(
         text: `✅ دسترسی کاربر <code>${targetId}</code> با موفقیت تایید شد.`,
         parse_mode: "HTML",
       });
-      await sendMessage(ctx.token, {
-        chat_id: targetId,
-        text: `🎉 <b>حساب کاربری شما تایید شد!</b>\nاکنون می‌توانید مینی‌اپ پتنت فارسی را باز کنید. 🚗`,
-        parse_mode: "HTML",
-        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", ctx.miniAppUrl),
-      });
+      await sendWelcomeGuide(ctx.token, targetId, ctx.miniAppUrl);
     }
   } else if (text.startsWith("/revoke") || text.startsWith("/block")) {
     if (!adminSide) {

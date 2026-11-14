@@ -152,6 +152,38 @@ export async function sendSupportReply(
 }
 
 /**
+ * Onboarding guide sent when a user gets access (every approval path) and on
+ * the admin's «راهنما» resend. The first button opens the Mini App straight on
+ * the lessons screen via the ?screen= param that init() in app.js reads.
+ */
+export async function sendWelcomeGuide(
+  token: string,
+  telegramUserId: number,
+  miniAppUrl: string
+): Promise<boolean> {
+  const lessonsUrl = new URL(miniAppUrl);
+  lessonsUrl.searchParams.set("screen", "topics");
+  return sendMessage(token, {
+    chat_id: telegramUserId,
+    text:
+      `🎉 <b>دسترسی‌ات به پتنت فارسی فعال شد!</b>\n\n` +
+      `از اینجا شروع کن:\n` +
+      `1️⃣ دکمه «📚 شروع درس‌ها» را بزن؛ مستقیم به صفحه فصل‌ها می‌روی.\n` +
+      `2️⃣ در بخش «درس‌ها» اولین درس فصل ۱ را باز کن و به ترتیب جلو برو.\n` +
+      `3️⃣ هر بار که اپ را باز می‌کنی، کارت «مسیر امروز» در صفحه خانه درس بعدی‌ات را نشان می‌دهد.\n` +
+      `4️⃣ وقتی آماده شدی، «آزمون جامع» ۳۰ سؤالی بده؛ حداکثر ۳ اشتباه یعنی قبولی.\n\n` +
+      `سؤالی داشتی، همین‌جا در چت ربات بنویس.`,
+    parse_mode: "HTML",
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "📚 شروع درس‌ها", web_app: { url: lessonsUrl.toString() } }],
+        [{ text: "🚗 باز کردن پتنت فارسی", web_app: { url: miniAppUrl } }],
+      ],
+    },
+  });
+}
+
+/**
  * Admin announcement. Pinning keeps it as a banner at the top of the user's
  * bot chat, which is what makes it hard to miss. sendMessage() only returns a
  * boolean, so this call reads message_id itself for the pin.
