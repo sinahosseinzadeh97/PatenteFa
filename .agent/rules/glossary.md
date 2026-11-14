@@ -82,6 +82,37 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
 | segnale raffigurato | تابلوی نشان‌داده‌شده | |
 | pannello integrativo | پنل تکمیلی | |
 
+## Manoeuvres, lights and equipment (chapter 13)
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| marcia per file parallele | حرکت در ردیف‌های موازی | |
+| inversione di marcia (del senso di marcia) | دور زدن | |
+| retromarcia | دنده‌عقب | |
+| corsia di preselezione | خطِ عبورِ انتخابِ جهت | |
+| immettersi nel flusso della circolazione | واردِ جریانِ ترافیک شدن | |
+| margine destro della carreggiata | لبه‌ی راستِ سواره‌رو | |
+| passo carrabile | ورودیِ خودرو به ملک | |
+| proprietà privata | ملکِ خصوصی | |
+| pericolo o intralcio | خطر یا مزاحمت | |
+| dosso | برآمدگی | |
+| rotatoria | میدان | |
+| autotreno | کامیون با یدک | |
+| corteo | دسته‌ی راهپیمایی | |
+| indicatore di direzione | چراغ راهنما | |
+| segnalazione luminosa di pericolo | چراغِ خطر (چهار راهنما با هم) | |
+| proiettori abbaglianti | نورِ بالا | |
+| proiettori anabbaglianti | نورِ پایین | |
+| clacson, avvisatore acustico | بوق | |
+| specchio retrovisore | آینه | |
+| specchio retrovisore centrale | آینه‌ی وسط | |
+| specchio retrovisore laterale sinistro | آینه‌ی بغلِ چپ | |
+| angolo cieco | نقطه‌ی کور | |
+| carico | بار | |
+| carta di circolazione | کارتِ خودرو | کارت ماشین |
+| linea di mezzeria | خطِ وسط | |
+| striscia discontinua, tratteggiata | خط‌چین | |
+
 ## Junctions (chapter 14)
 
 `incrocio` / `intersezione` = تقاطع, `precedenza` = حق تقدم and `filobus` = اتوبوس برقی follow the rows above.
