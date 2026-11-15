@@ -371,6 +371,40 @@
         part('penale', label(142, 22, 'penale') + label(142, 34, 'Codice Penale'), [[136, 10, 70, 60]]) +
         part('amministrativa', label(250, 22, 'amministrativa') + label(250, 34, 'Codice della strada'), [[240, 10, 98, 60]]);
     } },
+    // Chapter 24 (side view): a car moving right. Each tappable part is a reason it needs more energy:
+    // air pushing on the front, a roof box, an open window, load, tyre pressure, electrical loads.
+    resistenze: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-sky') + rect(0, 186, 340, 34, 'rd-asphalt') +
+        line(10, 40, 70, 40, 'rd-arrow') + '<polygon class="rd-arrow-head" points="70,34 82,40 70,46"/>' + label(10, 30, 'marcia') +
+        '<path class="rd-cabin" d="M40 168 L40 130 L84 122 L122 84 L228 84 L266 122 L298 128 L298 168 Z"/>' +
+        part('aria', line(336, 104, 308, 104, 'rd-arrow') + '<polygon class="rd-arrow-head" points="308,98 298,104 308,110"/>' +
+          line(336, 146, 308, 146, 'rd-arrow') + '<polygon class="rd-arrow-head" points="308,140 298,146 308,152"/>' + label(292, 90, 'aria'), [[286, 78, 54, 80]]) +
+        part('tetto', rect(130, 66, 84, 16, 'rd-seat', ' rx="6"') + label(132, 58, 'portapacchi'), [[126, 46, 96, 38]]) +
+        part('finestrino', '<polygon class="rd-visor" points="128,90 222,90 254,120 128,120"/>' + rect(176, 90, 44, 14, 'rd-wheel') +
+          '<path class="rd-arrow" d="M214 96 C204 88 188 92 192 102"/>' + label(132, 112, 'finestrino', 'rd-label-dark'), [[124, 88, 132, 34]]) +
+        part('peso', rect(48, 136, 24, 22, 'rd-card-photo', ' rx="2"') + rect(76, 144, 20, 14, 'rd-card-photo', ' rx="2"') +
+          label(48, 132, 'peso'), [[44, 124, 56, 38]]) +
+        part('impianti', rect(266, 136, 22, 14, 'rd-dash-board', ' rx="2"') + label(112, 208, 'impianti · clima'), [[262, 132, 32, 22], [108, 196, 88, 18]]) +
+        '<circle class="rd-wheel" cx="92" cy="168" r="20"/><circle class="rd-rim" cx="92" cy="168" r="8"/>' +
+        part('pneumatico', '<ellipse class="rd-wheel" cx="246" cy="170" rx="22" ry="18"/><circle class="rd-rim" cx="246" cy="170" r="8"/>' +
+          rect(232, 185, 28, 4, 'rd-contact') + label(220, 208, 'pressione'), [[220, 148, 52, 66]]);
+    } },
+    // Chapter 24: fuel goes in on the left, the exhaust leaves on the right. What comes out is three
+    // different things: CO2 (climate), pollutants (air we breathe), noise. Fuel use is what goes in.
+    scarico: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-sky') +
+        part('carburante', rect(22, 170, 70, 24, 'rd-card-photo', ' rx="4"') + line(58, 170, 58, 142, 'rd-column') +
+          label(26, 186, 'carburante', 'rd-label-dark'), [[18, 164, 80, 34]]) +
+        part('filtro', rect(34, 50, 52, 14, 'rd-card-photo', ' rx="3"') + label(24, 42, "filtro dell'aria"), [[20, 30, 90, 36]]) +
+        part('motore', rect(20, 66, 80, 76, 'rd-seat', ' rx="6"') + label(36, 108, 'motore'), [[20, 66, 80, 76]]) +
+        line(100, 131, 300, 131, 'rd-column') +
+        part('catalizzatore', rect(118, 118, 52, 26, 'rd-dash-board', ' rx="6"') + label(108, 162, 'catalizzatore'), [[104, 114, 76, 54]]) +
+        part('silenziatore', rect(196, 112, 64, 38, 'rd-dash-board', ' rx="12"') + label(198, 168, 'silenziatore'), [[192, 108, 72, 66]]) +
+        part('co2', '<ellipse class="rd-smoke" cx="300" cy="96" rx="26" ry="13"/>' + label(288, 100, 'CO₂', 'rd-label-dark'), [[272, 80, 56, 32]]) +
+        part('inquinanti', '<ellipse class="rd-smoke" cx="236" cy="62" rx="44" ry="15"/>' + label(206, 66, 'NOx · PM · CO', 'rd-label-dark'), [[190, 44, 92, 34]]) +
+        part('rumore', '<path class="rd-arrow" d="M306 122 C314 128 314 134 306 140"/><path class="rd-arrow" d="M316 116 C328 126 328 136 316 146"/>' +
+          label(284, 196, 'rumore'), [[280, 110, 56, 94]]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {
