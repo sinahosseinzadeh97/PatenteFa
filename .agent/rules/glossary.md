@@ -205,6 +205,37 @@ chapters 13 and 18 adopt: `passo carrabile` = ورودیِ خودرو به مل�
 | fuoristrada (Suv) | شاسی‌بلند | |
 | ciclomotorista | موتور گازی‌سوار | |
 
+## Belts, helmets and protective gear (chapter 19)
+
+`cinture di sicurezza` = کمربندِ ایمنی, `spia` = چراغِ نشانگر, `quadriciclo` = چهارچرخ موتوری and
+`decurtazione dei punti` = کم شدنِ امتیازِ گواهینامه follow the rows above. «کیسه‌ی هوا», «پشت‌سری»,
+«کلاه ایمنی» and «تأییدشده» were already the words chapters 13, 16 and 17 used.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| airbag | کیسه‌ی هوا | |
+| poggiatesta | پشت‌سری | |
+| colpo di frusta | ضربه‌ی شلاقیِ گردن | |
+| arrotolatore (della cintura) | جمع‌کنِ کمربند | |
+| omologato | تأییدشده | |
+| istruttore di guida | مربیِ رانندگی | |
+| foglio rosa (autorizzazione ad esercitarsi alla guida) | مجوزِ تمرینِ رانندگی | |
+| sistema di ritenuta per bambini | سیستمِ نگه‌دارنده‌ی کودک | |
+| seggiolino (per bambini) | صندلیِ کودک | |
+| rivolto all'indietro (schienale verso la strada) | رو به عقب | |
+| casco (protettivo) | کلاه ایمنی | |
+| casco integrale | کلاه ایمنیِ تمام‌صورت | |
+| calotta (esterna) | پوسته‌ی کلاه | |
+| calotta interna, imbottitura (EPS) | لایه‌ی فوم | |
+| visiera | طلقِ کلاه | |
+| cinturino | بندِ زیرِ چانه | |
+| carrozzeria (chiusa) | بدنه (ی بسته) | |
+| cellula di sicurezza | اتاقکِ ایمنی | |
+| quadriciclo privo di carrozzeria (Quad) | کوادِ بی‌بدنه | |
+| stivali / guanti / giacca ad uso motociclistico | چکمه / دستکش / کاپشنِ موتورسواری | |
+| abrasione | سایش | |
+| inserti rigidi protettivi | محافظ‌های سخت | |
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

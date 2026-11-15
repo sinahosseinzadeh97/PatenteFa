@@ -259,6 +259,46 @@
           '<path class="rd-x" d="M10 122 C150 122 206 100 206 230"/>' + label(20, 104, 'motrice') + label(20, 146, 'rimorchio', 'rd-label-dark'), [6, 98, 70, 54]) +
         part('pedone', person(184, 140) + label(132, 176, 'pedone', 'rd-label-dark'), [128, 132, 66, 50]);
     } },
+    // Chapter 19 (side views, not roads): the driver's seat facing right, belt over shoulder and pelvis,
+    // the headrest level with the top of the head and close to it, the airbag drawn inflated in front.
+    abitacolo: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-sky') + rect(0, 186, 340, 34, 'rd-asphalt') +
+        '<path class="rd-cabin" d="M60 186 L60 34 L214 30 L300 118 L330 124 L330 186 Z"/>' +
+        rect(258, 118, 72, 16, 'rd-dash-board', ' rx="4"') + line(244, 70, 262, 128, 'rd-column') +
+        '<polygon class="rd-seat" points="96,176 112,72 140,72 132,176"/>' + rect(96, 158, 106, 20, 'rd-seat', ' rx="6"') +
+        part('poggiatesta', rect(108, 40, 26, 30, 'rd-headrest', ' rx="7"') + label(70, 30, 'poggiatesta'), [104, 20, 72, 54]) +
+        '<g class="rd-occupant"><circle cx="152" cy="54" r="15"/>' +
+        '<polygon points="132,74 156,74 176,154 138,156"/><rect x="140" y="140" width="76" height="18" rx="8"/>' +
+        '<rect x="204" y="146" width="16" height="44" rx="7"/><rect x="170" y="88" width="56" height="12" rx="6" transform="rotate(24 170 94)"/></g>' +
+        part('cintura', line(136, 76, 172, 154, 'rd-belt') + line(140, 152, 198, 152, 'rd-belt') + label(140, 206, 'cintura'), [[130, 72, 48, 86], [134, 144, 68, 70]]) +
+        part('airbag', '<ellipse class="rd-airbag" cx="226" cy="74" rx="22" ry="30"/>' + label(250, 52, 'airbag'), [200, 40, 96, 66]);
+    } },
+    // Chapter 19: a full-face helmet facing right, cut open so the foam liner under the shell shows.
+    casco: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-sky') +
+        part('calotta', '<path class="rd-shell" d="M86 150 C78 62 150 22 214 30 C264 38 292 84 288 140 L262 150 L254 182 L104 184 C92 176 88 164 86 150 Z"/>' +
+          label(20, 132, 'calotta'), [16, 118, 70, 22]) +
+        part('imbottitura', '<path class="rd-liner" d="M106 148 C102 78 156 46 208 52 C246 58 266 92 262 136 L238 146 L232 166 L124 166 C112 162 108 156 106 148 Z"/>' +
+          '<path class="rd-pad" d="M124 144 C122 92 162 70 202 74 C230 78 244 100 242 132 L222 140 L218 152 L136 152 Z"/>' +
+          label(168, 67, 'EPS', 'rd-label-dark'), [150, 52, 64, 22]) +
+        part('visiera', '<path class="rd-visor" d="M248 78 C276 86 292 110 290 140 L258 146 C262 120 258 98 248 78 Z"/>' + label(286, 72, 'visiera'), [244, 60, 90, 90]) +
+        part('aerazione', rect(158, 30, 16, 6, 'rd-vent', ' rx="2"') + rect(186, 30, 16, 6, 'rd-vent', ' rx="2"') + label(150, 18, "prese d'aria"), [144, 6, 100, 34]) +
+        part('cinturino', '<path class="rd-strap" d="M150 184 C162 204 206 206 220 184"/>' + label(226, 208, 'cinturino'), [144, 180, 140, 34]);
+    } },
+    // Chapter 19: a rider standing, facing right. Only the helmet is required by law; the rest is
+    // certified protective gear (EN 17092 garments, EN 13594 gloves, EN 13634 boots).
+    motociclista: { h: 260, draw: function() {
+      return rect(0, 0, 340, 260, 'rd-sky') + rect(0, 242, 340, 18, 'rd-asphalt') +
+        part('casco', '<circle class="rd-shell" cx="170" cy="36" r="22"/><path class="rd-visor" d="M178 24 C192 28 194 46 186 52 L176 50 Z"/>' +
+          label(60, 30, 'casco'), [[146, 12, 50, 48], [56, 18, 56, 18]]) +
+        part('giacca', rect(148, 62, 46, 84, 'rd-jacket', ' rx="10"') + '<ellipse class="rd-armour" cx="170" cy="72" rx="13" ry="8"/>' +
+          '<rect class="rd-jacket" x="186" y="66" width="14" height="62" rx="6" transform="rotate(-18 193 70)"/>' +
+          '<ellipse class="rd-armour" cx="203" cy="100" rx="6" ry="9" transform="rotate(-18 203 100)"/>' + label(60, 96, 'giacca'), [[144, 58, 70, 92], [56, 84, 56, 18]]) +
+        part('guanti', '<rect class="rd-glove" x="204" y="122" width="18" height="16" rx="5"/>' + label(232, 134, 'guanti'), [200, 116, 74, 26]) +
+        '<rect class="rd-pants" x="150" y="144" width="19" height="76" rx="6"/><rect class="rd-pants" x="173" y="144" width="19" height="76" rx="6"/>' +
+        part('stivali', '<path class="rd-boot" d="M148 206 L170 206 L170 242 L144 242 Z"/><path class="rd-boot" d="M172 206 L193 206 L194 230 L214 236 L214 242 L172 242 Z"/>' +
+          label(232, 226, 'stivali'), [[140, 200, 80, 46], [228, 214, 54, 18]]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {

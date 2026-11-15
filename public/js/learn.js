@@ -594,7 +594,7 @@
       '<p class="lesson-text">' + esc(content.body) + '</p>' +
       '<div class="anatomy" data-step="' + index + '">' +
         '<figure class="anatomy-figure">' + App.roadSceneSvg(content.scene) +
-          '<figcaption class="visually-hidden">نقشه‌ی ساده‌ی جاده؛ بخش‌ها در دکمه‌های زیر هم آمده‌اند.</figcaption></figure>' +
+          '<figcaption class="visually-hidden">تصویرِ ساده؛ بخش‌ها در دکمه‌های زیر هم آمده‌اند.</figcaption></figure>' +
         '<div class="anatomy-chips" role="group" aria-label="بخش‌های تصویر">' + chips + '</div>' +
         '<div class="anatomy-detail" aria-live="polite"><p class="anatomy-hint">روی تصویر یا یکی از دکمه‌ها بزن.</p></div>' +
       '</div>' +

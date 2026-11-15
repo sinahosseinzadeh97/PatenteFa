@@ -2832,6 +2832,26 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-cross path { stroke: #c1272d; stroke-width: 5; stroke-linecap: square; }
 .rd-paint { fill: none; stroke: #f2f0eb; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .rd-paint-text { fill: #f2f0eb; font-family: 'Barlow', sans-serif; font-size: 10px; font-weight: 700; letter-spacing: .08em; pointer-events: none; }
+/* Chapter 19 side views (seat, helmet, rider): drawings, fixed colours like the road scenes. */
+.rd-cabin { fill: #2a3546; stroke: #8d939f; stroke-width: 1.5; }
+.rd-dash-board { fill: #4a4d55; }
+.rd-column { stroke: #14151a; stroke-width: 5; stroke-linecap: round; }
+.rd-seat { fill: #5b6170; }
+.rd-headrest { fill: #6f7584; stroke: #c9ccd3; stroke-width: 1.2; }
+.rd-occupant circle, .rd-occupant polygon, .rd-occupant rect { fill: #f2f0eb; }
+.rd-belt { stroke: #ffc300; stroke-width: 5; stroke-linecap: round; }
+.rd-airbag { fill: rgba(242, 240, 235, .25); stroke: #f2f0eb; stroke-width: 1.5; stroke-dasharray: 4 3; }
+.rd-shell { fill: #4c8df6; stroke: #f2f0eb; stroke-width: 1.5; }
+.rd-liner { fill: #f2f0eb; }
+.rd-pad { fill: #2f323c; }
+.rd-visor { fill: rgba(143, 180, 234, .55); stroke: #f2f0eb; stroke-width: 1.2; }
+.rd-vent { fill: #14151a; }
+.rd-strap { fill: none; stroke: #ffc300; stroke-width: 3; }
+.rd-jacket { fill: #3b4a63; stroke: #8d939f; stroke-width: 1; }
+.rd-armour { fill: none; stroke: #ffc300; stroke-width: 2; }
+.rd-glove { fill: #14151a; stroke: #ffc300; stroke-width: 1.2; }
+.rd-pants { fill: #2f323c; }
+.rd-boot { fill: #14151a; stroke: #8d939f; stroke-width: 1; }
 .rd-part { cursor: pointer; }
 .rd-hit { fill: transparent; }
 .rd-clear { fill: transparent; }
