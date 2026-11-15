@@ -356,6 +356,62 @@ of art. 186 (حبس). The lessons say which one a statement means. `tamponare` a
 `tamponamento` (تصادف از پشت); chapter 22 L7 says so in the text. `soccorritore` is whoever helps, usually untrained;
 «امدادگر» stays for the professional responders chapter 21 names.
 
+## Liability, insurance and traffic psychology (chapter 23)
+
+`assicurazione per la responsabilità civile (RCA)` = بیمه‌ی شخص ثالث, `polizza kasko` = بیمه‌ی بدنه,
+`incidente stradale` = تصادف, `modulo CAI` = فرمِ توافقیِ تصادف (CAI), `sospensione / revisione / revoca della patente`
+(chapter 20), `stato di ebbrezza` = حالتِ مستی, `viva voce` = بلندگو (هندزفری), `auricolare` = هدفون (chapter 20) and
+`specchio retrovisore` = آینه follow the rows above. «حواس‌پرتی» (distrazione), «تلفنِ همراه» and «جریمه‌ی اداری»
+(sanzione amministrativa) were already the words chapters 13, 16 and 20 used; «قانونِ جزا» and «جرم» were chapters 21–22's.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| sinistro (stradale) | تصادف | |
+| responsabilità civile | مسئولیتِ مدنی | |
+| responsabilità penale | مسئولیتِ کیفری | |
+| responsabilità amministrativa | مسئولیتِ اداری | |
+| reato | جرم | |
+| pena | مجازات | |
+| risarcimento (del danno) | جبرانِ خسارت | |
+| danneggiato | زیان‌دیده | |
+| danni alle persone / alle cose | خسارتِ جانی / خسارتِ مالی | |
+| lesioni personali (gravi, gravissime) | صدمه‌ی بدنی (شدید، بسیار شدید) | |
+| omicidio colposo, omicidio stradale | قتلِ غیرعمد (در رانندگی) | |
+| colpa | تقصیر | |
+| forza maggiore | قوه‌ی قاهره | |
+| querela | شکایتِ زیان‌دیده | |
+| arresto (preventivo) | بازداشت | |
+| proprietario del veicolo | مالکِ خودرو | |
+| contro la volontà (del proprietario) | بدونِ رضایتِ (مالک) | |
+| consulente d'infortunistica stradale | کارشناسِ تصادفات | |
+| impresa di assicurazione, impresa assicuratrice | شرکتِ بیمه | |
+| polizza | بیمه‌نامه | |
+| premio (assicurativo) | حقِ بیمه | |
+| massimale | سقفِ تعهد | |
+| franchigia | فرانشیز | |
+| rivalsa | حقِ رجوعِ بیمه | |
+| bonus malus | بونوس‌مالوس | |
+| classe di merito | طبقه‌ی سابقه | |
+| certificato di assicurazione | گواهیِ بیمه | |
+| contrassegno (assicurativo) | برچسبِ بیمه | |
+| terzi / terzi trasportati | شخصِ ثالث / سرنشین‌ها | |
+| risarcimento diretto | جبرانِ مستقیم | |
+| Fondo di garanzia per le vittime della strada | صندوقِ تضمینِ قربانیانِ جاده | |
+| veicolo non identificato / non assicurato | خودروی ناشناس / خودروی بی‌بیمه | |
+| furto, incendio | سرقت، آتش‌سوزی | |
+| confisca / sequestro (del veicolo) | مصادره / توقیف | |
+| attenzione | توجه | |
+| percezione del pericolo | تشخیصِ خطر | |
+| ansia | اضطراب | |
+| navigatore satellitare | مسیریاب | |
+| sopravvalutare / sottostimare | دست‌بالا گرفتن / دست‌کم گرفتن | |
+
+`arresto` now has three senses kept apart: the traffic stop of chapter 16 (ایستادن به خاطرِ ترافیک), the art. 186
+penalty of chapter 22 (حبس), and arrest before trial in chapter 23 (بازداشت); chapter 23 L1 says so. `sinistro` as
+«تصادف» is never «چپ»; chapter 23 L1 explains the double meaning. «مسئولیتِ مدنی» names the liability, «بیمه‌ی شخص
+ثالث» the policy that pays it: the two are not used for each other. `franchigia` keeps the Iranian insurance word
+«فرانشیز» because no plain Persian word is in use.
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

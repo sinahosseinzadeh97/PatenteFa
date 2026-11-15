@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -fermata.ts, -luci.ts, -autostrade.ts, -cinture.ts, -patente.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -fermata.ts, -luci.ts, -autostrade.ts, -cinture.ts, -patente.ts, -incidenti.ts, -alcool.ts, -responsabilita.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -43,6 +43,7 @@ import { LUCI_CHAPTER } from "./lessons-luci.js";
 import { NORME_CHAPTER } from "./lessons-norme.js";
 import { OBBLIGO_CHAPTER } from "./lessons-obbligo.js";
 import { PATENTE_CHAPTER } from "./lessons-patente.js";
+import { RESPONSABILITA_CHAPTER } from "./lessons-responsabilita.js";
 import { lessonConfluenze, lessonIntersezioniT, lessonSemaforoAgente } from "./ch5-incroci.js";
 import { reviewPrecedenza } from "./ch5-ripasso.js";
 import { lessonDoveDareStop, lessonRiconoscerePrecedenza, lessonStradaDiritto } from "./ch5-segnali.js";
@@ -312,7 +313,7 @@ export interface RoadPart {
 export type RoadScene =
   | "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach"
   | "agente-braccia" | "agente-angolo" | "triangolo" | "rimorchio" | "abitacolo" | "casco" | "motociclista" | "patente"
-  | "aquaplaning" | "galleria" | "posizioni";
+  | "aquaplaning" | "galleria" | "posizioni" | "conseguenze";
 
 interface StepBase {
   title: string;
@@ -1231,6 +1232,7 @@ export const CHAPTERS: Chapter[] = [
   PATENTE_CHAPTER,
   INCIDENTI_CHAPTER,
   ALCOOL_CHAPTER,
+  RESPONSABILITA_CHAPTER,
 ];
 
 export function findLesson(lessonId: string): Lesson | null {
