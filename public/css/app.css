@@ -2861,6 +2861,18 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-card-text { font-size: 11px; font-weight: 700; }
 .rd-card-photo { fill: #c9ccd3; }
 .rd-card-person { fill: #8d939f; }
+/* Chapter 21: tyre on water, tunnel. Drawings, fixed colours like the other scenes. */
+.rd-rim { fill: #9aa0af; }
+.rd-groove { fill: none; stroke: #8d939f; stroke-width: 3; stroke-dasharray: 7 6; }
+.rd-contact { fill: #ffc300; }
+.rd-arrow { stroke: #ffc300; stroke-width: 3; }
+.rd-arrow-head { fill: #ffc300; }
+.rd-wall { fill: #8d939f; }
+.rd-exit { fill: #13703a; stroke: #f2f0eb; stroke-width: 1.5; }
+.rd-niche { fill: #2f323c; stroke: #f2f0eb; stroke-width: 1; }
+.rd-ext { fill: #c1272d; }
+.rd-smoke { fill: rgba(201, 204, 211, .6); }
+.rd-speaker { fill: #ffc300; stroke: #14151a; stroke-width: 1; }
 .rd-part { cursor: pointer; }
 .rd-hit { fill: transparent; }
 .rd-clear { fill: transparent; }

@@ -279,6 +279,45 @@ chapters 13 and 18 adopt: `passo carrabile` = ورودیِ خودرو به مل�
 `revisione` of a *vehicle* stays «معاینه‌ی فنی» (chapter 20 L8); a *licence* revisione is «بازآزمایی»,
 so the two never share a word.
 
+## Accidents, bad weather and tunnels (chapter 21)
+
+`segnale mobile di pericolo` = مثلثِ خطر, `segnalazione luminosa di pericolo` = چراغِ خطر (چهار راهنما با هم),
+`proiettori fendinebbia anteriori` = چراغِ مهِ جلو, `luce posteriore per nebbia` = چراغِ مهِ عقب,
+`distanza di sicurezza` = فاصله‌ی ایمنی, `strettoia` = باریکه, `cilindrata` = حجمِ موتور and
+`freno di stazionamento` = ترمزِ دستی follow the rows above. «سطحِ جاده», «لاستیکِ زمستانی», «آجِ لاستیک»,
+«مهِ غلیظ», «دنده خلاص» and «کلاچ» were already the words chapters 2, 4, 11, 16 and 17 used.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| incidente stradale | تصادف | |
+| tamponamento | تصادف از پشت | |
+| conducente coinvolto | راننده‌ی درگیر در تصادف | |
+| prestare assistenza | کمک رساندن | |
+| generalità | مشخصاتِ هویتی | |
+| tracce (dell'incidente) | آثارِ تصادف | |
+| modulo CAI (constatazione amichevole) | فرمِ توافقیِ تصادف (CAI) | |
+| denuncia all'assicurazione | اعلامِ تصادف به بیمه | |
+| aquaplaning | آکواپلنینگ | |
+| aderenza | چسبندگی (لاستیک به جاده) | |
+| battistrada | آجِ لاستیک | |
+| sbandamento | لیز خوردن به پهلو | |
+| pneumatici invernali | لاستیکِ زمستانی | |
+| catene (da neve) | زنجیرِ چرخ | |
+| ruote motrici | چرخ‌های محرک | |
+| infossamento | گیر کردن (در برف یا شن) | |
+| doppia trazione | چهارچرخ‌محرک | |
+| marce basse | دنده‌های سنگین | |
+| zone in ombra | جاهای سایه‌گیر | |
+| nebbia fitta | مهِ غلیظ | |
+| servosterzo | فرمانِ کمکی (هیدرولیک یا برقی) | |
+| centralina | واحدِ کنترلِ موتور (ECU) | |
+| traforo | تونلِ کوهستانی | |
+| via di fuga | راهِ فرار | |
+| uscita di emergenza | خروجیِ اضطراری | |
+| porta tagliafuoco | درِ ضدِ آتش | |
+| estintore | کپسولِ آتش‌نشانی | |
+| vigili del fuoco | آتش‌نشان‌ها | |
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.
@@ -286,7 +325,10 @@ Recorded 2026-11-14. Each one moves into «Never write» once the content is fix
 - **attraversamento pedonale:** some lessons write «خط عابر پیاده», which is closer
   to *strisce pedonali*.
 - **segnale raffigurato:** some lessons write «تابلوی تصویر».
-- **tamponamento:** chapter 12 L3 writes «زدن به عقبِ خودروی جلو», chapter 10's review «تصادف از پشت». Pick one.
+- **tamponamento:** headword «تصادف از پشت» since chapter 21 (chapters 10, 17 and 21 already use it). Chapter 12
+  L3 still writes «زدن به عقبِ خودروی جلو»; left unchanged by the chapter 21 work.
+- **servosterzo:** headword «فرمانِ کمکی (هیدرولیک یا برقی)» (chapters 11 and 21); chapter 17 writes
+  «فرمانِ هیدرولیک (کمکی)».
 - **segnalazione luminosa di pericolo:** chapter 18 writes «چراغِ خطر (چهار راهنما با هم)»; chapter 11 L5 and
   chapter 15 L4 write «فلاشر». Align them, then add «فلاشر» to Never write.
 - **dosso:** chapter 15 (L2, L6) writes «قله‌ی سربالایی»; the chapter 13 work in progress uses «برآمدگی». In

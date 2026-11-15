@@ -316,6 +316,34 @@
         part('categorie', t(116, 160, '9. AM / B'), [112, 148, 110, 18]) +
         part('codici', t(116, 182, '12. 01 · 96'), [112, 170, 110, 18]);
     } },
+    // Chapter 21 (side view): a tyre rolling right on a water film. At speed the water cannot drain through
+    // the grooves, builds a wedge in front and lifts the tyre, so the contact patch shrinks.
+    aquaplaning: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-sky') + rect(0, 176, 340, 44, 'rd-asphalt') +
+        part('velo', rect(0, 166, 340, 10, 'rd-water') + label(8, 202, "velo d'acqua"), [[0, 164, 96, 44], [244, 164, 96, 14]]) +
+        part('velocita', line(36, 34, 112, 34, 'rd-arrow') + '<polygon class="rd-arrow-head" points="112,28 124,34 112,40"/>' +
+          label(40, 24, 'velocità'), [28, 14, 104, 30]) +
+        '<circle class="rd-wheel" cx="150" cy="104" r="58"/><circle class="rd-rim" cx="150" cy="104" r="24"/>' +
+        part('battistrada', '<circle class="rd-groove" cx="150" cy="104" r="52"/>' + label(214, 40, 'battistrada'), [[110, 44, 80, 22], [208, 28, 84, 20]]) +
+        part('cuneo', '<polygon class="rd-water" points="176,158 244,166 176,166"/>' + label(226, 150, "cuneo d'acqua"), [[174, 140, 130, 28]]) +
+        part('contatto', rect(126, 160, 22, 5, 'rd-contact') + label(58, 150, 'contatto'), [[54, 140, 96, 26]]);
+    } },
+    // Chapter 21: a long tunnel from above, traffic to the right. A queue keeps wide gaps; smoke ahead;
+    // an emergency exit in the wall, an SOS niche with an extinguisher, a loudspeaker for instructions.
+    galleria: { h: 230, draw: function() {
+      return rect(0, 0, 340, 230, 'rd-ground') + rect(0, 56, 340, 118, 'rd-asphalt') +
+        rect(0, 40, 340, 16, 'rd-wall') + rect(0, 174, 340, 16, 'rd-wall') + line(0, 115, 340, 115, 'rd-dash') +
+        car(150, 78, 40, 18, 'rd-car-parked', 'right') +
+        part('coda', car(10, 130, 40, 18, 'rd-car-you', 'right') + car(96, 130, 40, 18, 'rd-car-other', 'right') +
+          car(182, 130, 40, 18, 'rd-car-other', 'right') + rect(52, 154, 42, 10, 'rd-brace', ' rx="5"') +
+          rect(138, 154, 42, 10, 'rd-brace', ' rx="5"') + label(70, 196, 'distanza'), [[6, 126, 220, 40], [64, 186, 70, 14]]) +
+        part('fumo', '<ellipse class="rd-smoke" cx="296" cy="96" rx="40" ry="26"/><ellipse class="rd-smoke" cx="306" cy="136" rx="32" ry="22"/>' +
+          label(282, 120, 'fumo', 'rd-label-dark'), [256, 66, 84, 98]) +
+        part('uscita', rect(118, 40, 26, 16, 'rd-exit', ' rx="2"') + label(104, 30, 'via di fuga'), [[98, 18, 76, 40]]) +
+        part('nicchia', rect(236, 174, 24, 16, 'rd-niche', ' rx="2"') + rect(244, 177, 8, 10, 'rd-ext', ' rx="2"') +
+          label(214, 212, 'SOS · estintore'), [[210, 172, 96, 46]]) +
+        part('istruzioni', '<circle class="rd-speaker" cx="40" cy="48" r="6"/>' + label(10, 30, 'altoparlante'), [[6, 18, 76, 40]]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {

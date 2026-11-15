@@ -33,6 +33,7 @@ import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
 import { DIVIETO_CHAPTER } from "./lessons-divieto.js";
 import { FERMATA_CHAPTER } from "./lessons-fermata.js";
 import { INCROCI_CHAPTER } from "./lessons-incroci.js";
+import { INCIDENTI_CHAPTER } from "./lessons-incidenti.js";
 import { INDICAZIONE_CHAPTER } from "./lessons-indicazione.js";
 import { INTEGRATIVI_CHAPTER } from "./lessons-integrativi.js";
 import { LIMITI_CHAPTER } from "./lessons-limiti.js";
@@ -309,7 +310,8 @@ export interface RoadPart {
 /** An original drawing (public/js/road.js), never a bank figure. */
 export type RoadScene =
   | "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach"
-  | "agente-braccia" | "agente-angolo" | "triangolo" | "rimorchio" | "abitacolo" | "casco" | "motociclista" | "patente";
+  | "agente-braccia" | "agente-angolo" | "triangolo" | "rimorchio" | "abitacolo" | "casco" | "motociclista" | "patente"
+  | "aquaplaning" | "galleria";
 
 interface StepBase {
   title: string;
@@ -1226,6 +1228,7 @@ export const CHAPTERS: Chapter[] = [
   LUCI_CHAPTER,
   CINTURE_CHAPTER,
   PATENTE_CHAPTER,
+  INCIDENTI_CHAPTER,
 ];
 
 export function findLesson(lessonId: string): Lesson | null {
