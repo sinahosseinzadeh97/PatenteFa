@@ -405,6 +405,92 @@
         part('rumore', '<path class="rd-arrow" d="M306 122 C314 128 314 134 306 140"/><path class="rd-arrow" d="M316 116 C328 126 328 136 316 146"/>' +
           label(284, 196, 'rumore'), [[280, 110, 56, 94]]);
     } },
+    // Chapter 25: a tall vehicle in a left-hand curve, seen from behind. The curve pushes it outwards (right);
+    // grip at the tyres holds it in; a high load and a narrow track make it tip over sooner.
+    ribaltamento: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-sky') + rect(0, 186, 340, 34, 'rd-asphalt') +
+        label(206, 18, 'schema · vista da dietro') +
+        part('raggio', '<path class="rd-line" fill="none" d="M18 98 A72 72 0 0 1 90 26"/>' + '<circle class="rd-rim" cx="90" cy="98" r="3"/>' +
+          label(12, 116, 'raggio di curvatura') + label(12, 128, '← interno della curva'), [[8, 22, 104, 112]]) +
+        '<rect class="rd-cabin" x="110" y="72" width="120" height="96" rx="8"/>' + rect(124, 84, 92, 28, 'rd-visor', ' rx="4"') +
+        part('carico', rect(128, 50, 84, 22, 'rd-card-photo', ' rx="3"') + label(134, 44, 'carico in alto'), [[124, 34, 96, 40]]) +
+        rect(118, 164, 22, 24, 'rd-wheel', ' rx="4"') + rect(200, 164, 22, 24, 'rd-wheel', ' rx="4"') +
+        part('baricentro', '<circle class="rd-contact" cx="170" cy="134" r="6"/>' + line(160, 134, 180, 134, 'rd-column') +
+          label(132, 154, 'baricentro'), [[126, 124, 88, 36]]) +
+        part('esterno', line(232, 134, 300, 134, 'rd-arrow') + '<polygon class="rd-arrow-head" points="300,127 314,134 300,141"/>' +
+          label(236, 124, "verso l'esterno"), [[232, 112, 104, 32]]) +
+        part('aderente', rect(118, 186, 22, 4, 'rd-contact') + rect(200, 186, 22, 4, 'rd-contact') +
+          line(150, 200, 124, 200, 'rd-arrow') + '<polygon class="rd-arrow-head" points="126,195 116,200 126,205"/>' +
+          line(232, 200, 206, 200, 'rd-arrow') + '<polygon class="rd-arrow-head" points="208,195 198,200 208,205"/>' +
+          label(240, 204, 'forza aderente'), [[112, 184, 44, 24], [194, 184, 44, 24], [236, 194, 84, 16]]) +
+        part('carreggiata', line(129, 213, 211, 213, 'rd-line') + line(129, 208, 129, 218, 'rd-line') + line(211, 208, 211, 218, 'rd-line') +
+          label(14, 216, 'carreggiata (veicolo)'), [[10, 206, 206, 14]]);
+    } },
+    // Chapter 25: one wheel corner, cut away. The spring carries the body; the shock absorber stops it bouncing;
+    // both keep the tyre pressed on the road over bumps (and the headlight pointing where it should).
+    sospensione: { h: 220, draw: function() {
+      return rect(0, 0, 340, 220, 'rd-sky') +
+        label(196, 120, 'schema, non in scala') +
+        part('asperita', '<path class="rd-asphalt" d="M0 196 L214 196 Q240 176 266 196 L340 196 L340 220 L0 220 Z"/>' +
+          label(222, 214, 'asperità'), [[214, 174, 60, 44]]) +
+        part('telaio', rect(20, 40, 278, 34, 'rd-cabin', ' rx="6"') + label(30, 62, 'telaio · scocca'), [[20, 40, 278, 34]]) +
+        part('proiettore', rect(298, 48, 18, 16, 'rd-card-photo', ' rx="3"') + line(318, 56, 336, 64, 'rd-arrow') +
+          label(258, 30, 'proiettore'), [[294, 44, 44, 26], [254, 20, 70, 14]]) +
+        line(96, 128, 120, 164, 'rd-column') + line(143, 132, 124, 164, 'rd-column') +
+        part('molla', '<path class="rd-line" fill="none" d="M96 74 L108 80 L84 88 L108 96 L84 104 L108 112 L84 120 L96 126 L96 130"/>' +
+          label(22, 104, 'molla'), [[80, 74, 32, 58], [18, 94, 40, 14]]) +
+        part('ammortizzatore', rect(136, 76, 14, 32, 'rd-dash-board', ' rx="3"') + line(143, 108, 143, 134, 'rd-column') +
+          label(158, 96, 'ammortizzatore'), [[132, 74, 22, 62], [156, 86, 84, 14]]) +
+        part('pneumatico', '<circle class="rd-wheel" cx="120" cy="164" r="32"/><circle class="rd-rim" cx="120" cy="164" r="12"/>' +
+          rect(104, 194, 32, 4, 'rd-contact') + label(20, 214, 'ruota · pneumatico'), [[86, 130, 68, 68], [16, 204, 96, 14]]);
+    } },
+    // Chapter 25: a two-wheeler seen from the side, schematic. Controls and their places differ between models,
+    // and some two-wheelers have a belt or a shaft instead of a chain.
+    moto: { h: 240, draw: function() {
+      return rect(0, 0, 340, 240, 'rd-sky') + rect(0, 220, 340, 20, 'rd-asphalt') +
+        label(8, 18, 'schema · comandi e posizioni variano') +
+        '<circle class="rd-wheel" cx="76" cy="186" r="32"/><circle class="rd-wheel" cx="272" cy="186" r="32"/>' +
+        '<circle class="rd-rim" cx="272" cy="186" r="10"/>' +
+        '<path class="rd-column" fill="none" d="M76 186 L132 150 L200 110 L248 94 L272 186"/>' +
+        rect(96, 110, 72, 12, 'rd-seat', ' rx="5"') + rect(166, 96, 56, 26, 'rd-shell', ' rx="10"') +
+        rect(132, 140, 66, 46, 'rd-dash-board', ' rx="6"') + line(240, 92, 260, 80, 'rd-column') +
+        part('corona', '<circle class="rd-arrow" cx="76" cy="186" r="16"/><circle class="rd-rim" cx="76" cy="186" r="6"/>' +
+          label(14, 234, 'corona'), [[58, 168, 36, 36], [10, 224, 46, 14]]) +
+        part('pignone', '<circle class="rd-arrow" cx="150" cy="176" r="7"/>' + label(156, 234, 'pignone'), [[140, 166, 20, 20], [152, 224, 46, 14]]) +
+        part('catena', line(76, 170, 150, 169, 'rd-dash') + line(76, 202, 150, 183, 'rd-dash') +
+          label(30, 140, 'catena'), [[80, 164, 66, 40], [26, 130, 44, 14]]) +
+        part('oblo', '<circle class="rd-visor" cx="184" cy="176" r="5"/>' + label(204, 234, 'oblò olio'), [[176, 168, 16, 16], [200, 224, 56, 14]]) +
+        part('cavalletto', line(140, 196, 122, 222, 'rd-column') + label(96, 234, 'cavalletto'), [[116, 192, 30, 30], [92, 224, 56, 14]]) +
+        part('chiave', '<circle class="rd-card-photo" cx="236" cy="104" r="4"/>' + label(290, 112, 'chiave'), [[228, 96, 16, 16], [286, 102, 44, 14]]) +
+        part('serbatoio', rect(236, 72, 12, 10, 'rd-visor', ' rx="2"') + label(132, 66, 'vaschetta liquido freni'), [[232, 68, 20, 18], [128, 56, 124, 14]]) +
+        part('interruttore', rect(260, 74, 10, 8, 'rd-brake', ' rx="2"') + label(206, 46, 'interruttore di emergenza'), [[256, 70, 18, 16], [202, 36, 136, 14]]);
+    } },
+    // Chapter 25 review: "Know the vehicle", a schematic car seen from the side. Where a part sits changes from model
+    // to model, and not every car has every part (an electric car has no exhaust).
+    veicolo: { h: 230, draw: function() {
+      return rect(0, 0, 340, 230, 'rd-sky') + rect(0, 192, 340, 38, 'rd-asphalt') +
+        label(8, 18, 'schema · le posizioni cambiano tra i modelli') +
+        '<path class="rd-cabin" d="M30 170 L30 132 L74 124 L112 86 L218 86 L256 122 L306 130 L312 170 Z"/>' +
+        rect(120, 92, 82, 28, 'rd-visor', ' rx="3"') +
+        part('parabrezza', '<polygon class="rd-visor" points="206,90 220,90 250,120 226,120"/>' + label(214, 80, 'parabrezza'), [[200, 70, 66, 52]]) +
+        part('tergicristallo', line(228, 118, 242, 102, 'rd-column') + label(268, 96, 'tergicristallo'), [[222, 98, 24, 24], [264, 86, 72, 14]]) +
+        part('liquidofreni', rect(266, 118, 12, 8, 'rd-visor', ' rx="2"') + label(262, 112, 'liquido freni'), [[258, 104, 74, 24]]) +
+        part('sterzo', '<circle class="rd-rim" cx="198" cy="110" r="7"/>' + line(198, 110, 214, 126, 'rd-column') +
+          label(176, 140, 'sterzo'), [[188, 100, 28, 30], [172, 130, 40, 14]]) +
+        part('stazionamento', rect(150, 126, 6, 16, 'rd-seat', ' rx="2"') + label(114, 162, 'freno di stazionamento'), [[144, 122, 18, 24], [110, 152, 116, 14]]) +
+        part('ruotascorta', '<ellipse class="rd-wheel" cx="52" cy="146" rx="15" ry="7"/>' + label(60, 226, 'ruota di scorta'), [[34, 136, 36, 20], [56, 216, 80, 14]]) +
+        part('sospensione', '<path class="rd-line" fill="none" d="M78 122 L88 126 L70 131 L88 136 L70 141 L80 146"/>' + label(10, 108, 'sospensioni'),
+          [[66, 120, 26, 28], [6, 98, 64, 14]]) +
+        part('ammortizzatore', rect(96, 120, 8, 20, 'rd-dash-board', ' rx="2"') + line(100, 140, 100, 150, 'rd-column') +
+          label(10, 94, 'ammortizzatori'), [[92, 118, 16, 34], [6, 84, 80, 14]]) +
+        '<circle class="rd-wheel" cx="86" cy="170" r="22"/><circle class="rd-rim" cx="86" cy="170" r="8"/>' +
+        part('scarico', rect(12, 174, 24, 6, 'rd-dash-board', ' rx="2"') + label(10, 214, 'scarico'), [[8, 170, 32, 14], [6, 204, 46, 14]]) +
+        part('pneumatico', '<circle class="rd-wheel" cx="256" cy="170" r="22"/>' + rect(242, 190, 28, 3, 'rd-contact') +
+          label(232, 214, 'pneumatici'), [[232, 146, 48, 48], [228, 204, 60, 14]]) +
+        part('abs', rect(236, 176, 6, 6, 'rd-contact') + label(196, 214, 'ABS'), [[232, 172, 14, 14], [192, 204, 28, 14]]) +
+        part('freni', '<circle class="rd-rim" cx="256" cy="170" r="11"/>' + rect(262, 157, 8, 10, 'rd-brake', ' rx="2"') +
+          label(278, 160, 'freni'), [[244, 156, 28, 28], [274, 150, 32, 14]]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {

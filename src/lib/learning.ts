@@ -140,7 +140,12 @@ export function orderPracticeCandidates(
 export type TodayItem =
   | { kind: "lesson"; mode: "start" | "continue"; lessonId: string; titleFa: string; step: number; stepCount: number; minutes: number }
   | { kind: "review"; count: number; minutes: number }
-  | { kind: "practice"; lessonIds: string[]; count: number; minutes: number };
+  | { kind: "practice"; lessonIds: string[]; count: number; minutes: number }
+  | { kind: "exam"; count: number; minutes: number };
+
+/** The official simulation: 30 statements in 20 minutes. */
+const EXAM_QUESTIONS = 30;
+const EXAM_MINUTES = 20;
 
 export const PRACTICE_SET_SIZE = 10;
 /** ~30 seconds per true/false statement, including reading the feedback. */
@@ -199,6 +204,10 @@ export function buildTodayPath(
     items.push({ kind: "review", count, minutes: questionMinutes(count) });
   }
   if (!inProgress && nextLesson) items.push(lessonItem(nextLesson, "start"));
+  // Every lesson read (saved progress, not inferred): the route has nothing left to start, so offer a full simulation.
+  if (!inProgress && !nextLesson && lessons.length > 0 && completed.length === lessons.length) {
+    items.push({ kind: "exam", count: EXAM_QUESTIONS, minutes: EXAM_MINUTES });
+  }
   if (completed.length > 0) {
     items.push({
       kind: "practice",

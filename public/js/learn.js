@@ -132,6 +132,15 @@
         action: resume ? 'ادامه‌ی درس' : 'شروع درس',
       };
     }
+    if (item.kind === 'exam') {
+      return {
+        icon: 'i-exam',
+        tag: 'آزمون',
+        title: 'آزمونِ کامل: ' + fa(item.count) + ' سؤال در ' + fa(item.minutes) + ' دقیقه',
+        detail: 'همه‌ی درس‌ها خوانده شده‌اند؛ حالا خودت را در شرایطِ آزمون بسنج',
+        action: 'شروع آزمون',
+      };
+    }
     if (item.kind === 'review') {
       return {
         icon: 'i-review',
@@ -160,7 +169,9 @@
 
     document.getElementById('home-today-title').textContent = items.length === 0
       ? 'برای امروز کاری باقی نمانده'
-      : isNewLearner ? 'از اینجا شروع کن' : 'قدم بعدی‌ات آماده است';
+      : isNewLearner ? 'از اینجا شروع کن'
+      : state.learn.courseCompleted ? 'همه‌ی درس‌ها را خوانده‌ای؛ حالا تمرین و آزمون'
+      : 'قدم بعدی‌ات آماده است';
     document.getElementById('home-today-minutes').textContent = today.minutes ? minutesLabel(today.minutes) : '';
 
     var list = document.getElementById('home-today-list');
@@ -189,6 +200,7 @@
     var item = state.learn && state.learn.today && state.learn.today.items[index];
     if (!item) return;
     if (item.kind === 'lesson') App.openLesson(item.lessonId, undefined, state.currentScreen || 'home');
+    else if (item.kind === 'exam') App.startExam('exam');
     else if (item.kind === 'review') App.startReview();
     else App.startLessonPractice(null);
   };
@@ -617,9 +629,18 @@
     var badge = part.inCarreggiata === undefined ? ''
       : '<span class="anatomy-badge ' + (part.inCarreggiata ? 'is-in' : 'is-out') + '">' + icon(part.inCarreggiata ? 'i-check' : 'i-x') +
         '<span>' + (part.inCarreggiata ? 'جزو ' : 'بیرون از ') + '<bdi dir="ltr" lang="it">carreggiata</bdi></span></span>';
+    // "Know the vehicle" parts also say where the part is, why it matters, and which lesson teaches it.
+    var row = function(label, text) {
+      return text ? '<p class="anatomy-row"><strong>' + label + '</strong> ' + esc(text) + '</p>' : '';
+    };
+    var link = part.link
+      ? '<button type="button" class="btn btn-quiet btn-sm anatomy-link" onclick="App.openLesson(\'' + esc(part.link.lessonId) + '\', undefined, \'' +
+          esc(state.lessonReturnScreen || 'topics') + '\')">' + icon('i-book') + '<span>درسش: ' + esc(part.link.titleFa) + '</span></button>'
+      : '';
     root.querySelector('.anatomy-detail').innerHTML =
       '<h3 class="anatomy-name">' + itSpan(part.nameIt, 'anatomy-name-it') + '<span class="anatomy-name-fa">' + esc(part.nameFa) + '</span></h3>' +
-      badge + '<p>' + esc(part.text) + '</p>';
+      badge + row('کجاست:', part.where) + (part.where ? row('چه می‌کند:', part.text) : '<p>' + esc(part.text) + '</p>') +
+      row('برای ایمنی:', part.safety) + link;
   };
 
   // ── Comparison table: one card per row on a phone, columns on wider screens ─
@@ -1115,6 +1136,7 @@
     var isReview = data.position.review;
     var nextSummary = c.next && findLessonSummary(c.next.lessonId);
     var nextLabel = !c.next ? ''
+      : c.next.earlier ? 'درسِ تمام‌نشده‌ی قبلی: ' + (c.next.chapterNumbers ? chapterName(c.next.chapterNumbers) + '، ' : '') + esc(c.next.titleFa)
       : c.next.chapterNumbers ? chapterName(c.next.chapterNumbers) + '، «' + esc(c.next.chapterTitleFa) + '»: ' + esc(c.next.titleFa)
       : nextSummary && nextSummary.review ? 'بعدی: مرور فصل'
       : 'درس بعدی: ' + esc(c.next.titleFa);
@@ -1129,6 +1151,8 @@
         ? '<p class="done-honest">مرور فصل تمام شد. هر درسی از این فصل که هنوز تمام نشده، در مسیر درس‌ها منتظر است.</p>'
         : '';
 
+    var routeEnd = endOfRouteHtml(c, isReview);
+
     return '<div class="lesson-done">' +
       '<div class="done-route" aria-hidden="true"><span class="done-road"></span><span class="done-marker">' + icon('i-check') + '</span></div>' +
       '<p class="lesson-meta">' + chapterName(data.chapter.numbers) + '، ' + lessonLabel(data.position) + '</p>' +
@@ -1142,6 +1166,7 @@
           : '') +
       '</ul>' +
       '<p class="done-honest">خواندن درس قدم اول است. تسلط وقتی معلوم می‌شود که چند روز بعد هم درست جواب بدهی؛ برای همین سؤال‌های مرتبط در مرور و تمرین دوباره می‌آیند.</p>' +
+      routeEnd +
       '<div class="done-actions">' + primary +
         '<button type="button" class="btn btn-secondary btn-full" onclick="App.startLessonPractice(\'' + esc(data.lesson.id) + '\')">' + icon('i-target') +
           '<span>' + (isReview ? '۱۰ سؤال واقعی از کل ' + chapterName(data.chapter.numbers) : '۱۰ سؤال واقعی درباره‌ی همین درس') + '</span></button>' +
@@ -1152,6 +1177,36 @@
         '<p>متن‌های قانونی در ' + reviewed + ' بررسی شده‌اند. سؤال‌ها از بانک سال ۲۰۲۳ هستند و ممکن است با نسخه‌ی رسمی فعلی فرق داشته باشند؛ نزدیک آزمون با منبع رسمی چک کن.</p>' +
       '</details>' +
     '</div>';
+  }
+
+  /**
+   * After the last chapter's review there is no next chapter. Say what the saved progress
+   * shows (every lesson read, or how many chapters still have open lessons), never more,
+   * and offer the existing next steps: due mistakes, weak topics, a full exam, the route.
+   */
+  function endOfRouteHtml(c, isReview) {
+    if (!state.lessonCompletion) return '';
+    var atEnd = c.courseCompleted || (isReview && c.lastChapter);
+    if (!atEnd) return '';
+    var open = (c.openChapters || []).length;
+    var status = c.courseCompleted
+      ? '<p class="route-end-status" role="status">' + icon('i-route') + '<span>همه‌ی فصل‌های مسیر را تا آخر خوانده‌ای، همراه با مرورِ هر فصل.</span></p>'
+      : '<p class="route-end-status" role="status">' + icon('i-route') + '<span>این آخرین فصلِ مسیر است. ' +
+          (open > 0 ? fa(open) + ' فصل هنوز درسِ تمام‌نشده دارد؛ درسِ بعدیِ پیشنهادی یکی از همان‌هاست.' : 'چند درس از فصل‌های قبلی هنوز تمام نشده‌اند.') +
+        '</span></p>';
+    var review = c.reviewDue > 0
+      ? '<button type="button" class="btn btn-secondary btn-full" onclick="App.startReview()">' + icon('i-review') +
+          '<span>مرورِ ' + fa(Math.min(c.reviewDue, 30)) + ' اشتباهِ منتظر</span></button>'
+      : '';
+    return '<section class="route-end" aria-labelledby="route-end-title">' +
+      '<h3 id="route-end-title" class="route-end-title">پایانِ مسیرِ درس‌ها</h3>' + status +
+      '<p class="done-honest">خواندنِ همه‌ی درس‌ها یعنی همه را دیده‌ای، نه اینکه برای آزمون آماده‌ای، و اجازه‌ی رانندگی هم نیست. آمادگی را آزمون‌های کامل و مرورهای چند روز بعد نشان می‌دهند؛ رانندگی فقط با مجوزِ تمرین و همراهِ مجاز (فصلِ ۲۰).</p>' +
+      '<div class="done-actions">' + review +
+        '<button type="button" class="btn btn-secondary btn-full" onclick="App.startExam(\'exam\')">' + icon('i-exam') + '<span>آزمونِ کامل: ۳۰ سؤال، ۲۰ دقیقه</span></button>' +
+        '<button type="button" class="btn btn-secondary btn-full" onclick="App.startTopicPractice()">' + icon('i-target') + '<span>تمرین روی موضوع‌هایی که بیشتر اشتباه داری</span></button>' +
+        '<button type="button" class="btn btn-quiet btn-full" onclick="App.showScreen(\'topics\')">' + icon('i-book') + '<span>دیدنِ فصل‌ها و دوباره خواندن</span></button>' +
+      '</div>' +
+    '</section>';
   }
 
   App.openExternalLink = function(url) {

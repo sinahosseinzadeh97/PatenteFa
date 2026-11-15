@@ -463,6 +463,61 @@ written for an emission, and «آلودگی» alone is always qualified (هوا 
 town («محله‌ی مسکونی»), not `centro abitato` (آبادی); chapter 8 still glosses centro abitato as «منطقه‌ی مسکونی», left
 unchanged by the chapter 24 work. `marmitta` is the whole exhaust («اگزوز»), `silenziatore` its silencing part.
 
+## Vehicle elements, maintenance and behaviour (chapter 25)
+
+`servosterzo` = فرمانِ کمکی (هیدرولیک یا برقی), `liquido di raffreddamento` = مایعِ خنک‌کننده, `guarnizioni dei freni` = لنتِ ترمز,
+`impianto frenante` = سیستمِ ترمز, `marmitta` = اگزوز, `silenziatore` = صداخفه‌کن, `pressione di gonfiaggio` = فشارِ بادِ لاستیک,
+`in folle` = دنده خلاص, `marcia bassa` = دنده‌ی سنگین and `retromarcia` = دنده‌عقب follow the rows above. «ترمزِ دستی», «ترمزِ کمکی»,
+«کمک‌فنر», «آجِ لاستیک», «کپسولِ آتش‌نشانی», «شیشه‌ی جلو», «برف‌پاک‌کن» and «مرکزِ ثقل» were already the words chapters 11–24 used.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| forza aderente | نیروی چسبندگی | |
+| aderenza | چسبندگی (لاستیک به جاده) | |
+| coefficiente di aderenza | ضریبِ چسبندگی | |
+| sbandamento | لیز خوردن به پهلو | |
+| ribaltamento | واژگونی | |
+| baricentro | مرکزِ ثقل | |
+| carreggiata (del veicolo) | فاصله‌ی چرخ‌های یک محور | |
+| raggio di curvatura | شعاعِ پیچ | |
+| A.B.S. | ABS (ترمزِ ضدِقفل) | |
+| servofreno (a depressione) | ترمزِ کمکی (مکشی) | |
+| freno di stazionamento | ترمزِ دستی | |
+| freno di servizio | ترمزِ پایی | |
+| freno motore | ترمزِ موتور | |
+| liquido dei freni | روغنِ ترمز | |
+| pastiglie | لنت‌های دیسکی | |
+| dischi · tamburi | دیسکِ ترمز · کاسه‌ی ترمز | |
+| pneumatico | لاستیک | |
+| battistrada | آجِ لاستیک | |
+| tubeless · camera d'aria | لاستیکِ تیوبلس · تیوب | |
+| pneumatici invernali · chiodati | لاستیکِ زمستانی · لاستیکِ میخ‌دار | |
+| catene da neve | زنجیرِ چرخ | |
+| ruota di scorta · ruotino | زاپاس · زاپاسِ کوچک | |
+| martinetto (cric) | جک | |
+| sospensioni | سیستمِ تعلیق | |
+| molla | فنر | |
+| ammortizzatore | کمک‌فنر | |
+| ammortizzatori scarichi | کمک‌فنرهای خسته | |
+| tenuta di strada | پایداری روی جاده | |
+| sterzo · volante | فرمان · غربیلکِ فرمان | |
+| gioco dello sterzo | لقیِ فرمان | |
+| bilanciatura | بالانسِ چرخ | |
+| convergenza | تنظیمِ زاویه‌ی چرخ‌ها | |
+| impianto di scarico | سیستمِ اگزوز | |
+| lavacristallo | شیشه‌شوی | |
+| disappannamento | بخارزدا | |
+| pannelli a messaggio variabile | تابلوهای پیامِ متغیر | |
+| interruttore di emergenza (due ruote) | کلیدِ قطعِ اضطراریِ موتور | |
+| catena di trasmissione | زنجیرِ انتقالِ نیرو | |
+| pignone · corona | چرخ‌دنده‌ی جلو · چرخ‌دنده‌ی چرخِ عقب | |
+| cavalletto | پایه‌ی موتورسیکلت | |
+
+`carreggiata` has two meanings in the bank: the road's carriageway («سواره‌رو», above) and, in the rollover group (634), the
+distance between the wheels of one axle («فاصله‌ی چرخ‌های یک محور»). Chapter 25 L2 teaches the difference. `freno di stazionamento`
+stays «ترمزِ دستی» even where it is a button: the lessons say so instead of changing the word. `cavalletto` is «پایه», never «جک»,
+because «جک» is the car jack (`martinetto`). `sospensioni` is «سیستمِ تعلیق»; one chapter 21 gloss adds «جلوبندی», left unchanged.
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

@@ -339,6 +339,7 @@ test("'next lesson' skips lessons the learner already completed", async () => {
     titleFa: LIMITI_CHAPTER.lessons[1].titleFa,
     chapterTitleFa: LIMITI_CHAPTER.titleFa,
     chapterNumbers: [11],
+    earlier: false,
   });
 
   // Finishing it the real way gives the same answer.

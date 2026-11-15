@@ -70,11 +70,12 @@ const STOPPING_MODEL = {
 function nextLessonAfter(
   lesson: Lesson,
   completed: Set<string>
-): { lessonId: string; titleFa: string; chapterTitleFa: string | null; chapterNumbers: number[] | null } | null {
+): { lessonId: string; titleFa: string; chapterTitleFa: string | null; chapterNumbers: number[] | null; earlier: boolean } | null {
   const lessons = CHAPTERS.flatMap((chapter) => chapter.lessons.map((l) => ({ chapter, lesson: l })));
   const index = lessons.findIndex((entry) => entry.lesson.id === lesson.id);
   const open = (entry: (typeof lessons)[number]) => entry.lesson.id !== lesson.id && !completed.has(entry.lesson.id);
-  const next = lessons.slice(index + 1).find(open) ?? lessons.slice(0, index).find(open);
+  const ahead = lessons.slice(index + 1).find(open);
+  const next = ahead ?? lessons.slice(0, index).find(open);
   if (!next) return null;
   const sameChapter = next.chapter.lessons.some((l) => l.id === lesson.id);
   return {
@@ -82,7 +83,14 @@ function nextLessonAfter(
     titleFa: next.lesson.titleFa,
     chapterTitleFa: sameChapter ? null : next.chapter.titleFa,
     chapterNumbers: sameChapter ? null : next.chapter.numbers,
+    // Past the end of the route the only open lessons lie behind: an unfinished earlier lesson, not a next chapter.
+    earlier: !ahead,
   };
+}
+
+/** Every lesson of every chapter, reviews included, is completed: what the saved progress says, nothing inferred. */
+function courseCompleted(completed: Set<string>): boolean {
+  return CHAPTERS.every((chapter) => chapterCompleted(chapter, completed));
 }
 
 /** Lesson numbers count lessons only; the chapter review is labelled as the review, not "lesson N". */
@@ -140,6 +148,7 @@ learn.get("/", async (c) => {
     chapters,
     today: buildTodayPath(chapters.flatMap((chapter) => chapter.lessons), reviewDue),
     reviewDue,
+    courseCompleted: courseCompleted(completed),
   });
 });
 
@@ -316,10 +325,11 @@ learn.post("/lessons/:lessonId/complete", async (c) => {
   const lesson = findLesson(c.req.param("lessonId"));
   if (!lesson) return c.json({ error: "درس پیدا نشد." }, 404);
 
-  const [practice, answers, progressRows] = await Promise.all([
+  const [practice, answers, progressRows, dueSourceIds] = await Promise.all([
     resolvedPractice(c.env.DB, lesson),
     getLessonAnswerRows(c.env.DB, userId, lesson.id),
     getLessonProgressRows(c.env.DB, userId),
+    getDueReviewSourceIds(c.env.DB, userId),
   ]);
   const answered = new Set(answers.map((a) => a.question_id));
   const missing = practice.questions.filter(({ row }) => !answered.has(row.id)).map(({ row }) => row.id);
@@ -342,6 +352,11 @@ learn.post("/lessons/:lessonId/complete", async (c) => {
       queuedForReview: practiceAnswers.filter((a) => a.is_correct !== 1).length,
     },
     chapterCompleted: chapter ? chapterCompleted(chapter, completed) : false,
+    courseCompleted: courseCompleted(completed),
+    lastChapter: chapter === CHAPTERS.at(-1),
+    // Official numbers of chapters with a lesson (or review) not yet completed, from saved progress only.
+    openChapters: CHAPTERS.filter((ch) => !chapterCompleted(ch, completed)).map((ch) => ch.numbers[0]),
+    reviewDue: dueSourceIds.length,
     next: nextLessonAfter(lesson, completed),
   });
 });
