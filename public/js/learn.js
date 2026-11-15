@@ -669,11 +669,15 @@
     }).join('');
     var verdict = answered
       ? '<p class="classify-verdict ' + (picked === item.answer ? 'is-right' : 'is-wrong') + '" role="status">' +
-          '<strong>' + (picked === item.answer ? 'درست است.' : 'جواب: ' + esc(content.options[item.answer].fa) + '.') + '</strong> ' + esc(item.explain) + '</p>'
+          '<strong>' + (picked === item.answer ? 'درست است.' : 'جواب: ' + esc(content.options[item.answer].fa) + '.') + '</strong> ' +
+          (item.pair ? '<span class="classify-differs">تفاوت: ' + esc(item.pair.differs) + '</span> ' : '') + esc(item.explain) + '</p>'
       : '';
     return '<li class="classify-item" id="cls-' + index + '-' + i + '">' +
       (item.sign ? '<span class="sign-tile classify-sign"><img src="' + signUrl(item.sign) + '" alt="تصویر برای دسته‌بندی" /></span>' : '') +
       (item.figure ? '<figure class="practice-sign is-figure"><img src="' + signUrl(item.figure) + '" alt="شکل ' + esc(fa(item.figure)) + ' از بانک سؤال" loading="lazy" /></figure>' : '') +
+      (item.pair ? '<div class="classify-pair">' +
+        '<p class="classify-choice"><strong>الف</strong> ' + esc(item.pair.a) + '</p>' +
+        '<p class="classify-choice"><strong>ب</strong> ' + esc(item.pair.b) + '</p></div>' : '') +
       '<p class="classify-prompt">' + esc(item.prompt) + '</p>' +
       '<div class="classify-options" role="group" aria-label="دسته را انتخاب کن">' + options + '</div>' + verdict + '</li>';
   }

@@ -2934,6 +2934,11 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .classify { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .classify-item { padding: 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); }
 .classify-prompt { margin: 0 0 10px; font-size: .92rem; font-weight: 600; line-height: 1.9; }
+.classify-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 0 10px; }
+.classify-choice { margin: 0; padding: 9px 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); background: var(--surface-2); font-size: .88rem; line-height: 1.85; }
+.classify-choice strong { display: block; margin-bottom: 2px; font-weight: 800; color: var(--accent); }
+.classify-differs { display: block; margin-bottom: 4px; font-weight: 700; }
+@media (max-width: 360px) { .classify-pair { grid-template-columns: 1fr; } }
 .classify-options { display: flex; flex-wrap: wrap; gap: 8px; }
 .classify-option { min-height: 44px; padding: 6px 12px; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface-2); color: var(--ink); font: inherit; font-size: .86rem; cursor: pointer; }
 .classify-option:disabled { cursor: default; opacity: .7; }

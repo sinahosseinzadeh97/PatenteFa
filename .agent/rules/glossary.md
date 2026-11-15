@@ -412,6 +412,57 @@ penalty of chapter 22 (حبس), and arrest before trial in chapter 23 (بازد�
 ثالث» the policy that pays it: the two are not used for each other. `franchigia` keeps the Iranian insurance word
 «فرانشیز» because no plain Persian word is in use.
 
+## Consumption, environment and pollution (chapter 24)
+
+`carta di circolazione` = کارتِ خودرو, `autocaravan` = کمپر, `in folle` = دنده خلاص, `marcia bassa` = دنده‌ی سنگین,
+`clacson` = بوق, `carreggiata` = سواره‌رو, `centro abitato` = آبادی and `revisione` (of a vehicle) = معاینه‌ی فنی follow the
+rows above. «کولر» (chapter 16), «باربند» (chapter 20), «پمپِ انژکتور» (chapter 21) and «فشارِ بادِ…» were already in use.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| consumo (di carburante) | مصرفِ سوخت | |
+| autonomia (veicolo elettrico) | بُردِ خودروی برقی | |
+| carburante | سوخت | |
+| inquinamento atmosferico, dell'aria | آلودگیِ هوا | |
+| inquinamento acustico | آلودگیِ صوتی | |
+| sostanze, emissioni inquinanti | آلاینده‌ها | |
+| gas di scarico | گازِ اگزوز | |
+| anidride carbonica (CO₂) | دی‌اکسیدِ کربن | |
+| effetto serra | اثرِ گلخانه‌ای | |
+| smog | اسموگ (دود و مه) | |
+| piogge acide | باران اسیدی | |
+| marmitta | اگزوز | |
+| silenziatore | صداخفه‌کن | |
+| marmitta catalitica, catalizzatore | مبدلِ کاتالیستی | |
+| tubo di scarico | لوله‌ی اگزوز | |
+| filtro dell'aria | فیلترِ هوا | |
+| filtro antipolline | فیلترِ کابین | |
+| filtro dell'olio | فیلترِ روغن | |
+| iniettori | انژکتورها | |
+| climatizzatore | کولرِ خودرو | |
+| ricircolo dell'aria | گردشِ داخلیِ هوا | |
+| portapacchi | باربند | |
+| tettuccio (scorrevole) | سان‌روف | |
+| lunotto termico | گرم‌کنِ شیشه‌ی عقب | |
+| pressione di gonfiaggio | فشارِ بادِ لاستیک | |
+| numero di giri | دورِ موتور | |
+| veicolo ibrido / elettrico | خودروی هیبریدی / خودروی برقی | |
+| metano, GPL | گازِ طبیعی (متان)، گازِ مایع (LPG) | |
+| normativa antinquinamento (Euro) | استانداردِ آلایندگی (یورو) | |
+| liquido antigelo | ضدیخ | |
+| batteria esausta | باتریِ کهنه | |
+| demolire, rottamare | اسقاط کردن | |
+| centro di raccolta (autodemolitore autorizzato) | مرکزِ مجازِ اسقاط | |
+| fognatura | فاضلاب | |
+| rifiuti pericolosi | زباله‌ی خطرناک | |
+| rumori molesti, fastidiosi | صدای مزاحم | |
+| zona residenziale | محله‌ی مسکونی | |
+
+`consumo`, `CO₂`, `inquinanti` and `rumore` are four different things and keep four different words: «مصرف» is never
+written for an emission, and «آلودگی» alone is always qualified (هوا / صوتی). `zona residenziale` is a signed zone inside a
+town («محله‌ی مسکونی»), not `centro abitato` (آبادی); chapter 8 still glosses centro abitato as «منطقه‌ی مسکونی», left
+unchanged by the chapter 24 work. `marmitta` is the whole exhaust («اگزوز»), `silenziatore` its silencing part.
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

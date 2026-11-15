@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -fermata.ts, -luci.ts, -autostrade.ts, -cinture.ts, -patente.ts, -incidenti.ts, -alcool.ts, -responsabilita.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -fermata.ts, -luci.ts, -autostrade.ts, -cinture.ts, -patente.ts, -incidenti.ts, -alcool.ts, -responsabilita.ts, -ambiente.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -44,6 +44,7 @@ import { NORME_CHAPTER } from "./lessons-norme.js";
 import { OBBLIGO_CHAPTER } from "./lessons-obbligo.js";
 import { PATENTE_CHAPTER } from "./lessons-patente.js";
 import { RESPONSABILITA_CHAPTER } from "./lessons-responsabilita.js";
+import { AMBIENTE_CHAPTER } from "./lessons-ambiente.js";
 import { lessonConfluenze, lessonIntersezioniT, lessonSemaforoAgente } from "./ch5-incroci.js";
 import { reviewPrecedenza } from "./ch5-ripasso.js";
 import { lessonDoveDareStop, lessonRiconoscerePrecedenza, lessonStradaDiritto } from "./ch5-segnali.js";
@@ -313,7 +314,7 @@ export interface RoadPart {
 export type RoadScene =
   | "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach"
   | "agente-braccia" | "agente-angolo" | "triangolo" | "rimorchio" | "abitacolo" | "casco" | "motociclista" | "patente"
-  | "aquaplaning" | "galleria" | "posizioni" | "conseguenze";
+  | "aquaplaning" | "galleria" | "posizioni" | "conseguenze" | "resistenze" | "scarico";
 
 interface StepBase {
   title: string;
@@ -419,8 +420,9 @@ export type LessonStep =
       kind: "classify";
       body: string;
       options: { it: string; fa: string }[];
-      /** `sign` shows a road sign as a tile; `figure` a wide bank drawing. */
-      items: { prompt: string; figure?: number; sign?: number; answer: number; explain: string }[];
+      /** `sign` shows a road sign as a tile; `figure` a wide bank drawing. `pair` shows two situations
+       *  side by side ("compare the choices"); `differs` names the one factor that changes, shown after the answer. */
+      items: { prompt: string; figure?: number; sign?: number; pair?: { a: string; b: string; differs: string }; answer: number; explain: string }[];
       takeaway: string;
     })
   | (StepBase & { kind: "terms"; terms: Term[] })
@@ -1233,6 +1235,7 @@ export const CHAPTERS: Chapter[] = [
   INCIDENTI_CHAPTER,
   ALCOOL_CHAPTER,
   RESPONSABILITA_CHAPTER,
+  AMBIENTE_CHAPTER,
 ];
 
 export function findLesson(lessonId: string): Lesson | null {
