@@ -26,7 +26,7 @@ import {
 import { getQuestionSource, sourceKey, type SourceQuestion } from '../lib/question-sources.js';
 import { saveReviewedContent } from '../lib/content-quality.js';
 import { checkPrimaryAdmin, isAccessExpired } from "../lib/auth.js";
-import { sendMessage, sendSupportReply, sendAnnouncement, buildMiniAppButton } from "../lib/telegram.js";
+import { sendMessage, sendSupportReply, sendAnnouncement, sendWelcomeGuide } from "../lib/telegram.js";
 import { normalizeSupportText } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
 import {
@@ -130,12 +130,7 @@ admin.post("/users/:id/status", async (c) => {
   // approval nobody is notified of is an approval that does nothing.
   if (body.isApproved === 1) {
     c.executionCtx.waitUntil(
-      sendMessage(c.env.TELEGRAM_BOT_TOKEN, {
-        chat_id: target.telegram_user_id,
-        text: `🎉 <b>تبریک! حساب کاربری شما تایید شد.</b>\n\nاکنون می‌توانید مینی‌اپ پتنت فارسی را باز کرده و تمرینات را آغاز کنید. 🚗`,
-        parse_mode: "HTML",
-        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", c.env.MINI_APP_URL),
-      })
+      sendWelcomeGuide(c.env.TELEGRAM_BOT_TOKEN, target.telegram_user_id, c.env.MINI_APP_URL)
     );
   } else if (body.isApproved === -1) {
     c.executionCtx.waitUntil(
@@ -185,12 +180,38 @@ admin.post("/users/:id/access", async (c) => {
         .slice(0, 19);
   const updated = await setUserAccessExpiration(c.env.DB, id, accessExpiresAt);
 
+  // «اعمال دسترسی» is how the panel lets a pending user in, so it is an
+  // approval too; a plain renewal of active access sends nothing.
+  const hadAccess = target.is_approved === 1 && !isAccessExpired(target.access_expires_at);
+  if (!hadAccess) {
+    c.executionCtx.waitUntil(
+      sendWelcomeGuide(c.env.TELEGRAM_BOT_TOKEN, target.telegram_user_id, c.env.MINI_APP_URL)
+    );
+  }
+
   return c.json({
     ok: true,
     userId: id,
     isApproved: updated?.is_approved === 1,
     accessExpiresAt: updated?.access_expires_at ?? null,
   });
+});
+
+// POST /api/admin/users/:id/welcome — resend the onboarding guide, e.g. to
+// users approved before it existed. Blocked users can't open the app, so no.
+admin.post("/users/:id/welcome", async (c) => {
+  const id = Number(c.req.param("id"));
+  if (!Number.isSafeInteger(id) || id <= 0) {
+    return c.json({ error: "Invalid user id" }, 400);
+  }
+  const target = await getUserById(c.env.DB, id);
+  if (!target) return c.json({ error: "User not found" }, 404);
+  if (target.is_approved === -1) {
+    return c.json({ error: "این کاربر مسدود است؛ اول دسترسی‌اش را فعال کن." }, 409);
+  }
+
+  const delivered = await sendWelcomeGuide(c.env.TELEGRAM_BOT_TOKEN, target.telegram_user_id, c.env.MINI_APP_URL);
+  return c.json({ ok: true, delivered });
 });
 
 // ── Support inbox ────────────────────────────────────────────────────────────
