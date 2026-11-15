@@ -164,7 +164,8 @@ test("today's path puts unfinished work first, then due review, and never exceed
   assert.ok(nextLesson.items[0].kind === "lesson" && nextLesson.items[0].lessonId === L2.id);
 
   const allDone = buildTodayPath([summary(L1, "completed"), summary(L2, "completed"), summary(L3, "completed")], 50);
-  assert.deepEqual(allDone.items.map((item) => item.kind), ["review", "practice"]);
+  // Every lesson read: the route has nothing left to start, so a full simulation is offered (chapter 25, end of route).
+  assert.deepEqual(allDone.items.map((item) => item.kind), ["review", "exam", "practice"]);
   assert.ok(allDone.items[0].kind === "review" && allDone.items[0].count === 30, "review is capped at one session");
 });
 

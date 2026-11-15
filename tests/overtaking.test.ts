@@ -326,7 +326,7 @@ test("the chapter is listed, opens directly, and the last intersections lesson (
   assert.equal(lesson.body.lesson.practice.length, L3.practice.length);
   assert.equal(lesson.body.stopping, null);
   const lastIncroci = await call(9401, "GET", `/learn/lessons/${CHAPTERS[INDEX - 1].lessons.at(-1)!.id}`);
-  assert.deepEqual(lastIncroci.body.next, { lessonId: L2.id, titleFa: L2.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa, chapterNumbers: [15] });
+  assert.deepEqual(lastIncroci.body.next, { lessonId: L2.id, titleFa: L2.titleFa, chapterTitleFa: SORPASSO_CHAPTER.titleFa, chapterNumbers: [15], earlier: false });
 });
 
 test("progress and answers in this chapter are per learner, resume never moves back, and a wrong answer is queued once", async () => {

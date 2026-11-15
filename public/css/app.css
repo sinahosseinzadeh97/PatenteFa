@@ -2865,6 +2865,8 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-rim { fill: #9aa0af; }
 .rd-groove { fill: none; stroke: #8d939f; stroke-width: 3; stroke-dasharray: 7 6; }
 .rd-contact { fill: #ffc300; }
+/* Chapter 25 drawings: brake caliper and the two-wheeler emergency switch. */
+.rd-brake { fill: #e5484d; }
 .rd-arrow { stroke: #ffc300; stroke-width: 3; }
 .rd-arrow-head { fill: #ffc300; }
 .rd-wall { fill: #8d939f; }
@@ -2901,6 +2903,13 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .anatomy-badge.is-in { background: var(--go-dim); color: var(--go-light); }
 .anatomy-badge.is-out { background: var(--stop-dim); color: var(--stop-light); }
 .anatomy-badge bdi { font-family: 'Public Sans', sans-serif; }
+.anatomy-row strong { color: var(--ink); font-weight: 700; }
+.anatomy-link { margin-top: 10px; max-width: 100%; justify-content: flex-start; text-align: start; white-space: normal; }
+.route-end { max-width: 440px; margin: 0 auto 18px; padding: 14px 14px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); }
+.route-end-title { margin: 0 0 8px; font-size: .98rem; }
+.route-end-status { margin: 0 0 10px; display: flex; align-items: flex-start; gap: 8px; font-size: .86rem; font-weight: 600; line-height: 1.85; }
+.route-end-status .ui-icon { flex: none; margin-top: 4px; width: 17px; height: 17px; color: var(--accent); }
+.route-end .done-honest { margin-bottom: 12px; }
 
 /* ── Comparison table: stacked cards on a phone, columns from 560px ─────── */
 .ltable { display: grid; gap: 8px; }

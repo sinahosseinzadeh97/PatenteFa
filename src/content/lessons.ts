@@ -2,7 +2,7 @@
  * src/content/lessons.ts
  * Lesson content model, chapter 5 (Segnali di precedenza: the pilot lessons + ch5-*.ts), and the
  * chapter registry. Other chapters live in their own files
- * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -fermata.ts, -luci.ts, -autostrade.ts, -cinture.ts, -patente.ts, -incidenti.ts, -alcool.ts, -responsabilita.ts, -ambiente.ts)
+ * (src/content/lessons-definizioni.ts, -pericolo.ts, -divieto.ts, -obbligo.ts, -segnaletica.ts, -semafori.ts, -indicazione.ts, -complementari.ts, -integrativi.ts, -limiti.ts, -velocita.ts, -norme.ts, -incroci.ts, -sorpasso.ts, -fermata.ts, -luci.ts, -autostrade.ts, -cinture.ts, -patente.ts, -incidenti.ts, -alcool.ts, -responsabilita.ts, -ambiente.ts, -veicolo.ts)
  * and are registered in CHAPTERS below, in official chapter order.
  *
  * This file is the single source of truth for lesson text. It is written and
@@ -45,6 +45,7 @@ import { OBBLIGO_CHAPTER } from "./lessons-obbligo.js";
 import { PATENTE_CHAPTER } from "./lessons-patente.js";
 import { RESPONSABILITA_CHAPTER } from "./lessons-responsabilita.js";
 import { AMBIENTE_CHAPTER } from "./lessons-ambiente.js";
+import { VEICOLO_CHAPTER } from "./lessons-veicolo.js";
 import { lessonConfluenze, lessonIntersezioniT, lessonSemaforoAgente } from "./ch5-incroci.js";
 import { reviewPrecedenza } from "./ch5-ripasso.js";
 import { lessonDoveDareStop, lessonRiconoscerePrecedenza, lessonStradaDiritto } from "./ch5-segnali.js";
@@ -308,13 +309,20 @@ export interface RoadPart {
   text: string;
   /** Shown as a badge when the scene is about what belongs to the carreggiata. */
   inCarreggiata?: boolean;
+  /** "Know the vehicle": where the part sits in the (schematic) drawing. */
+  where?: string;
+  /** "Know the vehicle": how its condition affects safe driving. */
+  safety?: string;
+  /** "Know the vehicle": the lesson that teaches it, opened from the detail panel. */
+  link?: { lessonId: string; titleFa: string };
 }
 
 /** An original drawing (public/js/road.js), never a bank figure. */
 export type RoadScene =
   | "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach"
   | "agente-braccia" | "agente-angolo" | "triangolo" | "rimorchio" | "abitacolo" | "casco" | "motociclista" | "patente"
-  | "aquaplaning" | "galleria" | "posizioni" | "conseguenze" | "resistenze" | "scarico";
+  | "aquaplaning" | "galleria" | "posizioni" | "conseguenze" | "resistenze" | "scarico"
+  | "ribaltamento" | "sospensione" | "moto" | "veicolo";
 
 interface StepBase {
   title: string;
@@ -1236,6 +1244,7 @@ export const CHAPTERS: Chapter[] = [
   ALCOOL_CHAPTER,
   RESPONSABILITA_CHAPTER,
   AMBIENTE_CHAPTER,
+  VEICOLO_CHAPTER,
 ];
 
 export function findLesson(lessonId: string): Lesson | null {

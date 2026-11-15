@@ -237,6 +237,7 @@ test("the intersections chapter is listed, opens directly, and points mistakes b
     titleFa: INCROCI_CHAPTER.lessons[0].titleFa,
     chapterTitleFa: INCROCI_CHAPTER.titleFa,
     chapterNumbers: [14],
+    earlier: false,
   });
 });
 
