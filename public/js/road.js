@@ -360,6 +360,17 @@
         part('fermo', figure([40, 214], '54,216 236,216') +
           label(8, 176, 'disteso, senza muoverlo'), [[24, 188, 230, 38]]);
     } },
+    // Chapter 23: one crash (bottom) and the road forking into three branches, one per kind of liability.
+    // All three branches leave the same point: the same event can start any of them, or all three.
+    conseguenze: { h: 240, draw: function() {
+      return rect(0, 0, 340, 240, 'rd-ground') +
+        '<path class="rd-band" d="M170 182 C170 130 56 130 52 44"/><path class="rd-band" d="M170 182 L170 44"/><path class="rd-band" d="M170 182 C170 130 284 130 288 44"/>' +
+        part('incidente', rect(150, 182, 40, 58, 'rd-asphalt') + line(170, 186, 170, 240, 'rd-dash') +
+          car(140, 196, 30, 16, 'rd-car-you', 'right') + car(172, 196, 30, 16, 'rd-car-other', 'left') + label(206, 228, 'sinistro'), [[136, 182, 76, 58]]) +
+        part('civile', label(8, 22, 'civile') + label(8, 34, 'risarcimento'), [[4, 10, 96, 60]]) +
+        part('penale', label(142, 22, 'penale') + label(142, 34, 'Codice Penale'), [[136, 10, 70, 60]]) +
+        part('amministrativa', label(250, 22, 'amministrativa') + label(250, 34, 'Codice della strada'), [[240, 10, 98, 60]]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {
