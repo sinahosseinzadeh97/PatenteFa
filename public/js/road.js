@@ -299,6 +299,23 @@
         part('stivali', '<path class="rd-boot" d="M148 206 L170 206 L170 242 L144 242 Z"/><path class="rd-boot" d="M172 206 L193 206 L194 230 L214 236 L214 242 L172 242 Z"/>' +
           label(232, 226, 'stivali'), [[140, 200, 80, 46], [228, 214, 54, 18]]);
     } },
+    // Chapter 20: a made-up EU-format licence card (no real person; the name reads ESEMPIO).
+    // Field numbers follow the EU model: 1–2 name, 4a issue, 4b expiry, 9 categories, 12 codes.
+    patente: { h: 220, draw: function() {
+      var t = function(x, y, s) { return label(x, y, s, 'rd-label-dark rd-card-text'); };
+      return rect(0, 0, 340, 220, 'rd-sky') +
+        rect(20, 18, 300, 184, 'rd-card', ' rx="12"') +
+        rect(20, 18, 300, 30, 'rd-card-head', ' rx="12"') + rect(20, 36, 300, 12, 'rd-card-head') +
+        rect(32, 24, 22, 18, 'rd-card-eu', ' rx="2"') + label(38, 37, 'I', 'rd-card-eu-text') +
+        label(64, 37, 'PATENTE DI GUIDA · ESEMPIO', 'rd-label-dark rd-card-title') +
+        part('foto', rect(34, 60, 70, 88, 'rd-card-photo', ' rx="4"') +
+          '<circle class="rd-card-person" cx="69" cy="92" r="14"/><path class="rd-card-person" d="M45 146 C47 120 91 120 93 146 Z"/>', [34, 60, 70, 88]) +
+        part('dati', t(116, 74, '1. ESEMPIO') + t(116, 90, '2. NOME FITTIZIO'), [112, 62, 196, 34]) +
+        part('rilascio', t(116, 114, '4a. 01.03.2024'), [112, 102, 110, 18]) +
+        part('scadenza', t(116, 134, '4b. 01.03.2034'), [112, 122, 110, 18]) +
+        part('categorie', t(116, 160, '9. AM / B'), [112, 148, 110, 18]) +
+        part('codici', t(116, 182, '12. 01 · 96'), [112, 170, 110, 18]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {

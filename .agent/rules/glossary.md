@@ -236,6 +236,49 @@ chapters 13 and 18 adopt: `passo carrabile` = ورودیِ خودرو به مل�
 | abrasione | سایش | |
 | inserti rigidi protettivi | محافظ‌های سخت | |
 
+## Licence, points and documents (chapter 20)
+
+`carta di circolazione` = کارتِ خودرو, `decurtazione dei punti` = کم شدنِ امتیازِ گواهینامه,
+`sospensione della patente` = تعلیقِ گواهینامه (chapter 16), `passo carrabile` = ورودیِ خودرو به ملک,
+`quadriciclo (leggero)` = چهارچرخ موتوری (سبک), `rimorchio` = یدک, `autocaravan` = کمپر and
+`autotreno` = کامیون با یدک follow the rows above. «گواهینامه», «سندِ مالکیت», «سه‌چرخ موتوری» and
+«مالیاتِ مالکیتِ خودرو (bollo)» were already the words chapters 1, 11, 16 and 17 used.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| patente (di guida) | گواهینامه | |
+| categoria (della patente) | ردیفِ گواهینامه | |
+| neopatentato | راننده‌ی تازه‌کار | |
+| punti, punteggio (della patente) | امتیاز (گواهینامه) | |
+| patente a punti | گواهینامه‌ی امتیازی | |
+| ritiro della patente | گرفتنِ گواهینامه (توسطِ پلیس) | |
+| revisione della patente | بازآزماییِ گواهینامه | معاینه‌ی فنیِ گواهینامه |
+| revoca della patente | ابطالِ گواهینامه | |
+| conferma di validità, rinnovo | تمدیدِ گواهینامه | |
+| requisiti fisici e psichici | شرایطِ جسمی و روانی | |
+| requisiti morali | شرایطِ اخلاقی | |
+| prefetto | فرماندار (Prefetto) | |
+| Ufficio Motorizzazione civile | اداره‌ی موتوریتزاتسیونه (Motorizzazione) | |
+| esame di idoneità tecnica | آزمونِ مهارت | |
+| assicurazione per la responsabilità civile (RCA) | بیمه‌ی شخص ثالث | |
+| polizza kasko | بیمه‌ی بدنه | |
+| immatricolato | شماره‌گذاری‌شده | |
+| targa | پلاک | |
+| targa prova | پلاکِ آزمایشی | |
+| massa massima autorizzata | حداکثر وزنِ مجاز | |
+| rimorchio leggero | یدکِ سبک (تا ۷۵۰ کیلو) | |
+| complesso veicolare | مجموعه‌ی خودرو و یدک | |
+| codice armonizzato 96 | کدِ ۹۶ | |
+| triciclo a motore | سه‌چرخ موتوری | |
+| cilindrata | حجمِ موتور | |
+| accesso graduale / diretto | راهِ پله‌ای / راهِ مستقیم | |
+| macchine agricole | ماشین‌آلاتِ کشاورزی | |
+| macchine operatrici | ماشین‌آلاتِ عملیاتی (راهسازی) | |
+| carrozzetta | سایدکار | |
+
+`revisione` of a *vehicle* stays «معاینه‌ی فنی» (chapter 20 L8); a *licence* revisione is «بازآزمایی»,
+so the two never share a word.
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

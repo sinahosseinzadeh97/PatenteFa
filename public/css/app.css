@@ -2852,6 +2852,15 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-glove { fill: #14151a; stroke: #ffc300; stroke-width: 1.2; }
 .rd-pants { fill: #2f323c; }
 .rd-boot { fill: #14151a; stroke: #8d939f; stroke-width: 1; }
+/* Chapter 20: a made-up licence card, fixed colours like the other drawings. */
+.rd-card { fill: #f6d7e1; stroke: #c9ccd3; stroke-width: 1.5; }
+.rd-card-head { fill: #eab6c6; }
+.rd-card-eu { fill: #1f3f8f; }
+.rd-card-eu-text { fill: #ffc300; font-family: 'Barlow', sans-serif; font-size: 12px; font-weight: 800; pointer-events: none; }
+.rd-card-title { font-family: 'Barlow', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: .06em; }
+.rd-card-text { font-size: 11px; font-weight: 700; }
+.rd-card-photo { fill: #c9ccd3; }
+.rd-card-person { fill: #8d939f; }
 .rd-part { cursor: pointer; }
 .rd-hit { fill: transparent; }
 .rd-clear { fill: transparent; }
