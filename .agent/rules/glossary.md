@@ -318,6 +318,44 @@ so the two never share a word.
 | estintore | کپسولِ آتش‌نشانی | |
 | vigili del fuoco | آتش‌نشان‌ها | |
 
+## Alcohol, drugs and first aid (chapter 22)
+
+`piazzola di sosta` = پارکینگِ کوچکِ کنارِ راه, `codice armonizzato` = کدِ … (chapter 20), `incidente stradale` = تصادف,
+`prestare assistenza` = کمک رساندن and `tamponamento` = تصادف از پشت follow the rows above. «زخمی» (ferito) and
+«کمک‌های اولیه» were already the words chapter 21 used; «مستی» and «الکلِ خون» were chapters 17 and 20's.
+
+| Italiano | فارسی | Never write |
+|---|---|---|
+| stato di ebbrezza | حالتِ مستی | |
+| tasso alcolemico, concentrazione di alcool nel sangue | الکلِ خون | |
+| idoneità alla guida | آمادگی برای رانندگی | |
+| arresto (pena, art. 186) | حبس | |
+| sostanze stupefacenti | مواد مخدر | |
+| sostanze psicotrope | مواد روان‌گردان | |
+| farmaci sedativi | داروهای آرام‌بخش | |
+| foglio illustrativo | برگه‌ی راهنمای دارو | |
+| occhiali da vista | عینکِ طبی | |
+| lenti a contatto | لنزِ تماسی | |
+| primo soccorso | کمک‌های اولیه | |
+| soccorritore | کمک‌رسان | |
+| ferito (della strada) | زخمی (ی تصادف) | |
+| infortunato | مصدوم | |
+| stato di incoscienza | بیهوشی (جواب ندادن) | |
+| emorragia | خونریزی | |
+| tamponare (una ferita) | روی زخم فشار دادن | |
+| corpo estraneo | جسمِ خارجی | |
+| stato di shock | شوک | |
+| gabbia toracica | قفسه‌ی سینه | |
+| colonna vertebrale | ستونِ مهره‌ها | |
+| fratture agli arti | شکستگیِ دست و پا | |
+| ustione, bruciatura | سوختگی | |
+| posizione semiseduta | نیمه‌نشسته | |
+
+`arresto` now has two senses kept apart: the traffic stop of chapter 16 (ایستادن به خاطرِ ترافیک) and the penalty
+of art. 186 (حبس). The lessons say which one a statement means. `tamponare` a wound (روی زخم فشار دادن) is not
+`tamponamento` (تصادف از پشت); chapter 22 L7 says so in the text. `soccorritore` is whoever helps, usually untrained;
+«امدادگر» stays for the professional responders chapter 21 names.
+
 ## Open conflicts (content not yet aligned)
 
 Recorded 2026-11-14. Each one moves into «Never write» once the content is fixed.

@@ -2873,6 +2873,11 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .rd-ext { fill: #c1272d; }
 .rd-smoke { fill: rgba(201, 204, 211, .6); }
 .rd-speaker { fill: #ffc300; stroke: #14151a; stroke-width: 1; }
+/* Chapter 22: resting positions. A plain figure, fixed colours like the other drawings. */
+.rd-floor { stroke: #8d939f; stroke-width: 2; }
+.rd-support { fill: #5b6170; }
+.rd-head { fill: #e3c4a3; }
+.rd-limb { fill: none; stroke: #e3c4a3; stroke-width: 13; stroke-linecap: round; stroke-linejoin: round; }
 .rd-part { cursor: pointer; }
 .rd-hit { fill: transparent; }
 .rd-clear { fill: transparent; }
