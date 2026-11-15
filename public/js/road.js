@@ -344,6 +344,22 @@
           label(214, 212, 'SOS · estintore'), [[210, 172, 96, 46]]) +
         part('istruzioni', '<circle class="rd-speaker" cx="40" cy="48" r="6"/>' + label(10, 30, 'altoparlante'), [[6, 18, 76, 40]]);
     } },
+    // Chapter 22: three resting positions from the side, a person drawn as a head and thick strokes (no injury
+    // shown). Row 1 shock: lying flat, legs a little raised on a support. Row 2 chest injury, conscious: half-sitting
+    // against a backrest. Row 3 unconscious after a crash: lying flat, not moved.
+    posizioni: { h: 240, draw: function() {
+      function figure(head, path) {
+        return '<circle class="rd-head" cx="' + head[0] + '" cy="' + head[1] + '" r="9"/><polyline class="rd-limb" points="' + path + '"/>';
+      }
+      return rect(0, 0, 340, 240, 'rd-sky') +
+        line(0, 66, 340, 66, 'rd-floor') + line(0, 146, 340, 146, 'rd-floor') + line(0, 226, 340, 226, 'rd-floor') +
+        part('gambe', rect(200, 48, 36, 18, 'rd-support') + figure([40, 54], '54,58 140,58 232,47') +
+          label(8, 16, 'disteso, gambe sollevate'), [[24, 28, 230, 40]]) +
+        part('semiseduto', '<polygon class="rd-support" points="36,146 104,146 36,98"/>' + figure([56, 98], '64,110 100,138 152,132 204,140') +
+          label(230, 100, 'semiseduto'), [[28, 84, 180, 64]]) +
+        part('fermo', figure([40, 214], '54,216 236,216') +
+          label(8, 176, 'disteso, senza muoverlo'), [[24, 188, 230, 38]]);
+    } },
     // Officer scenes: a four-arm junction seen from above, the officer in the middle facing the bottom
     // arm. Sides are named from the officer's point of view (his left is the screen's right).
     'agente-braccia': { h: 260, draw: function() {

@@ -27,6 +27,7 @@
 
 // The chapter files (and overtaking.ts) only import *types* from this file
 // (erased at build), so this is not a runtime import cycle.
+import { ALCOOL_CHAPTER } from "./lessons-alcool.js";
 import { AUTOSTRADE_CHAPTER } from "./lessons-autostrade.js";
 import { COMPLEMENTARI_CHAPTER } from "./lessons-complementari.js";
 import { DEFINIZIONI_CHAPTER } from "./lessons-definizioni.js";
@@ -311,7 +312,7 @@ export interface RoadPart {
 export type RoadScene =
   | "street" | "lanes" | "elements" | "queue" | "cyclist" | "crossing" | "school" | "profile" | "curve" | "railway" | "approach"
   | "agente-braccia" | "agente-angolo" | "triangolo" | "rimorchio" | "abitacolo" | "casco" | "motociclista" | "patente"
-  | "aquaplaning" | "galleria";
+  | "aquaplaning" | "galleria" | "posizioni";
 
 interface StepBase {
   title: string;
@@ -1229,6 +1230,7 @@ export const CHAPTERS: Chapter[] = [
   CINTURE_CHAPTER,
   PATENTE_CHAPTER,
   INCIDENTI_CHAPTER,
+  ALCOOL_CHAPTER,
 ];
 
 export function findLesson(lessonId: string): Lesson | null {
