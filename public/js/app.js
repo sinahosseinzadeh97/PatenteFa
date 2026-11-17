@@ -693,12 +693,16 @@ App.renderRichText = function(el, text) {
   };
 
   // ── §18.7: per-user card renderer ────────────────────────────────────────────
-  App.adminDate = function(value) {
+  // Gregorian calendar, Persian digits: «۱۷ نوامبر ۲۰۲۶» (with time: «… ساعت ۱۸:۴۲»).
+  App.adminDate = function(value, withTime) {
     if (!value) return '—';
     var raw = String(value).replace(' ', 'T');
     if (!/Z$|[+-]\d{2}:\d{2}$/.test(raw)) raw += 'Z';
     var date = new Date(raw);
-    return Number.isFinite(date.getTime()) ? date.toLocaleDateString('fa-IR') : '—';
+    if (!Number.isFinite(date.getTime())) return '—';
+    var opts = { day: 'numeric', month: 'long', year: 'numeric' };
+    if (withTime) { opts.hour = '2-digit'; opts.minute = '2-digit'; }
+    return date.toLocaleString('fa-IR-u-ca-gregory', opts);
   };
 
   App.adminGrantLabel = function(kind) {
@@ -763,7 +767,7 @@ App.renderRichText = function(el, text) {
               (u.username ? ' <span class="admin-user-username">@' + App.escapeHtml(u.username) + '</span>' : '') +
             '</div>' +
             '<div class="admin-user-meta">ID ' + App.escapeHtml(String(u.telegram_user_id)) + lastSeenHtml + '</div>' +
-            '<div class="admin-access-detail">عضویت: ' + App.escapeHtml(App.adminDate(u.created_at)) + ' (' + App.escapeHtml(App.relativeTime(u.created_at) || '—') + ')</div>' +
+            '<div class="admin-access-detail">عضویت: ' + App.escapeHtml(App.adminDate(u.created_at, true)) + ' (' + App.escapeHtml(App.relativeTime(u.created_at) || '—') + ')</div>' +
             '<div class="admin-access-detail">' + App.escapeHtml(access.detail) + '</div>' +
             (u.paid_count > 0 ? '<div class="admin-access-detail">خرید: ' + Number(u.paid_count).toLocaleString('fa-IR') + ' بار · €' + Number(u.paid_total_eur || 0).toFixed(2) + ' · آخرین: ' + App.escapeHtml(App.adminDate(u.last_paid_at)) + '</div>' : '') +
           '</div>' +
@@ -896,7 +900,7 @@ App.renderRichText = function(el, text) {
         var current = new Date(String(user.access_expires_at).replace(' ', 'T') + 'Z').getTime();
         if (Number.isFinite(current)) base = Math.max(base, current);
       }
-      action += ' · ' + durationDays.toLocaleString('fa-IR') + ' روز · پایان: ' + new Date(base + durationDays * 86400000).toLocaleDateString('fa-IR');
+      action += ' · ' + durationDays.toLocaleString('fa-IR') + ' روز · پایان: ' + App.adminDate(new Date(base + durationDays * 86400000).toISOString());
     }
     if (body.amountEur !== undefined) action += ' · €' + body.amountEur.toFixed(2);
     if (body.note) action += '\nیادداشت: ' + body.note;
