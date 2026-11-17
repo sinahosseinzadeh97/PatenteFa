@@ -19,6 +19,26 @@ export interface DbUser {
   created_at: string;
 }
 
+export const TRIAL_DAYS = 14;
+
+export interface AccessGrantRow {
+  id: number;
+  user_id: number;
+  kind: 'trial' | 'paid' | 'gift' | 'set' | 'unlimited' | 'block' | 'legacy';
+  days: number | null;
+  expires_at: string | null;
+  amount_eur: number | null;
+  note: string | null;
+  created_at: string;
+}
+
+export interface AccessGrantInput {
+  kind: 'paid' | 'gift' | 'set' | 'unlimited';
+  days: number | null;
+  amountEur?: number | null;
+  note?: string | null;
+}
+
 export interface DbTopic {
   id: number;
   name_it: string;
@@ -107,26 +127,15 @@ export async function upsertUser(
   username: string | undefined,
   isAdmin: boolean = false
 ): Promise<DbUser> {
-  const existing = await getUserByTelegramId(db, telegramUserId);
-
-  if (!existing) {
-    const initialApproved = isAdmin ? 1 : 0;
-    await db
-      .prepare(
-        `INSERT INTO users (telegram_user_id, first_name, username, is_approved)
-         VALUES (?, ?, ?, ?)`
-      )
-      .bind(telegramUserId, firstName, username ?? null, initialApproved)
-      .run();
-  } else {
-    const newApproval = isAdmin ? 1 : existing.is_approved;
-    await db
-      .prepare(
-        `UPDATE users SET first_name = ?, username = ?, is_approved = ? WHERE telegram_user_id = ?`
-      )
-      .bind(firstName, username ?? null, newApproval, telegramUserId)
-      .run();
-  }
+  // Preserve the live approval on conflict: a concurrent trial/block must not
+  // be overwritten by a status read before this profile update.
+  await db.prepare(
+    `INSERT INTO users (telegram_user_id, first_name, username, is_approved)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(telegram_user_id) DO UPDATE SET
+       first_name = excluded.first_name, username = excluded.username,
+       is_approved = CASE WHEN ? = 1 THEN 1 ELSE users.is_approved END`
+  ).bind(telegramUserId, firstName, username ?? null, isAdmin ? 1 : 0, isAdmin ? 1 : 0).run();
 
   return db
     .prepare(`SELECT * FROM users WHERE telegram_user_id = ?`)
@@ -139,32 +148,91 @@ export async function setUserApproval(
   telegramUserId: number,
   isApproved: number
 ): Promise<DbUser | null> {
-  await db
-    .prepare(
-      `UPDATE users
-       SET is_approved = ?,
-           access_expires_at = CASE WHEN ? = 1 THEN NULL ELSE access_expires_at END
+  if (isApproved === 1) {
+    const user = await getUserByTelegramId(db, telegramUserId);
+    if (!user) return null;
+    const trial = await startTrialIfEligible(db, user.id);
+    if (trial.started) return trial.user;
+    // A pre-trial block has NULL as "no window", not unlimited. Preserve
+    // unlimited only when it was recorded explicitly or backfilled as legacy.
+    await db.prepare(
+      `UPDATE users SET is_approved = 1,
+         access_expires_at = CASE WHEN access_expires_at IS NULL AND NOT EXISTS (
+           SELECT 1 FROM access_grants WHERE user_id = users.id
+             AND kind IN ('unlimited', 'legacy') AND expires_at IS NULL
+         ) THEN datetime('now') ELSE access_expires_at END
        WHERE telegram_user_id = ?`
-    )
-    .bind(isApproved, isApproved, telegramUserId)
-    .run();
+    ).bind(telegramUserId).run();
+    return getUserByTelegramId(db, telegramUserId);
+  }
+
+  const update = db.prepare(`UPDATE users SET is_approved = ? WHERE telegram_user_id = ?`)
+    .bind(isApproved, telegramUserId);
+  if (isApproved === -1) {
+    await db.batch([
+      update,
+      db.prepare(
+        `INSERT INTO access_grants (user_id, kind, expires_at)
+         SELECT id, 'block', access_expires_at FROM users WHERE telegram_user_id = ?`
+      ).bind(telegramUserId),
+    ]);
+  } else {
+    await update.run();
+  }
   return getUserByTelegramId(db, telegramUserId);
 }
 
-export async function setUserAccessExpiration(
+export async function startTrialIfEligible(
+  db: D1Database,
+  userId: number
+): Promise<{ started: boolean; user: DbUser | null }> {
+  const results = await db.batch([
+    db.prepare(
+      `INSERT INTO access_grants (user_id, kind, days, expires_at)
+       SELECT ?, 'trial', ?, datetime('now', ?)
+       WHERE NOT EXISTS (SELECT 1 FROM access_grants WHERE user_id = ?)
+         AND (SELECT is_approved FROM users WHERE id = ?) = 0`
+    ).bind(userId, TRIAL_DAYS, `+${TRIAL_DAYS} days`, userId, userId),
+    db.prepare(
+      `UPDATE users SET is_approved = 1,
+         access_expires_at = (SELECT expires_at FROM access_grants WHERE user_id = ? AND kind = 'trial')
+       WHERE id = ? AND is_approved = 0 AND changes() > 0
+         AND EXISTS (SELECT 1 FROM access_grants WHERE user_id = ? AND kind = 'trial')`
+    ).bind(userId, userId, userId),
+  ]);
+  // changes() also prevents re-approving a pending account with an old trial.
+  return { started: results[0].meta.changes > 0, user: await getUserById(db, userId) };
+}
+
+export async function grantAccess(
   db: D1Database,
   userId: number,
-  accessExpiresAt: string | null
+  grant: AccessGrantInput
 ): Promise<DbUser | null> {
-  await db
-    .prepare(
-      `UPDATE users
-       SET is_approved = 1, access_expires_at = ?
+  // Compute from the live row inside the batch, so concurrent purchases stack
+  // without losing days. SQLite datetime() emits UTC YYYY-MM-DD HH:MM:SS.
+  await db.batch([
+    db.prepare(
+      `UPDATE users SET is_approved = 1,
+         access_expires_at = CASE WHEN ? = 'unlimited' THEN NULL ELSE
+           COALESCE(datetime(CASE WHEN ? IN ('paid', 'gift') AND is_approved = 1
+                              AND datetime(access_expires_at) > datetime('now')
+                         THEN access_expires_at ELSE datetime('now') END, ?), datetime('now', ?)) END
        WHERE id = ?`
-    )
-    .bind(accessExpiresAt, userId)
-    .run();
+    ).bind(grant.kind, grant.kind, `+${grant.days ?? 0} days`, `+${grant.days ?? 0} days`, userId),
+    db.prepare(
+      `INSERT INTO access_grants (user_id, kind, days, expires_at, amount_eur, note)
+       SELECT id, ?, ?, access_expires_at, ?, ? FROM users WHERE id = ?`
+    ).bind(grant.kind, grant.days, grant.amountEur ?? null, grant.note ?? null, userId),
+  ]);
   return getUserById(db, userId);
+}
+
+export async function getAccessGrants(db: D1Database, userId: number): Promise<AccessGrantRow[]> {
+  const result = await db.prepare(
+    `SELECT * FROM access_grants WHERE user_id = ? ORDER BY created_at DESC, id DESC`
+  ).bind(userId).all<AccessGrantRow>();
+  return result.results;
 }
 
 export async function getUserByTelegramId(
@@ -1537,6 +1605,10 @@ export async function logApiUsage(
     .run();
 }
 
+// Deterministic for multiple grants recorded within the same second.
+const USER_PLAN_SQL = `(SELECT g.kind FROM access_grants g
+  WHERE g.user_id = u.id AND g.kind != 'block' ORDER BY g.created_at DESC, g.id DESC LIMIT 1)`;
+
 export async function getAdminOverviewStats(db: D1Database): Promise<{
   totalUsers: number;
   activeTodayUsers: number;
@@ -1549,8 +1621,16 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
   totalApiCalls: number;
   totalEventsLogged: number;
   totalInteractions: number;
+  joinedToday: number;
+  joined7d: number;
+  activeTrials: number;
+  activePaid: number;
+  expiredTrials: number;
+  convertedUsers: number;
+  revenueEur: number;
+  revenue30dEur: number;
 }> {
-  const [userRow, activeTodayRow, activeNowRow, pendingRow, examRow, minutesRow, apiRow, eventsRow, interactionsRow] = await Promise.all([
+  const [userRow, activeTodayRow, activeNowRow, pendingRow, examRow, minutesRow, apiRow, eventsRow, interactionsRow, subscriptionRow, revenueRow] = await Promise.all([
     db.prepare(`SELECT COUNT(*) as count FROM users`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= date('now')`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(DISTINCT user_id) as count FROM user_events WHERE created_at >= datetime('now', '-5 minutes')`).first<{ count: number }>(),
@@ -1582,6 +1662,29 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
     db.prepare(`SELECT COUNT(*) as calls, COALESCE(SUM(estimated_cost_usd), 0) as total_cost FROM api_usage_logs`).first<{ calls: number; total_cost: number }>(),
     db.prepare(`SELECT COUNT(*) as count FROM user_events`).first<{ count: number }>(),
     db.prepare(`SELECT COUNT(*) as count FROM user_events WHERE event_type = 'interaction'`).first<{ count: number }>(),
+    db.prepare(
+      `SELECT
+         COUNT(CASE WHEN u.created_at >= date('now') THEN 1 END) AS joinedToday,
+         COUNT(CASE WHEN u.created_at >= datetime('now', '-7 days') THEN 1 END) AS joined7d,
+         COUNT(CASE WHEN ${USER_PLAN_SQL} = 'trial' AND u.is_approved = 1
+                          AND u.access_expires_at > datetime('now') THEN 1 END) AS activeTrials,
+         COUNT(CASE WHEN ${USER_PLAN_SQL} = 'paid' AND u.is_approved = 1
+                          AND u.access_expires_at > datetime('now') THEN 1 END) AS activePaid,
+         COUNT(CASE WHEN ${USER_PLAN_SQL} = 'trial' AND u.is_approved = 1
+                          AND u.access_expires_at <= datetime('now') THEN 1 END) AS expiredTrials,
+         COUNT(CASE WHEN EXISTS (SELECT 1 FROM access_grants g WHERE g.user_id = u.id AND g.kind = 'trial')
+                         AND EXISTS (SELECT 1 FROM access_grants g WHERE g.user_id = u.id AND g.kind = 'paid')
+                    THEN 1 END) AS convertedUsers
+       FROM users u`
+    ).first<{
+      joinedToday: number; joined7d: number; activeTrials: number;
+      activePaid: number; expiredTrials: number; convertedUsers: number;
+    }>(),
+    db.prepare(
+      `SELECT COALESCE(SUM(amount_eur), 0) AS revenueEur,
+         COALESCE(SUM(CASE WHEN created_at >= datetime('now', '-30 days') THEN amount_eur ELSE 0 END), 0) AS revenue30dEur
+       FROM access_grants WHERE kind = 'paid'`
+    ).first<{ revenueEur: number; revenue30dEur: number }>(),
   ]);
 
   const totalExams = examRow?.total ?? 0;
@@ -1601,6 +1704,14 @@ export async function getAdminOverviewStats(db: D1Database): Promise<{
     totalApiCalls: apiRow?.calls ?? 0,
     totalEventsLogged: eventsRow?.count ?? 0,
     totalInteractions: interactionsRow?.count ?? 0,
+    joinedToday: subscriptionRow?.joinedToday ?? 0,
+    joined7d: subscriptionRow?.joined7d ?? 0,
+    activeTrials: subscriptionRow?.activeTrials ?? 0,
+    activePaid: subscriptionRow?.activePaid ?? 0,
+    expiredTrials: subscriptionRow?.expiredTrials ?? 0,
+    convertedUsers: subscriptionRow?.convertedUsers ?? 0,
+    revenueEur: revenueRow?.revenueEur ?? 0,
+    revenue30dEur: revenueRow?.revenue30dEur ?? 0,
   };
 }
 
@@ -1627,6 +1738,12 @@ export interface AdminUserListItem {
   review_due: number;
   // §18.4: waste signal — API calls per finished exam
   api_per_exam: number;
+  plan: AccessGrantRow['kind'] | null;
+  trial_started_at: string | null;
+  paid_count: number;
+  paid_total_eur: number;
+  first_paid_at: string | null;
+  last_paid_at: string | null;
 }
 
 export async function getAdminUsersList(
@@ -1647,6 +1764,12 @@ export async function getAdminUsersList(
       u.is_approved,
       u.access_expires_at,
       u.created_at,
+      ${USER_PLAN_SQL} AS plan,
+      (SELECT MIN(g.created_at) FROM access_grants g WHERE g.user_id = u.id AND g.kind = 'trial') AS trial_started_at,
+      (SELECT COUNT(*) FROM access_grants g WHERE g.user_id = u.id AND g.kind = 'paid') AS paid_count,
+      (SELECT COALESCE(SUM(g.amount_eur), 0) FROM access_grants g WHERE g.user_id = u.id AND g.kind = 'paid') AS paid_total_eur,
+      (SELECT MIN(g.created_at) FROM access_grants g WHERE g.user_id = u.id AND g.kind = 'paid') AS first_paid_at,
+      (SELECT MAX(g.created_at) FROM access_grants g WHERE g.user_id = u.id AND g.kind = 'paid') AS last_paid_at,
       (SELECT MAX(e.created_at)  FROM user_events e  WHERE e.user_id = u.id) AS last_active_at,
       (SELECT COALESCE(SUM(e.duration_seconds), 0) / 60
          FROM user_events e
@@ -1683,6 +1806,15 @@ export async function getAdminUsersList(
     query += ` AND u.is_approved = 0`;
   } else if (statusFilter === "blocked") {
     query += ` AND u.is_approved = -1`;
+  } else if (statusFilter === "trial" || statusFilter === "paid") {
+    query += ` AND plan = ? AND u.is_approved = 1 AND u.access_expires_at > datetime('now')`;
+    params.push(statusFilter);
+  } else if (statusFilter === "trial_expired") {
+    query += ` AND plan = 'trial' AND u.is_approved = 1 AND u.access_expires_at <= datetime('now')`;
+  } else if (statusFilter === "expiring") {
+    query += ` AND u.is_approved = 1 AND u.access_expires_at > datetime('now') AND u.access_expires_at <= datetime('now', '+3 days')`;
+  } else if (statusFilter === "unlimited") {
+    query += ` AND u.is_approved = 1 AND u.access_expires_at IS NULL`;
   }
 
   if (search && search.trim()) {
@@ -1725,6 +1857,7 @@ export async function getUserActivityTimeline(
   events: DbUserEvent[];
   sessions: DbExamSession[];
   apiLogs: DbApiUsageLog[];
+  grants: AccessGrantRow[];
   interactionSummary: Array<{
     screen: string;
     control: string;
@@ -1742,7 +1875,7 @@ export async function getUserActivityTimeline(
     totalApiCostUsd: number;
   };
 }> {
-  const [user, events, sessions, apiLogs, interactionSummary, eventSummary, examSummary, apiSummary] = await Promise.all([
+  const [user, events, sessions, apiLogs, interactionSummary, eventSummary, examSummary, apiSummary, grants] = await Promise.all([
     db.prepare(`SELECT * FROM users WHERE id = ?`).bind(userId).first<DbUser>(),
     db.prepare(`SELECT * FROM user_events WHERE user_id = ? ORDER BY created_at DESC LIMIT ?`).bind(userId, limit).all<DbUserEvent>(),
     db.prepare(`SELECT * FROM exam_sessions WHERE user_id = ? ORDER BY started_at DESC LIMIT ?`).bind(userId, 20).all<DbExamSession>(),
@@ -1783,6 +1916,7 @@ export async function getUserActivityTimeline(
          COALESCE(SUM(estimated_cost_usd), 0) AS cost
        FROM api_usage_logs WHERE user_id = ?`
     ).bind(userId).first<{ calls: number; tokens: number; cost: number }>(),
+    getAccessGrants(db, userId),
   ]);
 
   const trackedSeconds = eventSummary?.active_seconds ?? 0;
@@ -1793,6 +1927,7 @@ export async function getUserActivityTimeline(
     events: events.results,
     sessions: sessions.results,
     apiLogs: apiLogs.results,
+    grants,
     interactionSummary: interactionSummary.results,
     summary: {
       trackedActiveMinutes: Math.round(trackedSeconds / 60),

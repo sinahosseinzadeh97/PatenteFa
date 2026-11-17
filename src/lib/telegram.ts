@@ -198,30 +198,33 @@ export async function sendAnnouncement(
 export async function notifyAdminNewUserRequest(
   token: string,
   logChannelId: string,
-  user: { telegramUserId: number; firstName: string; username?: string; funAnswer?: string }
+  user: { telegramUserId: number; firstName: string; username?: string; funAnswer?: string; trialUntil?: string }
 ): Promise<void> {
   const channel = logChannelId || "@patente_fa_logs";
-  const nameSafe = user.firstName.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const usernameSafe = user.username ? "@" + user.username.replace(/</g, "&lt;") : "ندارد";
+  const nameSafe = esc(user.firstName);
+  const usernameSafe = user.username ? "@" + esc(user.username) : "ندارد";
   const answerSafe = user.funAnswer
-    ? user.funAnswer.replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    ? esc(user.funAnswer)
     : "آره خیلی زیاد!";
+  const header = user.trialUntil
+    ? `🔔 <b>کاربر جدید به پتنت فارسی پیوست</b>\nدوره آزمایشی ۱۴ روزه تا ${esc(new Date(user.trialUntil.replace(' ', 'T') + 'Z').toLocaleDateString('fa-IR'))} فعال است.\n\n`
+    : `🔔 <b>درخواست دسترسی جدید به پتنت فارسی</b>\n\n`;
 
   const text =
-    `🔔 <b>درخواست دسترسی جدید به پتنت فارسی</b>\n\n` +
+    header +
     `👤 <b>کاربر</b>: ${nameSafe}\n` +
     `🆔 <b>آیدی تلگرام</b>: <code>${user.telegramUserId}</code>\n` +
     `🏷️ <b>نام کاربری</b>: ${usernameSafe}\n\n` +
     `💬 <b>توضیحات / پیام کاربر</b>:\n` +
     `«<i>${answerSafe}</i>»\n\n` +
     `🎯 <i>هدف: قبولی در آزمون تئوری در ۴ ماه با بالاترین آمادگی 🚗💨</i>\n\n` +
-    `لطفاً جهت بررسی و فعال‌سازی دسترسی، دکمه زیر را انتخاب کنید:`;
+    (user.trialUntil ? `برای مدیریت کاربر از دکمه‌های زیر استفاده کنید:` : `لطفاً جهت بررسی و فعال‌سازی دسترسی، دکمه زیر را انتخاب کنید:`);
 
   const reply_markup = {
     inline_keyboard: [
       [
-        { text: "✅ تایید دسترسی", callback_data: `approve_user:${user.telegramUserId}` },
-        { text: "❌ رد درخواست", callback_data: `reject_user:${user.telegramUserId}` },
+        ...(!user.trialUntil ? [{ text: "✅ تایید دسترسی", callback_data: `approve_user:${user.telegramUserId}` }] : []),
+        { text: user.trialUntil ? "🚫 مسدودکردن" : "❌ رد درخواست", callback_data: `reject_user:${user.telegramUserId}` },
       ],
       [
         { text: "💬 پاسخ به کاربر", callback_data: `reply_user:${user.telegramUserId}` },

@@ -19,14 +19,16 @@ import {
   insertSupportMessage,
   markSupportThreadRead,
   countUnreadSupportTotal,
-  setUserAccessExpiration,
+  grantAccess,
+  startTrialIfEligible,
+  type AccessGrantInput,
   getQuestionById,
   getAllUsers,
 } from "../db/queries.js";
 import { getQuestionSource, sourceKey, type SourceQuestion } from '../lib/question-sources.js';
 import { saveReviewedContent } from '../lib/content-quality.js';
-import { checkPrimaryAdmin, isAccessExpired } from "../lib/auth.js";
-import { sendMessage, sendSupportReply, sendAnnouncement, buildMiniAppButton } from "../lib/telegram.js";
+import { checkPrimaryAdmin, isAccessExpired, isPrimaryAdminUser } from "../lib/auth.js";
+import { sendMessage, sendSupportReply, sendAnnouncement, buildMiniAppButton, notifyAdminNewUserRequest } from "../lib/telegram.js";
 import { normalizeSupportText } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
 import {
@@ -124,7 +126,19 @@ admin.post("/users/:id/status", async (c) => {
   const target = await getUserById(c.env.DB, id);
   if (!target) return c.json({ error: "User not found" }, 404);
 
-  await setUserApproval(c.env.DB, target.telegram_user_id, body.isApproved);
+  let trialStarted = false;
+  if (body.isApproved === 1 && !isPrimaryAdminUser(target.telegram_user_id, c.env.PRIMARY_ADMIN_TELEGRAM_USER_ID, c.env.ALLOWED_TELEGRAM_USER_IDS)) {
+    const trial = await startTrialIfEligible(c.env.DB, id);
+    trialStarted = trial.started;
+    if (trial.started) {
+      c.executionCtx.waitUntil(notifyAdminNewUserRequest(
+        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+        { telegramUserId: target.telegram_user_id, firstName: target.first_name || "کاربر",
+          username: target.username ?? undefined, trialUntil: trial.user!.access_expires_at! }
+      ));
+    }
+  }
+  if (!trialStarted) await setUserApproval(c.env.DB, target.telegram_user_id, body.isApproved);
 
   // Tell the user, exactly like the bot's approve/revoke buttons do — an
   // approval nobody is notified of is an approval that does nothing.
@@ -155,41 +169,55 @@ admin.post("/users/:id/status", async (c) => {
   });
 });
 
-// POST /api/admin/users/:id/access — grant unlimited or time-boxed access.
+// POST /api/admin/users/:id/access — record a manual purchase or access grant.
 admin.post("/users/:id/access", async (c) => {
   const id = Number(c.req.param("id"));
   if (!Number.isSafeInteger(id) || id <= 0) {
-    return c.json({ error: "Invalid user id" }, 400);
+    return c.json({ error: "شناسه کاربر نامعتبر است." }, 400);
   }
 
-  const body = (await c.req.json().catch(() => ({}))) as { durationDays?: number | null };
+  const body = await c.req.json().catch(() => null) as Record<string, unknown> | null;
+  if (!body || typeof body !== 'object' || Array.isArray(body)) {
+    return c.json({ error: "اطلاعات دسترسی را به‌درستی ارسال کنید." }, 400);
+  }
   const durationDays = body.durationDays;
-  if (durationDays === undefined) {
-    return c.json({ error: "durationDays is required" }, 400);
+  // Old clients sent only durationDays. An explicit invalid kind never falls back.
+  const kind = body.kind === undefined
+    ? (typeof durationDays === 'number' ? 'set' : durationDays === null ? 'unlimited' : undefined)
+    : body.kind;
+  if (typeof kind !== 'string' || !['paid', 'gift', 'set', 'unlimited'].includes(kind)) {
+    return c.json({ error: "نوع دسترسی باید خرید اشتراک، هدیه، اصلاح یا نامحدود باشد." }, 400);
   }
   if (
-    durationDays !== null &&
-    (!Number.isSafeInteger(durationDays) || durationDays < 1 || durationDays > 3650)
+    kind === 'unlimited' ? durationDays !== null :
+    typeof durationDays !== 'number' || !Number.isSafeInteger(durationDays) || durationDays < 1 || durationDays > 3650
   ) {
-    return c.json({ error: "durationDays must be null or an integer between 1 and 3650" }, 400);
+    return c.json({ error: "مدت دسترسی باید عدد صحیح ۱ تا ۳۶۵۰ روز و برای نامحدود تهی باشد." }, 400);
+  }
+  if ((body.amountEur !== undefined && kind !== 'paid') ||
+      (body.amountEur !== undefined && body.amountEur !== null &&
+       (typeof body.amountEur !== 'number' || !Number.isFinite(body.amountEur) || body.amountEur < 0 || body.amountEur > 10000))) {
+    return c.json({ error: "مبلغ فقط برای خرید اشتراک مجاز است و باید بین ۰ تا ۱۰۰۰۰ یورو باشد." }, 400);
+  }
+  if (body.note !== undefined && (typeof body.note !== 'string' || body.note.length > 200)) {
+    return c.json({ error: "یادداشت باید متن و حداکثر ۲۰۰ نویسه باشد." }, 400);
   }
 
   const target = await getUserById(c.env.DB, id);
-  if (!target) return c.json({ error: "User not found" }, 404);
-
-  const accessExpiresAt = durationDays === null
-    ? null
-    : new Date(Date.now() + durationDays * 86_400_000)
-        .toISOString()
-        .replace("T", " ")
-        .slice(0, 19);
-  const updated = await setUserAccessExpiration(c.env.DB, id, accessExpiresAt);
+  if (!target) return c.json({ error: "کاربر پیدا نشد." }, 404);
+  const updated = await grantAccess(c.env.DB, id, {
+    kind: kind as AccessGrantInput['kind'],
+    days: durationDays as number | null,
+    amountEur: body.amountEur as number | null | undefined,
+    note: typeof body.note === 'string' ? body.note.trim() || null : null,
+  });
 
   return c.json({
     ok: true,
     userId: id,
     isApproved: updated?.is_approved === 1,
     accessExpiresAt: updated?.access_expires_at ?? null,
+    plan: kind,
   });
 });
 

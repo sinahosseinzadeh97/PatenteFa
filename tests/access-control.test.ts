@@ -1,62 +1,15 @@
 import assert from "node:assert/strict";
-import { createHmac } from "node:crypto";
 import test from "node:test";
 
 import worker from "../src/index.js";
 import { isAccessExpired, isPrimaryAdminUser } from "../src/lib/auth.js";
 import type { AppEnv } from "../src/types.js";
+import { createSqliteD1, signedInitData as sign } from "./helpers/sqlite-d1.js";
 
 const BOT_TOKEN = "123456:test-token";
 
 function signedInitData(userId: number): string {
-  const params = new URLSearchParams({
-    auth_date: String(Math.floor(Date.now() / 1000)),
-    user: JSON.stringify({ id: userId, first_name: "Pending" }),
-  });
-  const dataCheckString = [...params.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
-  const secret = createHmac("sha256", "WebAppData").update(BOT_TOKEN).digest();
-  params.set("hash", createHmac("sha256", secret).update(dataCheckString).digest("hex"));
-  return params.toString();
-}
-
-function userDb(
-  approvalStatus: number,
-  telegramUserId = 9001,
-  accessExpiresAt: string | null = null
-): D1Database {
-  const user = {
-    id: 7,
-    telegram_user_id: telegramUserId,
-    first_name: "Pending",
-    username: null,
-    target_exam_date: null,
-    daily_reminder_hour: 8,
-    timezone: "Europe/Rome",
-    is_approved: approvalStatus,
-    access_expires_at: accessExpiresAt,
-    // Deliberately recent: this reproduced the former 72-hour bypass.
-    created_at: new Date().toISOString().replace("T", " ").slice(0, 19),
-  };
-
-  return {
-    prepare(sql: string) {
-      assert.match(sql, /users/, "a blocked request must not reach the protected endpoint query");
-      return {
-        bind() {
-          return this;
-        },
-        async first() {
-          return user;
-        },
-        async run() {
-          return { success: true };
-        },
-      };
-    },
-  } as unknown as D1Database;
+  return sign(BOT_TOKEN, userId);
 }
 
 function envFor(
@@ -65,8 +18,15 @@ function envFor(
   accessExpiresAt: string | null = null,
   primaryAdminId?: string
 ): AppEnv {
+  const { db, raw } = createSqliteD1();
+  raw.prepare(`INSERT INTO users (id, telegram_user_id, is_approved, access_expires_at)
+    VALUES (7, ?, ?, ?)`).run(telegramUserId, approvalStatus, accessExpiresAt);
+  if (approvalStatus !== 1) {
+    raw.prepare(`INSERT INTO access_grants (user_id, kind, expires_at)
+      VALUES (7, 'block', ?)`).run(accessExpiresAt);
+  }
   return {
-    DB: userDb(approvalStatus, telegramUserId, accessExpiresAt),
+    DB: db,
     TELEGRAM_BOT_TOKEN: BOT_TOKEN,
     ALLOWED_TELEGRAM_USER_IDS: "42",
     PRIMARY_ADMIN_TELEGRAM_USER_ID: primaryAdminId,
@@ -80,7 +40,7 @@ const executionCtx = {
   props: {},
 } as unknown as ExecutionContext;
 
-test("a newly registered pending user is denied every protected API route", async () => {
+test("a pending user who already consumed a grant is denied protected API routes", async () => {
   const response = await worker.fetch(
     new Request("https://example.test/api/stats", {
       headers: { "X-Telegram-InitData": signedInitData(9001) },

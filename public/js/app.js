@@ -476,14 +476,18 @@ App.renderRichText = function(el, text) {
     state.adminSearchTimer = setTimeout(function() { App.loadAdminUsers(); }, 350);
   };
 
-  App.loadAdminUsers = async function() {
+  App.adminUsersQuery = function() {
     var search = ((document.getElementById('admin-search-input') || {}).value || '').trim();
     var status = ((document.getElementById('admin-status-filter') || {}).value || 'all');
+    var qs = [];
+    if (search) qs.push('search=' + encodeURIComponent(search));
+    if (status !== 'all') qs.push('status=' + encodeURIComponent(status));
+    return '/admin/users' + (qs.length ? '?' + qs.join('&') : '');
+  };
+
+  App.loadAdminUsers = async function() {
     try {
-      var qs = [];
-      if (search) qs.push('search=' + encodeURIComponent(search));
-      if (status !== 'all') qs.push('status=' + encodeURIComponent(status));
-      var res = await api('GET', '/admin/users' + (qs.length ? '?' + qs.join('&') : ''));
+      var res = await api('GET', App.adminUsersQuery());
       state.adminUsers = res.users || [];
       App.renderAdminUsers(state.adminUsers);
     } catch (err) {
@@ -499,7 +503,7 @@ App.renderRichText = function(el, text) {
     try {
       const [overview, usersRes, eventsRes, costRes, supportRes] = await Promise.all([
         api('GET', '/admin/overview'),
-        api('GET', '/admin/users'),
+        api('GET', App.adminUsersQuery()),
         api('GET', '/admin/events'),
         api('GET', '/admin/cost'),
         api('GET', '/admin/support'),
@@ -509,6 +513,14 @@ App.renderRichText = function(el, text) {
 
       // KPI chips
       var el = function(id) { return document.getElementById(id); };
+      var faNumber = function(value) { return Number(value || 0).toLocaleString('fa-IR'); };
+      if (el('admin-joined-summary')) el('admin-joined-summary').textContent = faNumber(overview.joinedToday) + ' / ' + faNumber(overview.joined7d);
+      if (el('admin-active-trials')) el('admin-active-trials').textContent = faNumber(overview.activeTrials);
+      if (el('admin-active-paid')) el('admin-active-paid').textContent = faNumber(overview.activePaid);
+      if (el('admin-expired-trials')) el('admin-expired-trials').textContent = faNumber(overview.expiredTrials);
+      if (el('admin-converted-users')) el('admin-converted-users').textContent = faNumber(overview.convertedUsers);
+      if (el('admin-revenue')) el('admin-revenue').textContent = '€' + Number(overview.revenueEur || 0).toFixed(2);
+      if (el('admin-revenue-30d')) el('admin-revenue-30d').textContent = '۳۰ روز: €' + Number(overview.revenue30dEur || 0).toFixed(2);
       if (el('admin-total-users'))    el('admin-total-users').textContent    = String(overview.totalUsers || 0);
       if (el('admin-active-today'))   el('admin-active-today').textContent   = String(overview.activeTodayUsers || 0);
       if (el('admin-active-now'))     el('admin-active-now').textContent     = (overview.activeNowUsers || 0) + ' نفر در ۵ دقیقه اخیر';
@@ -681,24 +693,32 @@ App.renderRichText = function(el, text) {
   };
 
   // ── §18.7: per-user card renderer ────────────────────────────────────────────
-  App.adminAccessStatus = function(user) {
-    if (user.is_approved === -1) return { className: 'blocked', label: 'مسدود', detail: 'دسترسی لغو شده' };
-    if (user.is_approved !== 1) return { className: 'pending', label: 'در انتظار', detail: 'هنوز فعال نشده' };
-    if (!user.access_expires_at) return { className: 'approved', label: 'فعال · نامحدود', detail: 'بدون تاریخ پایان' };
-
-    var raw = String(user.access_expires_at).replace(' ', 'T');
+  App.adminDate = function(value) {
+    if (!value) return '—';
+    var raw = String(value).replace(' ', 'T');
     if (!/Z$|[+-]\d{2}:\d{2}$/.test(raw)) raw += 'Z';
-    var expiry = new Date(raw);
-    var remainingMs = expiry.getTime() - Date.now();
-    if (!Number.isFinite(expiry.getTime()) || remainingMs <= 0) {
-      return { className: 'expired', label: 'منقضی شده', detail: 'نیاز به تمدید' };
+    var date = new Date(raw);
+    return Number.isFinite(date.getTime()) ? date.toLocaleDateString('fa-IR') : '—';
+  };
+
+  App.adminGrantLabel = function(kind) {
+    var labels = { trial: 'آزمایشی', paid: 'اشتراک', gift: 'هدیه', set: 'اصلاح', unlimited: 'نامحدود', block: 'مسدود', legacy: 'قدیمی' };
+    return Object.prototype.hasOwnProperty.call(labels, kind) ? labels[kind] : 'بدون طرح';
+  };
+
+  App.adminAccessStatus = function(user) {
+    var detail = user.is_approved === 1 ? 'بدون تاریخ پایان' : 'بدون بازه دسترسی';
+    var expired = false;
+    if (user.access_expires_at) {
+      var raw = String(user.access_expires_at).replace(' ', 'T');
+      if (!/Z$|[+-]\d{2}:\d{2}$/.test(raw)) raw += 'Z';
+      var remainingMs = new Date(raw).getTime() - Date.now();
+      expired = !Number.isFinite(remainingMs) || remainingMs <= 0;
+      detail = 'تا ' + App.adminDate(user.access_expires_at) + ' · ' + (expired ? 'منقضی' : Math.ceil(remainingMs / 86400000).toLocaleString('fa-IR') + ' روز مانده');
     }
-    var days = Math.max(1, Math.ceil(remainingMs / 86400000));
-    return {
-      className: 'approved',
-      label: 'فعال · ' + days.toLocaleString('fa-IR') + ' روز',
-      detail: 'تا ' + expiry.toLocaleDateString('fa-IR')
-    };
+    if (user.is_approved === -1) return { className: 'blocked', label: 'مسدود', detail: detail };
+    if (user.is_approved !== 1) return { className: 'pending', label: 'در انتظار', detail: detail };
+    return { className: expired ? 'expired' : 'approved', label: expired ? 'منقضی شده' : 'فعال', detail: detail };
   };
 
   App.renderAdminUsers = function(users) {
@@ -714,13 +734,16 @@ App.renderRichText = function(el, text) {
 
     var html = '';
     users.forEach(function(u) {
+      // IDs enter inline handlers and element IDs; accept only database integers.
+      if (!Number.isSafeInteger(u.id) || u.id <= 0) return;
       var access = App.adminAccessStatus(u);
-      var statusBadge = '<span class="admin-status-badge ' + access.className + '">' + access.label + '</span>';
+      var statusBadge = '<span class="admin-plan-badge">' + App.escapeHtml(App.adminGrantLabel(u.plan)) + '</span>' +
+        '<span class="admin-status-badge ' + access.className + '">' + App.escapeHtml(access.label) + '</span>';
 
       // §18.3: last_active_at relative time
       var relTime = u.last_active_at ? App.relativeTime(u.last_active_at) : null;
       var lastSeenHtml = relTime
-        ? ' <span class="admin-last-seen">' + relTime + '</span>'
+        ? ' <span class="admin-last-seen">' + App.escapeHtml(relTime) + '</span>'
         : '';
 
       // §18.4: api-per-exam waste signal
@@ -739,8 +762,10 @@ App.renderRichText = function(el, text) {
               App.escapeHtml(u.first_name || 'کاربر') +
               (u.username ? ' <span class="admin-user-username">@' + App.escapeHtml(u.username) + '</span>' : '') +
             '</div>' +
-            '<div class="admin-user-meta">ID ' + u.telegram_user_id + lastSeenHtml + '</div>' +
-            '<div class="admin-access-detail">' + access.detail + '</div>' +
+            '<div class="admin-user-meta">ID ' + App.escapeHtml(String(u.telegram_user_id)) + lastSeenHtml + '</div>' +
+            '<div class="admin-access-detail">عضویت: ' + App.escapeHtml(App.adminDate(u.created_at)) + ' (' + App.escapeHtml(App.relativeTime(u.created_at) || '—') + ')</div>' +
+            '<div class="admin-access-detail">' + App.escapeHtml(access.detail) + '</div>' +
+            (u.paid_count > 0 ? '<div class="admin-access-detail">خرید: ' + Number(u.paid_count).toLocaleString('fa-IR') + ' بار · €' + Number(u.paid_total_eur || 0).toFixed(2) + ' · آخرین: ' + App.escapeHtml(App.adminDate(u.last_paid_at)) + '</div>' : '') +
           '</div>' +
           '<div class="admin-user-badges">' + wasteHtml + statusBadge + '</div>' +
         '</div>' +
@@ -754,20 +779,23 @@ App.renderRichText = function(el, text) {
           '<div><div class="stat-label">API</div><b>' + u.total_api_calls + '</b> <span class="stat-value">· ' + Number(u.total_api_tokens || 0).toLocaleString('fa-IR') + ' توکن</span></div>' +
         '</div>' +
         '<div class="admin-access-control">' +
-          '<label for="admin-access-' + u.id + '">تمدید دسترسی</label>' +
-          '<select id="admin-access-' + u.id + '" class="admin-access-select">' +
-            '<option value="7">۷ روز</option>' +
-            '<option value="30" selected>۳۰ روز</option>' +
-            '<option value="90">۹۰ روز</option>' +
-            '<option value="365">یک سال</option>' +
-            '<option value="unlimited">نامحدود</option>' +
-          '</select>' +
-          '<button type="button" class="btn btn-primary btn-sm" onclick="App.setAdminUserAccess(' + u.id + ')">اعمال دسترسی</button>' +
+          '<div class="admin-access-field admin-access-wide"><label for="admin-access-kind-' + u.id + '">نوع دسترسی</label>' +
+            '<select id="admin-access-kind-' + u.id + '" class="admin-access-select" onchange="App.changeAdminAccessKind(' + u.id + ')">' +
+              '<option value="paid">ثبت خرید اشتراک</option><option value="gift">هدیه روز رایگان</option><option value="set">اصلاح: از امروز</option><option value="unlimited">نامحدود</option>' +
+            '</select></div>' +
+          '<div id="admin-access-days-field-' + u.id + '" class="admin-access-field"><label for="admin-access-days-' + u.id + '">مدت (روز)</label>' +
+            '<select id="admin-access-days-' + u.id + '" class="admin-access-select"><option value="7">۷</option><option value="14">۱۴</option><option value="30" selected>۳۰</option><option value="90">۹۰</option><option value="180">۱۸۰</option><option value="365">۳۶۵</option></select></div>' +
+          '<div id="admin-access-amount-field-' + u.id + '" class="admin-access-field"><label for="admin-access-amount-' + u.id + '">مبلغ (€، اختیاری)</label>' +
+            '<input id="admin-access-amount-' + u.id + '" class="admin-access-select" type="number" min="0" max="10000" step="0.01" inputmode="decimal" dir="ltr"></div>' +
+          '<div class="admin-access-field admin-access-wide"><label for="admin-access-note-' + u.id + '">یادداشت (اختیاری)</label>' +
+            '<input id="admin-access-note-' + u.id + '" class="admin-access-select" type="text" maxlength="200"></div>' +
+          '<button type="button" id="admin-access-apply-' + u.id + '" class="btn btn-primary btn-sm admin-access-wide" onclick="App.setAdminUserAccess(' + u.id + ')">اعمال دسترسی</button>' +
         '</div>' +
         // Actions
         '<div class="admin-user-actions-row">' +
           '<button type="button" class="btn btn-ghost btn-sm" onclick="App.viewAdminUserTimeline(' + u.id + ')">لاگ</button>' +
           '<button type="button" class="btn btn-ghost btn-sm" onclick="App.openAdminThread(' + u.id + ')">پیام</button>' +
+          (u.is_approved !== 1 ? '<button type="button" class="btn btn-secondary btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', 1)">تأیید دسترسی قبلی</button>' : '') +
           (u.is_approved === -1
             ? ''
             : '<button type="button" class="btn btn-falso btn-sm" onclick="App.setAdminUserStatus(' + u.id + ', -1)">مسدودکردن</button>') +
@@ -839,17 +867,49 @@ App.renderRichText = function(el, text) {
     }
   };
 
+  App.changeAdminAccessKind = function(userId) {
+    var kind = document.getElementById('admin-access-kind-' + userId).value;
+    document.getElementById('admin-access-days-field-' + userId).hidden = kind === 'unlimited';
+    document.getElementById('admin-access-days-' + userId).disabled = kind === 'unlimited';
+    document.getElementById('admin-access-amount-field-' + userId).hidden = kind !== 'paid';
+    document.getElementById('admin-access-amount-' + userId).disabled = kind !== 'paid';
+  };
+
   App.setAdminUserAccess = async function(userId) {
-    var select = document.getElementById('admin-access-' + userId);
-    if (!select) return;
-    var raw = select.value;
-    var durationDays = raw === 'unlimited' ? null : Number(raw);
+    var typeSelect = document.getElementById('admin-access-kind-' + userId);
+    var btn = document.getElementById('admin-access-apply-' + userId);
+    if (!typeSelect || (btn && btn.disabled)) return;
+    var kind = typeSelect.value;
+    var durationDays = kind === 'unlimited' ? null : Number(document.getElementById('admin-access-days-' + userId).value);
+    var amountInput = document.getElementById('admin-access-amount-' + userId);
+    var noteInput = document.getElementById('admin-access-note-' + userId);
+    var body = { kind: kind, durationDays: durationDays, note: noteInput.value.trim() };
+    if (kind === 'paid' && amountInput.value.trim()) {
+      if (!amountInput.checkValidity()) { amountInput.reportValidity(); return; }
+      body.amountEur = Number(amountInput.value);
+    }
+    var user = (state.adminUsers || []).find(function(u) { return u.id === userId; });
+    var action = App.adminGrantLabel(kind);
+    if (durationDays !== null) {
+      var base = Date.now();
+      if (user && user.is_approved === 1 && user.access_expires_at && (kind === 'paid' || kind === 'gift')) {
+        var current = new Date(String(user.access_expires_at).replace(' ', 'T') + 'Z').getTime();
+        if (Number.isFinite(current)) base = Math.max(base, current);
+      }
+      action += ' · ' + durationDays.toLocaleString('fa-IR') + ' روز · پایان: ' + new Date(base + durationDays * 86400000).toLocaleDateString('fa-IR');
+    }
+    if (body.amountEur !== undefined) action += ' · €' + body.amountEur.toFixed(2);
+    if (body.note) action += '\nیادداشت: ' + body.note;
+    if (!window.confirm('برای ' + (user ? user.first_name || 'کاربر' : 'کاربر') + ':\n' + action + '\nثبت شود؟')) return;
+    if (btn) btn.disabled = true;
     try {
-      await api('POST', '/admin/users/' + userId + '/access', { durationDays: durationDays });
+      await api('POST', '/admin/users/' + userId + '/access', body);
       App.toast(durationDays === null ? 'دسترسی نامحدود فعال شد.' : 'دسترسی کاربر تمدید شد.');
-      App.loadAdminData();
+      await App.loadAdminData();
     } catch (err) {
-      App.toast('خطا در اعمال مدت دسترسی');
+      App.toast(err.message || 'خطا در ثبت دسترسی');
+    } finally {
+      if (btn) btn.disabled = false;
     }
   };
 
@@ -885,6 +945,25 @@ App.renderRichText = function(el, text) {
         '<div><span>مصرف API</span><b>' + (summary.totalApiCalls || 0) + ' فراخوانی</b><small>' + Number(summary.totalApiTokens || 0).toLocaleString('fa-IR') + ' توکن · $' + Number(summary.totalApiCostUsd || 0).toFixed(4) + '</small></div>' +
         '<div><span>کلیک ثبت‌شده</span><b>' + (summary.totalInteractions || 0) + '</b><small>بدون ذخیره متن ورودی</small></div>' +
       '</div>';
+
+      html += '<section><h4 class="admin-modal-section-heading ink">تاریخچه اشتراک</h4>';
+      if (data.grants && data.grants.length > 0) {
+        html += '<div class="admin-grants-list">';
+        data.grants.forEach(function(grant) {
+          var expiry = grant.expires_at ? 'تا ' + App.adminDate(grant.expires_at)
+            : (grant.kind === 'unlimited' || grant.kind === 'legacy' ? 'نامحدود' : 'بدون بازه دسترسی');
+          html += '<div class="admin-grant-row"><div><b>' + App.escapeHtml(App.adminGrantLabel(grant.kind)) + '</b>' +
+            (grant.days !== null ? ' · ' + Number(grant.days).toLocaleString('fa-IR') + ' روز' : '') +
+            (grant.amount_eur !== null ? ' · €' + Number(grant.amount_eur).toFixed(2) : '') +
+            '<div class="admin-access-detail">' + App.escapeHtml(expiry) + '</div>' +
+            (grant.note ? '<p class="admin-grant-note">' + App.escapeHtml(grant.note) + '</p>' : '') +
+            '</div><time datetime="' + App.escapeHtml(grant.created_at) + '">' + App.escapeHtml(App.adminDate(grant.created_at)) + '</time></div>';
+        });
+        html += '</div>';
+      } else {
+        html += '<p class="admin-modal-empty-note">هنوز دسترسی یا خریدی ثبت نشده است.</p>';
+      }
+      html += '</section>';
 
       // Most-used click paths
       html += '<div><h4 class="admin-modal-section-heading amber">مسیرهای پرتکرار کلیک</h4>';
