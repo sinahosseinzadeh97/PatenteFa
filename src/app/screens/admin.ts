@@ -70,6 +70,18 @@ export function renderAdminScreen(): string {
     <!-- ── Messages: broadcast + one-to-one inbox ──────────────────────────── -->
     <div id="admin-panel-messages" class="admin-tab-panel" role="tabpanel" aria-labelledby="admin-tab-messages" hidden>
       <div class="admin-section-card">
+        <div class="admin-section-header-row"><h2 class="admin-section-heading">قیمت و روش پرداخت</h2></div>
+        <form class="admin-broadcast-form" onsubmit="App.saveAdminOfferSettings(event)">
+          <label for="admin-plans-input" class="field-label">اشتراک‌ها و قیمت</label>
+          <textarea id="admin-plans-input" class="support-input" rows="3" maxlength="600" placeholder="مثلاً: یک ماه ۱۵ یورو — سه ماه ۳۵ یورو"></textarea>
+          <label for="admin-payment-input" class="field-label">روش پرداخت</label>
+          <textarea id="admin-payment-input" class="support-input" rows="3" maxlength="600" placeholder="مثلاً: کارت به کارت به شماره … یا PayPal به …"></textarea>
+          <button type="submit" id="admin-offer-save-btn" class="btn btn-primary">ذخیره</button>
+        </form>
+        <p class="admin-broadcast-hint">در یادآورهای خودکار ربات (۳ روز و ۱ روز قبل از پایان و بعد از پایان دسترسی) و در صفحه «دسترسی شما تمام شده» نمایش داده می‌شود. اگر خالی باشد، فقط گفته می‌شود به پشتیبانی پیام بدهند.</p>
+      </div>
+
+      <div class="admin-section-card">
         <div class="admin-section-header-row"><h2 class="admin-section-heading">پیام همگانی</h2></div>
         <form class="admin-broadcast-form" onsubmit="App.sendAdminBroadcast(event)">
           <label for="admin-broadcast-input" class="visually-hidden">متن پیام همگانی</label>

@@ -126,7 +126,7 @@ App.renderRichText = function(el, text) {
         // Not while the user is in the support thread: that screen is reachable
         // without approval on purpose, and a background call (telemetry) hitting
         // the gate would otherwise throw them out mid-message.
-        if (state.currentScreen !== 'support') App.showPendingScreen(err.error);
+        if (state.currentScreen !== 'support') App.showPendingScreen(err.error, err);
         throw new Error(err.error || 'در انتظار تایید مدیریت');
       }
       const apiError = new Error(err.error || 'درخواست ناموفق بود');
@@ -550,6 +550,7 @@ App.renderRichText = function(el, text) {
       App.renderAdminUsers(state.adminUsers);
       App.renderAdminEvents(eventsRes.events || []);
       App.renderAdminSupport(supportRes.threads || [], supportRes.unreadTotal || 0);
+      App.loadAdminOfferSettings();
     } catch (err) {
       App.toast('خطا در دریافت اطلاعات مدیریت (فقط ادمین دسترسی دارد)');
     }
@@ -565,6 +566,37 @@ App.renderRichText = function(el, text) {
   };
 
   // ── Broadcast: one announcement to every user in the chosen audience ───────
+  App.loadAdminOfferSettings = async function() {
+    try {
+      var s = await api('GET', '/admin/settings');
+      var plans = document.getElementById('admin-plans-input');
+      var payment = document.getElementById('admin-payment-input');
+      // Don't overwrite text the admin is in the middle of editing.
+      if (plans && document.activeElement !== plans) plans.value = s.plansText || '';
+      if (payment && document.activeElement !== payment) payment.value = s.paymentText || '';
+    } catch (err) {
+      App.toast('خطا در دریافت قیمت و روش پرداخت');
+    }
+  };
+
+  App.saveAdminOfferSettings = async function(e) {
+    if (e) e.preventDefault();
+    var btn = document.getElementById('admin-offer-save-btn');
+    if (btn && btn.disabled) return;
+    if (btn) btn.disabled = true;
+    try {
+      await api('PUT', '/admin/settings', {
+        plansText: document.getElementById('admin-plans-input').value,
+        paymentText: document.getElementById('admin-payment-input').value,
+      });
+      App.toast('قیمت و روش پرداخت ذخیره شد.');
+    } catch (err) {
+      App.toast(err.message || 'خطا در ذخیره');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
   App.sendAdminBroadcast = async function(e) {
     e.preventDefault();
     var input = document.getElementById('admin-broadcast-input');
@@ -1096,7 +1128,36 @@ App.renderRichText = function(el, text) {
     }
   });
 
-  App.showPendingScreen = function(msg) {
+  // Expired users get a renewal screen (price, payment, one button), not the
+  // "waiting for approval" request form. Called without a payload, the screen
+  // keeps whatever mode it was last put in.
+  App.applyPendingMode = function(payload) {
+    var expired = payload.status === 'expired';
+    state.accessStatus = payload.status || 'pending';
+    var byId = function(id) { return document.getElementById(id); };
+    if (byId('pending-title')) byId('pending-title').textContent = expired ? 'دسترسی شما تمام شده است' : 'در انتظار تأیید مدیریت';
+    if (byId('pending-details-title')) byId('pending-details-title').textContent = expired ? 'با تمدید دوباره در دسترس است' : 'پس از فعال‌سازی در دسترس است';
+    ['pending-request-field', 'btn-submit-fun'].forEach(function(id) { if (byId(id)) byId(id).hidden = expired; });
+    if (expired && byId('fun-reward-box')) byId('fun-reward-box').style.display = 'none';
+    var offer = payload.offer || {};
+    var plans = String(offer.plansText || '').trim();
+    var payment = String(offer.paymentText || '').trim();
+    if (byId('pending-offer')) byId('pending-offer').hidden = !expired;
+    if (byId('pending-offer-plans')) byId('pending-offer-plans').hidden = !plans;
+    if (byId('pending-offer-payment')) byId('pending-offer-payment').hidden = !payment;
+    // textContent keeps owner-entered text inert; CSS keeps its line breaks.
+    if (byId('pending-offer-plans-text')) byId('pending-offer-plans-text').textContent = plans;
+    if (byId('pending-offer-payment-text')) byId('pending-offer-payment-text').textContent = payment;
+  };
+
+  App.openSupportToBuy = function() {
+    App.openSupport();
+    var input = document.getElementById('support-input');
+    if (input && !input.value.trim()) input.value = 'سلام، می‌خواهم اشتراک بخرم.';
+  };
+
+  App.showPendingScreen = function(msg, payload) {
+    if (payload) App.applyPendingMode(payload);
     document.querySelectorAll('.screen').forEach(function(s) {
       s.classList.remove('active');
       s.style.display = 'none';
@@ -1123,7 +1184,7 @@ App.renderRichText = function(el, text) {
       App.showScreen('home');
       App.toast('دسترسی شما با موفقیت تأیید شد.');
     } catch(e) {
-      App.toast('هنوز در انتظار تأیید مدیریت است.');
+      App.toast(state.accessStatus === 'expired' ? 'دسترسی هنوز تمدید نشده است.' : 'هنوز در انتظار تأیید مدیریت است.');
     }
   };
 

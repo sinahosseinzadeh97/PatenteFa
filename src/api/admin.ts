@@ -24,6 +24,8 @@ import {
   type AccessGrantInput,
   getQuestionById,
   getAllUsers,
+  getAccessOfferSettings,
+  saveAccessOfferSettings,
 } from "../db/queries.js";
 import { getQuestionSource, sourceKey, type SourceQuestion } from '../lib/question-sources.js';
 import { saveReviewedContent } from '../lib/content-quality.js';
@@ -219,6 +221,23 @@ admin.post("/users/:id/access", async (c) => {
     accessExpiresAt: updated?.access_expires_at ?? null,
     plan: kind,
   });
+});
+
+// GET/PUT /api/admin/settings — plans and payment text used by the automatic
+// access reminders and the expired screen.
+const OFFER_TEXT_MAX = 600;
+
+admin.get("/settings", async (c) => c.json(await getAccessOfferSettings(c.env.DB)));
+
+admin.put("/settings", async (c) => {
+  const body = (await c.req.json().catch(() => null)) as { plansText?: unknown; paymentText?: unknown } | null;
+  const valid = (v: unknown): v is string => typeof v === "string" && v.length <= OFFER_TEXT_MAX;
+  if (!body || !valid(body.plansText) || !valid(body.paymentText)) {
+    return c.json({ error: `قیمت و روش پرداخت باید متن و هر کدام حداکثر ${OFFER_TEXT_MAX} نویسه باشد.` }, 400);
+  }
+  const settings = { plansText: body.plansText.trim(), paymentText: body.paymentText.trim() };
+  await saveAccessOfferSettings(c.env.DB, settings);
+  return c.json({ ok: true, ...settings });
 });
 
 // ── Support inbox ────────────────────────────────────────────────────────────
