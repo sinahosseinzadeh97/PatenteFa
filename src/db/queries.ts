@@ -2034,7 +2034,7 @@ export async function insertSupportMessage(
   userId: number,
   direction: SupportDirection,
   body: string,
-  source: "app" | "telegram"
+  source: "app" | "telegram" | "auto"
 ): Promise<void> {
   await db
     .prepare(
@@ -2135,4 +2135,82 @@ export async function countUnreadSupportTotal(db: D1Database): Promise<number> {
     )
     .first<{ n: number }>();
   return row?.n ?? 0;
+}
+
+// ── Access reminders & owner settings ───────────────────────────────────────
+
+export interface AccessOfferSettings {
+  plansText: string;
+  paymentText: string;
+}
+
+const SETTING_KEYS = { plansText: "plans_text", paymentText: "payment_text" } as const;
+
+export async function getAccessOfferSettings(db: D1Database): Promise<AccessOfferSettings> {
+  const rows = await db
+    .prepare(`SELECT key, value FROM app_settings WHERE key IN (?, ?)`)
+    .bind(SETTING_KEYS.plansText, SETTING_KEYS.paymentText)
+    .all<{ key: string; value: string }>();
+  const byKey = new Map(rows.results.map((r) => [r.key, r.value]));
+  return {
+    plansText: byKey.get(SETTING_KEYS.plansText) ?? "",
+    paymentText: byKey.get(SETTING_KEYS.paymentText) ?? "",
+  };
+}
+
+export async function saveAccessOfferSettings(db: D1Database, settings: AccessOfferSettings): Promise<void> {
+  const upsert = `INSERT INTO app_settings (key, value, updated_at) VALUES (?, ?, datetime('now'))
+    ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at`;
+  await db.batch([
+    db.prepare(upsert).bind(SETTING_KEYS.plansText, settings.plansText),
+    db.prepare(upsert).bind(SETTING_KEYS.paymentText, settings.paymentText),
+  ]);
+}
+
+export interface ReminderCandidate {
+  id: number;
+  telegram_user_id: number;
+  first_name: string | null;
+  access_expires_at: string;
+  last_kind: AccessGrantRow["kind"] | null;
+  last_days: number | null;
+}
+
+/** Approved users whose access window ends within ±3 days of now. */
+export async function getReminderCandidates(db: D1Database): Promise<ReminderCandidate[]> {
+  const result = await db
+    .prepare(
+      `SELECT u.id, u.telegram_user_id, u.first_name, u.access_expires_at,
+         (SELECT g.kind FROM access_grants g WHERE g.user_id = u.id AND g.kind != 'block'
+            ORDER BY g.created_at DESC, g.id DESC LIMIT 1) AS last_kind,
+         (SELECT g.days FROM access_grants g WHERE g.user_id = u.id AND g.kind != 'block'
+            ORDER BY g.created_at DESC, g.id DESC LIMIT 1) AS last_days
+       FROM users u
+       WHERE u.is_approved = 1 AND u.access_expires_at IS NOT NULL
+         AND datetime(u.access_expires_at) > datetime('now', '-3 days')
+         AND datetime(u.access_expires_at) <= datetime('now', '+3 days')`
+    )
+    .all<ReminderCandidate>();
+  return result.results;
+}
+
+/** Reserve a reminder; false when it was already sent for this window. */
+export async function claimAccessReminder(
+  db: D1Database, userId: number, kind: string, expiresAt: string
+): Promise<boolean> {
+  const res = await db
+    .prepare(`INSERT OR IGNORE INTO access_reminders (user_id, kind, expires_at) VALUES (?, ?, ?)`)
+    .bind(userId, kind, expiresAt)
+    .run();
+  return (res.meta?.changes ?? 0) > 0;
+}
+
+/** Undo a claim whose Telegram send failed, so the next run retries it. */
+export async function releaseAccessReminder(
+  db: D1Database, userId: number, kind: string, expiresAt: string
+): Promise<void> {
+  await db
+    .prepare(`DELETE FROM access_reminders WHERE user_id = ? AND kind = ? AND expires_at = ?`)
+    .bind(userId, kind, expiresAt)
+    .run();
 }

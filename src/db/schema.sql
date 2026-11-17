@@ -227,3 +227,19 @@ CREATE TABLE IF NOT EXISTS content_reports (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_content_reports_open ON content_reports(question_id, user_id, kind) WHERE status = 'open';
 CREATE INDEX IF NOT EXISTS idx_content_reports_status ON content_reports(status, id);
+
+-- Owner-editable text (subscription plans, payment method). See migration 0019.
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at TEXT DEFAULT (datetime('now'))
+);
+
+-- Access reminders already sent, one per user/kind/window.
+CREATE TABLE IF NOT EXISTS access_reminders (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  kind TEXT NOT NULL CHECK (kind IN ('ends_3d', 'ends_1d', 'expired')),
+  expires_at TEXT NOT NULL,
+  sent_at TEXT DEFAULT (datetime('now')),
+  PRIMARY KEY (user_id, kind, expires_at)
+);

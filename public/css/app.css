@@ -1970,6 +1970,12 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .pending-details li { display: flex; align-items: center; gap: 8px; color: var(--ink-muted); font-size: .77rem; }
 .pending-details li .ui-icon { width: 17px; height: 17px; color: var(--go-light); }
 .pending-note-field { margin-bottom: 12px; text-align: right; }
+.pending-offer { margin: 0 0 16px; padding: 16px; text-align: right; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface); display: grid; gap: 12px; }
+.pending-offer[hidden], .pending-offer-block[hidden] { display: none; }
+.pending-offer h2 { margin: 0; font-size: .95rem; }
+.pending-offer h3 { margin: 0 0 4px; font-size: .78rem; color: var(--ink-muted); font-weight: 600; }
+.pending-offer-block p { margin: 0; white-space: pre-line; font-size: .88rem; line-height: 1.7; }
+.pending-offer-next { margin: 0; font-size: .77rem; color: var(--ink-muted); line-height: 1.7; }
 .pending-content > .btn { margin-top: 8px; }
 .inline-success { display: none; margin-top: 10px; padding: 10px 12px; align-items: center; gap: 8px; border: 1px solid rgb(var(--go-rgb) / .4); border-radius: 10px; background: var(--go-dim); color: var(--go-light); font-size: .76rem; text-align: right; }
 

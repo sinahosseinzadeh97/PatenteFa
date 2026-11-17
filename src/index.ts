@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { AppEnv, AppVariables } from "./types.js";
 import { verifyInitData, isAccessExpired, isPrimaryAdminUser } from "./lib/auth.js";
-import { upsertUser, setUserApproval, startTrialIfEligible } from "./db/queries.js";
+import { upsertUser, setUserApproval, startTrialIfEligible, getAccessOfferSettings } from "./db/queries.js";
 import { webhook } from "./bot/webhook.js";
 import { exam } from "./api/exam.js";
 import { content } from './api/content.js';
@@ -19,6 +19,7 @@ import { signs } from "./api/signs.js";
 import { support } from "./api/support.js";
 import { serveApp } from "./app/shell.js";
 import { runMorningReminder } from "./jobs/morningReminder.js";
+import { runAccessReminders } from "./jobs/accessReminder.js";
 import { runNightlyBackup } from "./jobs/nightlyJournalAndBackup.js";
 
 import { notifyAdminNewUserRequest } from "./lib/telegram.js";
@@ -149,6 +150,8 @@ api.use("*", async (c, next) => {
   const accessExpired = !isAdmin && dbUser.is_approved === 1 && isAccessExpired(dbUser.access_expires_at);
   if (dbUser.is_approved !== 1 || accessExpired) {
     const rejected = dbUser.is_approved === -1;
+    // Expired users see the plans and payment method on the gate screen.
+    const offer = accessExpired ? await getAccessOfferSettings(c.env.DB) : undefined;
     return c.json(
       {
         error: accessExpired
@@ -159,6 +162,7 @@ api.use("*", async (c, next) => {
         isApproved: false,
         status: accessExpired ? "expired" : rejected ? "rejected" : "pending",
         accessExpiresAt: accessExpired ? dbUser.access_expires_at : undefined,
+        offer,
       },
       403
     );
@@ -224,6 +228,13 @@ const scheduled: ExportedHandlerScheduledHandler<AppEnv> = async (event, env) =>
   console.log("Cron fired:", cron);
 
   if (cron === "0 6 * * *") {
+    // Independent of the review nudge: runs first and catches its own errors,
+    // so a failure in either job never skips the other.
+    await runAccessReminders({
+      DB: env.DB,
+      TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
+      MINI_APP_URL: env.MINI_APP_URL,
+    }).catch((e) => console.error("Access reminders failed:", e));
     await runMorningReminder({
       DB: env.DB,
       TELEGRAM_BOT_TOKEN: env.TELEGRAM_BOT_TOKEN,
