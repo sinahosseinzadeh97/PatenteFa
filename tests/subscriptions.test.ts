@@ -473,3 +473,25 @@ test("trial dates are shown in the Gregorian calendar on the Rome day", async ()
   assert.equal(formatDateFa("2026-11-30 23:30:00"), "۱ دسامبر ۲۰۲۶");
   assert.doesNotMatch(formatDateFa("2026-12-01 12:00:00"), /آذر/);
 });
+
+test("admin users list sorts by AI cost only when asked, and ignores unknown sort values", async t => {
+  const { db, raw, request } = fixture(t);
+  const cheap = await upsertUser(db, 9101, "Cheap", undefined);
+  const costly = await upsertUser(db, 9102, "Costly", undefined);
+  const none = await upsertUser(db, 9103, "None", undefined);
+  const seen = raw.prepare("INSERT INTO user_events (user_id, event_type, created_at) VALUES (?, 'app_open', datetime('now', ?))");
+  seen.run(costly.id, "-1 hours"); seen.run(cheap.id, "-2 hours"); seen.run(none.id, "-0 hours");
+  const log = raw.prepare("INSERT INTO api_usage_logs (user_id, action, prompt_tokens, completion_tokens, estimated_cost_usd) VALUES (?, 'translate', 100, 50, ?)");
+  log.run(cheap.id, 0.01); log.run(costly.id, 0.4); log.run(costly.id, 0.1);
+
+  const ids = (rows: { id: number }[]) => rows.filter(r => [cheap.id, costly.id, none.id].includes(r.id)).map(r => r.id);
+  assert.deepEqual(ids(await getAdminUsersList(db)), [none.id, costly.id, cheap.id]);
+  assert.deepEqual(ids(await getAdminUsersList(db, undefined, undefined, "cost")), [costly.id, cheap.id, none.id]);
+  assert.deepEqual(ids(await getAdminUsersList(db, undefined, undefined, "1; DROP TABLE users")), [none.id, costly.id, cheap.id]);
+
+  const res = await request("/admin/users?sort=cost", ADMIN_ID);
+  assert.equal(res.status, 200);
+  const body = await res.json() as { users: { id: number; total_api_cost_usd: number }[] };
+  assert.deepEqual(ids(body.users), [costly.id, cheap.id, none.id]);
+  assert.equal(body.users.find(u => u.id === costly.id)?.total_api_cost_usd, 0.5);
+});

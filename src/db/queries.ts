@@ -1749,7 +1749,8 @@ export interface AdminUserListItem {
 export async function getAdminUsersList(
   db: D1Database,
   search?: string,
-  statusFilter?: string
+  statusFilter?: string,
+  sort?: string
 ): Promise<AdminUserListItem[]> {
   // Each aggregate is a correlated subquery to avoid cross-join multiplication.
   // Joining user_events + exam_sessions + api_usage_logs + vocab_items at once
@@ -1823,7 +1824,10 @@ export async function getAdminUsersList(
     params.push(term, term, term);
   }
 
-  query += ` ORDER BY last_active_at DESC NULLS LAST`;
+  // Whitelisted: the sort value picks a fixed clause, never reaches SQL itself.
+  query += sort === "cost"
+    ? ` ORDER BY total_api_cost_usd DESC, last_active_at DESC NULLS LAST`
+    : ` ORDER BY last_active_at DESC NULLS LAST`;
 
   const result = await db.prepare(query).bind(...params).all<AdminUserListItem>();
 

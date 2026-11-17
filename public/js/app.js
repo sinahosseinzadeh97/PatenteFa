@@ -479,9 +479,11 @@ App.renderRichText = function(el, text) {
   App.adminUsersQuery = function() {
     var search = ((document.getElementById('admin-search-input') || {}).value || '').trim();
     var status = ((document.getElementById('admin-status-filter') || {}).value || 'all');
+    var sort = ((document.getElementById('admin-sort-select') || {}).value || 'recent');
     var qs = [];
     if (search) qs.push('search=' + encodeURIComponent(search));
     if (status !== 'all') qs.push('status=' + encodeURIComponent(status));
+    if (sort !== 'recent') qs.push('sort=' + encodeURIComponent(sort));
     return '/admin/users' + (qs.length ? '?' + qs.join('&') : '');
   };
 
