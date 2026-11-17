@@ -17,6 +17,7 @@ import {
 import {
   upsertUser,
   setUserApproval,
+  startTrialIfEligible,
   getAllUsers,
   getPendingReviewCount,
   getStreak,
@@ -168,7 +169,7 @@ export async function handleUpdate(
         await answerCallbackQuery(ctx.token, cb.id, "شناسه کاربر نامعتبر است.");
         return;
       }
-      await setUserApproval(ctx.db, targetUserId, 1);
+      await approveAndNotifyTrial(ctx, targetUserId);
       await answerCallbackQuery(ctx.token, cb.id, "کاربر با موفقیت تایید شد! ✅");
 
       if (cb.message) {
@@ -243,7 +244,7 @@ export async function handleUpdate(
     const parts = text.split(" ");
     const targetId = Number(parts[1]);
     if (Number.isSafeInteger(targetId) && targetId > 0) {
-      await setUserApproval(ctx.db, targetId, 1);
+      await approveAndNotifyTrial(ctx, targetId);
       await sendMessage(ctx.token, {
         chat_id: chatId,
         text: `✅ دسترسی کاربر <code>${targetId}</code> با موفقیت تایید شد.`,
@@ -437,6 +438,21 @@ async function handleListUsers(
   }
 }
 
+async function approveAndNotifyTrial(ctx: BotContext, telegramUserId: number): Promise<void> {
+  const user = await getUserByTelegramId(ctx.db, telegramUserId);
+  if (user && !isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId)) {
+    const trial = await startTrialIfEligible(ctx.db, user.id);
+    if (trial.started) {
+      await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
+        telegramUserId, firstName: user.first_name || "کاربر", username: user.username ?? undefined,
+        trialUntil: trial.user!.access_expires_at!,
+      });
+      return;
+    }
+  }
+  await setUserApproval(ctx.db, telegramUserId, 1);
+}
+
 async function handleStart(
   telegramUserId: number,
   firstName: string,
@@ -446,7 +462,23 @@ async function handleStart(
 ): Promise<void> {
   const isAdmin = isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId);
 
-  const dbUser = await upsertUser(ctx.db, telegramUserId, firstName, username, isAdmin);
+  let dbUser = await upsertUser(ctx.db, telegramUserId, firstName, username, isAdmin);
+  if (!isAdmin && dbUser.is_approved === 0) {
+    // Only pending users can be eligible; skip the two writes on every other request.
+    const trial = await startTrialIfEligible(ctx.db, dbUser.id);
+    dbUser = trial.user ?? dbUser;
+    if (trial.started) {
+      await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
+        telegramUserId, firstName, username, trialUntil: dbUser.access_expires_at!,
+      });
+      const until = new Date(dbUser.access_expires_at!.replace(' ', 'T') + 'Z').toLocaleDateString('fa-IR');
+      await sendMessage(ctx.token, {
+        chat_id: chatId,
+        text: `🎉 دوره آزمایشی رایگان ۱۴ روزه شما تا ${until} فعال است.`,
+        reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", ctx.miniAppUrl),
+      });
+    }
+  }
 
   if (dbUser.is_approved !== 1) {
     if (!isAdmin) {

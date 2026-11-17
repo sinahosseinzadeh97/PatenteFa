@@ -34,6 +34,14 @@ export function renderAdminScreen(): string {
 
     <!-- ── Users ───────────────────────────────────────────────────────────── -->
     <div id="admin-panel-users" class="admin-tab-panel" role="tabpanel" aria-labelledby="admin-tab-users">
+      <div class="admin-subscription-summary" aria-label="خلاصه عضویت و اشتراک">
+        <div><span>عضو امروز / ۷ روز</span><b id="admin-joined-summary">—</b></div>
+        <div><span>آزمایشی فعال</span><b id="admin-active-trials">—</b></div>
+        <div><span>اشتراک فعال</span><b id="admin-active-paid">—</b></div>
+        <div><span>آزمایشی تمام‌شده</span><b id="admin-expired-trials">—</b></div>
+        <div><span>تبدیل به خرید</span><b id="admin-converted-users">—</b></div>
+        <div><span>درآمد (€)</span><b id="admin-revenue">—</b><small id="admin-revenue-30d"></small></div>
+      </div>
       <div class="admin-filter-row">
         <label for="admin-search-input" class="visually-hidden">جستجوی کاربر</label>
         <input type="search" id="admin-search-input" placeholder="جستجوی کاربر با نام یا آیدی"
@@ -42,6 +50,11 @@ export function renderAdminScreen(): string {
         <select id="admin-status-filter" onchange="App.loadAdminUsers()" class="admin-status-select">
           <option value="all">همه کاربران</option>
           <option value="approved">دسترسی فعال</option>
+          <option value="trial">آزمایشی فعال</option>
+          <option value="paid">اشتراک فعال</option>
+          <option value="trial_expired">آزمایشی تمام‌شده</option>
+          <option value="expiring">رو به اتمام ≤۳ روز</option>
+          <option value="unlimited">نامحدود</option>
           <option value="expired">منقضی‌شده</option>
           <option value="pending">در انتظار</option>
           <option value="blocked">مسدود</option>

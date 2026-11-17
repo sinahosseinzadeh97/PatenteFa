@@ -8,7 +8,7 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import type { AppEnv, AppVariables } from "./types.js";
 import { verifyInitData, isAccessExpired, isPrimaryAdminUser } from "./lib/auth.js";
-import { upsertUser, setUserApproval } from "./db/queries.js";
+import { upsertUser, setUserApproval, startTrialIfEligible } from "./db/queries.js";
 import { webhook } from "./bot/webhook.js";
 import { exam } from "./api/exam.js";
 import { content } from './api/content.js';
@@ -62,6 +62,17 @@ app.post("/api/request-access", async (c) => {
   );
 
   let dbUser = await upsertUser(c.env.DB, user.id, user.first_name, user.username, isAdmin);
+  if (!isAdmin && dbUser.is_approved === 0) {
+    // Only pending users can be eligible; skip the two writes on every other request.
+    const trial = await startTrialIfEligible(c.env.DB, dbUser.id);
+    dbUser = trial.user ?? dbUser;
+    if (trial.started) {
+      c.executionCtx.waitUntil(notifyAdminNewUserRequest(
+        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+        { telegramUserId: user.id, firstName: user.first_name, username: user.username, funAnswer, trialUntil: dbUser.access_expires_at! }
+      ));
+    }
+  }
 
   // A rejected user may submit a fresh request, but this public endpoint must
   // never downgrade an already-approved account back to pending.
@@ -118,11 +129,21 @@ api.use("*", async (c, next) => {
     c.env.ALLOWED_TELEGRAM_USER_IDS
   );
 
-  // Upsert user (admins auto-approved, others default to pending 0)
-  const dbUser = await upsertUser(c.env.DB, user.id, user.first_name, user.username, isAdmin);
+  let dbUser = await upsertUser(c.env.DB, user.id, user.first_name, user.username, isAdmin);
+  if (!isAdmin && dbUser.is_approved === 0) {
+    // Only pending users can be eligible; skip the two writes on every other request.
+    const trial = await startTrialIfEligible(c.env.DB, dbUser.id);
+    dbUser = trial.user ?? dbUser;
+    if (trial.started) {
+      c.executionCtx.waitUntil(notifyAdminNewUserRequest(
+        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+        { telegramUserId: user.id, firstName: user.first_name, username: user.username, trialUntil: dbUser.access_expires_at! }
+      ));
+    }
+  }
 
-  // Approval is the subscription/access gate. Keep it fail-closed: a newly
-  // registered, pending, rejected, or otherwise invalid status must never reach
+  // Approval plus its explicit access window are the gate. Pending, rejected,
+  // expired, or otherwise invalid statuses must never reach
   // any protected API route. The support and access-request routes above are
   // the only intentional exceptions.
   const accessExpired = !isAdmin && dbUser.is_approved === 1 && isAccessExpired(dbUser.access_expires_at);
