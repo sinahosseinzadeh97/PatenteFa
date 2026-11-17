@@ -195,6 +195,13 @@ export async function sendAnnouncement(
   }
 }
 
+/** UTC 'YYYY-MM-DD HH:MM:SS' → «۱ دسامبر ۲۰۲۶» (Gregorian, Persian digits, Rome day). */
+export function formatDateFa(utc: string): string {
+  return new Date(utc.replace(' ', 'T') + 'Z').toLocaleDateString('fa-IR-u-ca-gregory', {
+    day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Rome',
+  });
+}
+
 export async function notifyAdminNewUserRequest(
   token: string,
   logChannelId: string,
@@ -207,7 +214,7 @@ export async function notifyAdminNewUserRequest(
     ? esc(user.funAnswer)
     : "آره خیلی زیاد!";
   const header = user.trialUntil
-    ? `🔔 <b>کاربر جدید به پتنت فارسی پیوست</b>\nدوره آزمایشی ۱۴ روزه تا ${esc(new Date(user.trialUntil.replace(' ', 'T') + 'Z').toLocaleDateString('fa-IR'))} فعال است.\n\n`
+    ? `🔔 <b>کاربر جدید به پتنت فارسی پیوست</b>\nدوره آزمایشی ۱۴ روزه تا ${esc(formatDateFa(user.trialUntil))} فعال است.\n\n`
     : `🔔 <b>درخواست دسترسی جدید به پتنت فارسی</b>\n\n`;
 
   const text =

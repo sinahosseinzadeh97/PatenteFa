@@ -448,7 +448,7 @@ test("admin purchase controls toggle by kind, confirm the stacked expiry and sen
   await App.setAdminUserAccess(1);
   assert.equal(requests[0].path, "/admin/users/1/access");
   assert.deepEqual(JSON.parse(JSON.stringify(requests[0].body)), { kind: "paid", durationDays: 30, amountEur: 24.5, note: "بانک" });
-  assert.ok(confirmations[0].includes(new Date("2099-01-31T00:00:00Z").toLocaleDateString("fa-IR")));
+  assert.ok(confirmations[0].includes(new Date("2099-01-31T00:00:00Z").toLocaleString("fa-IR-u-ca-gregory", { day: "numeric", month: "long", year: "numeric" })));
   assert.equal(reloads(), 1);
   element("admin-access-kind-1").value = "unlimited";
   App.changeAdminAccessKind(1);
@@ -464,4 +464,12 @@ test("admin purchase controls toggle by kind, confirm the stacked expiry and sen
   await App.setAdminUserAccess(1);
   assert.equal(requests[2].body.durationDays, 30);
   assert.ok(!("amountEur" in requests[2].body));
+});
+
+test("trial dates are shown in the Gregorian calendar on the Rome day", async () => {
+  const { formatDateFa } = await import("../src/lib/telegram.js");
+  assert.equal(formatDateFa("2026-12-01 17:42:13"), "۱ دسامبر ۲۰۲۶");
+  // 23:30 UTC on 30 Nov is already 1 Dec in Rome.
+  assert.equal(formatDateFa("2026-11-30 23:30:00"), "۱ دسامبر ۲۰۲۶");
+  assert.doesNotMatch(formatDateFa("2026-12-01 12:00:00"), /آذر/);
 });

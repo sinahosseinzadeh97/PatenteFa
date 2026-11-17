@@ -13,6 +13,7 @@ import {
   notifySupportMessage,
   sendSupportReply,
   esc,
+  formatDateFa,
 } from "../lib/telegram.js";
 import {
   upsertUser,
@@ -471,7 +472,7 @@ async function handleStart(
       await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
         telegramUserId, firstName, username, trialUntil: dbUser.access_expires_at!,
       });
-      const until = new Date(dbUser.access_expires_at!.replace(' ', 'T') + 'Z').toLocaleDateString('fa-IR');
+      const until = formatDateFa(dbUser.access_expires_at!);
       await sendMessage(ctx.token, {
         chat_id: chatId,
         text: `🎉 دوره آزمایشی رایگان ۱۴ روزه شما تا ${until} فعال است.`,
