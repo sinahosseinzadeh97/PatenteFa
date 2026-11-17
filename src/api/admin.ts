@@ -102,13 +102,13 @@ admin.post('/content-reports/:id/resolve', async c => {
   return c.json({ saved: true });
 });
 
-// GET /api/admin/users?search=&status=
+// GET /api/admin/users?search=&status=&sort=cost
 // §18.6: search and status are forwarded directly to getAdminUsersList which
 // runs a server-side SQL LIKE query — zero in-memory filtering on this path.
 admin.get("/users", async (c) => {
   const search = c.req.query("search");
   const statusFilter = c.req.query("status");
-  const users = await getAdminUsersList(c.env.DB, search, statusFilter);
+  const users = await getAdminUsersList(c.env.DB, search, statusFilter, c.req.query("sort"));
   return c.json({ users });
 });
 

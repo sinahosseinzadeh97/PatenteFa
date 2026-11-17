@@ -59,6 +59,11 @@ export function renderAdminScreen(): string {
           <option value="pending">در انتظار</option>
           <option value="blocked">مسدود</option>
         </select>
+        <label for="admin-sort-select" class="visually-hidden">مرتب‌سازی کاربران</label>
+        <select id="admin-sort-select" onchange="App.loadAdminUsers()" class="admin-status-select">
+          <option value="recent">آخرین فعالیت</option>
+          <option value="cost">بیشترین هزینه</option>
+        </select>
       </div>
       <div class="admin-list-header-row">
         <h2 class="admin-list-heading">فهرست کاربران</h2>
