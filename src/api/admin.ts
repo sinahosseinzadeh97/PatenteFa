@@ -30,7 +30,10 @@ import {
 import { getQuestionSource, sourceKey, type SourceQuestion } from '../lib/question-sources.js';
 import { saveReviewedContent } from '../lib/content-quality.js';
 import { checkPrimaryAdmin, isAccessExpired, isPrimaryAdminUser } from "../lib/auth.js";
-import { sendMessage, sendSupportReply, sendAnnouncement, buildMiniAppButton, notifyAdminNewUserRequest } from "../lib/telegram.js";
+import { sendMessage, sendSupportReply, sendAnnouncement, buildMiniAppButton, notifyAdminNewUserRequest, formatDateFa } from "../lib/telegram.js";
+import { rewardReferrer } from "../db/referral-queries.js";
+import { REFERRER_REWARD_DAYS } from "../lib/referral.js";
+import type { DbUser } from "../db/queries.js";
 import { normalizeSupportText } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
 import {
@@ -171,6 +174,16 @@ admin.post("/users/:id/status", async (c) => {
   });
 });
 
+/** Tell the inviter their friend paid, and until when their access now runs. */
+async function notifyReferralReward(env: AppEnv, inviter: DbUser): Promise<void> {
+  const until = inviter.access_expires_at ? ` حالا تا ${formatDateFa(inviter.access_expires_at)} فعال است.` : "";
+  await sendMessage(env.TELEGRAM_BOT_TOKEN, {
+    chat_id: inviter.telegram_user_id,
+    text: `🎁 یکی از دوستانی که دعوت کرده بودید اشتراک خرید! ${REFERRER_REWARD_DAYS.toLocaleString("fa-IR")} روز به اشتراک شما اضافه شد.${until}`,
+    reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", env.MINI_APP_URL),
+  });
+}
+
 // POST /api/admin/users/:id/access — record a manual purchase or access grant.
 admin.post("/users/:id/access", async (c) => {
   const id = Number(c.req.param("id"));
@@ -213,6 +226,9 @@ admin.post("/users/:id/access", async (c) => {
     amountEur: body.amountEur as number | null | undefined,
     note: typeof body.note === 'string' ? body.note.trim() || null : null,
   });
+  // A friend's first payment rewards whoever invited them, once (features.md §53).
+  const rewarded = kind === 'paid' ? await rewardReferrer(c.env.DB, id) : null;
+  if (rewarded) c.executionCtx.waitUntil(notifyReferralReward(c.env, rewarded));
 
   return c.json({
     ok: true,
@@ -220,6 +236,7 @@ admin.post("/users/:id/access", async (c) => {
     isApproved: updated?.is_approved === 1,
     accessExpiresAt: updated?.access_expires_at ?? null,
     plan: kind,
+    referralRewardUserId: rewarded?.id ?? null,
   });
 });
 

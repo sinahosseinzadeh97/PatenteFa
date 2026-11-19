@@ -1832,7 +1832,59 @@ App.renderRichText = function(el, text) {
 
   // ── Profile & Analysis screen (\u00a713) ──────────────────────────────────────────
 
+  // ── Invite link (features.md §53) ──────────────────────────────────────────
+  let invite = null;
+  const faCount = function(n) { return Number(n).toLocaleString('fa-IR'); };
+
+  App.loadInvite = async function() {
+    const copyEl = document.getElementById('profile-invite-copy');
+    if (!copyEl) return;
+    const linkEl = document.getElementById('profile-invite-link');
+    const statsEl = document.getElementById('profile-invite-stats');
+    const buttons = [document.getElementById('btn-invite-share'), document.getElementById('btn-invite-copy')];
+    try {
+      const r = await api('GET', '/referral');
+      invite = { link: r.link, days: r.trialDays + r.inviteeBonusDays };
+      copyEl.textContent = 'دوستت با لینک تو ' + faCount(invite.days) + ' روز رایگان می‌گیرد (' + faCount(r.inviteeBonusDays) +
+        ' روز بیشتر از معمول). هر دوستی که اشتراک بخرد، ' + faCount(r.rewardDaysPerFriend) + ' روز به اشتراک تو اضافه می‌شود.';
+      linkEl.textContent = r.link;
+      statsEl.textContent = r.invited > 0
+        ? faCount(r.invited) + ' نفر با لینکت آمدند · ' + faCount(r.paid) + ' نفر اشتراک خریدند · ' + faCount(r.rewardDays) + ' روز هدیه گرفتی.'
+        : 'هنوز کسی با لینکت وارد نشده.';
+      buttons.forEach(function(b) { if (b) b.disabled = false; });
+    } catch (e) {
+      invite = null;
+      copyEl.textContent = 'لینک دعوت الان در دسترس نیست.';
+      buttons.forEach(function(b) { if (b) b.disabled = true; });
+    }
+  };
+
+  App.shareInvite = function() {
+    if (!invite) return;
+    const text = 'من با «پتنت فارسی» برای آزمون تئوری پاتنته می‌خوانم؛ درس‌ها و تست‌ها به فارسی. با لینک من ' + faCount(invite.days) + ' روز رایگان امتحانش کن:';
+    const url = 'https://t.me/share/url?url=' + encodeURIComponent(invite.link) + '&text=' + encodeURIComponent(text);
+    const tgApp = window.Telegram && window.Telegram.WebApp;
+    if (tgApp && typeof tgApp.openTelegramLink === 'function') tgApp.openTelegramLink(url);
+    else window.open(url, '_blank');
+  };
+
+  App.copyInvite = async function() {
+    if (!invite) return;
+    try {
+      await navigator.clipboard.writeText(invite.link);
+      App.toast('لینک کپی شد');
+    } catch (e) {
+      const range = document.createRange();
+      range.selectNodeContents(document.getElementById('profile-invite-link'));
+      const selection = window.getSelection();
+      selection.removeAllRanges();
+      selection.addRange(range);
+      App.toast('لینک انتخاب شد؛ کپی کن');
+    }
+  };
+
   App.loadProfile = async function() {
+    App.loadInvite();
     try {
       const data = await api('GET', '/profile');
 
