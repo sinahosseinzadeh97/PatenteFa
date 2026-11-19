@@ -982,8 +982,29 @@
   };
 
   // ── Results ─────────────────────────────────────────────────────────────────
+  // One line under the score: what this simulation did to the readiness light.
+  App.showResultsReadiness = async function(data) {
+    const el = document.getElementById('results-readiness');
+    if (!el) return;
+    el.hidden = true;
+    if (state.examMode !== 'exam' || data.aiAssisted) return;
+    try {
+      const r = await api('GET', '/readiness');
+      if (state.lastFinishedSessionId !== data.sessionId) return;
+      const now = App.readinessName(r.state);
+      el.textContent = r.previousState !== r.state
+        ? 'این آزمون چراغت رو از ' + App.readinessName(r.previousState) + ' کرد ' + now + '.'
+        : 'چراغت هنوز ' + now + 'ه.';
+      el.dataset.state = r.state;
+      el.hidden = false;
+    } catch (e) {
+      el.hidden = true;
+    }
+  };
+
   App.renderResults = function(data) {
     state.lastFinishedSessionId = data.sessionId;
+    App.showResultsReadiness(data);
 
     const tutorBanner = document.getElementById('results-tutor-banner');
     const reviewBtn = document.getElementById('results-review-btn');

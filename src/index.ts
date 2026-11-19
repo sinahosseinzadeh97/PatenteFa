@@ -181,6 +181,7 @@ import { admin } from "./api/admin.js";
 import { profile } from "./api/profile.js";
 import { tutor } from "./api/tutor.js";
 import { learn } from "./api/learn.js";
+import { readiness } from "./api/readiness.js";
 
 api.route("/exam", exam);
 api.route("/translate", translate);
@@ -195,6 +196,7 @@ api.route("/admin", admin);
 api.route("/profile", profile);
 api.route("/tutor", tutor);
 api.route("/learn", learn);
+api.route("/readiness", readiness);
 
 app.route("/api", api);
 
