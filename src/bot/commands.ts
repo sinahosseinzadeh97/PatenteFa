@@ -29,6 +29,8 @@ import {
 import { isAccessExpired, isPrimaryAdminUser } from "../lib/auth.js";
 import { normalizeSupportText } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
+import { applyInviteBonus } from "../db/referral-queries.js";
+import { INVITEE_BONUS_DAYS } from "../lib/referral.js";
 
 export interface BotContext {
   db: D1Database;
@@ -233,7 +235,7 @@ export async function handleUpdate(
 
   // Command dispatch
   if (text.startsWith("/start") || text.startsWith("/panel") || text.startsWith("/admin")) {
-    await handleStart(telegramUserId, firstName, username, chatId, ctx);
+    await handleStart(telegramUserId, firstName, username, chatId, ctx, text);
   } else if (text.startsWith("/users") || text.startsWith("/list")) {
     if (adminSide) await handleListUsers(chatId, ctx);
     else await sendMessage(ctx.token, { chat_id: chatId, text: "دسترسی مدیریت ندارید." });
@@ -459,7 +461,8 @@ async function handleStart(
   firstName: string,
   username: string | undefined,
   chatId: number,
-  ctx: BotContext
+  ctx: BotContext,
+  startText = ""
 ): Promise<void> {
   const isAdmin = isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId);
 
@@ -469,13 +472,20 @@ async function handleStart(
     const trial = await startTrialIfEligible(ctx.db, dbUser.id);
     dbUser = trial.user ?? dbUser;
     if (trial.started) {
+      // A brand-new user who came through an invite link (features.md §53).
+      // shortcut: only this /start path records invites; a friend who opens the Mini App
+      // before pressing Start is not counted. Upgrade with the Mini App's start_param if that shows up.
+      const invited = await applyInviteBonus(ctx.db, dbUser.id, startText);
+      dbUser = invited ?? dbUser;
       await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
         telegramUserId, firstName, username, trialUntil: dbUser.access_expires_at!,
       });
       const until = formatDateFa(dbUser.access_expires_at!);
       await sendMessage(ctx.token, {
         chat_id: chatId,
-        text: `🎉 دوره آزمایشی رایگان ۱۴ روزه شما تا ${until} فعال است.`,
+        text: invited
+          ? `🎉 با دعوت یکی از دوستانتان آمدید! دوره آزمایشی رایگان ۱۴ روزه به‌علاوه‌ی ${INVITEE_BONUS_DAYS.toLocaleString("fa-IR")} روز هدیه، تا ${until} برای شما فعال است.`
+          : `🎉 دوره آزمایشی رایگان ۱۴ روزه شما تا ${until} فعال است.`,
         reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", ctx.miniAppUrl),
       });
     }

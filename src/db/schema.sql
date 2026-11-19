@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS users (
   timezone TEXT DEFAULT 'Europe/Rome',
   is_approved INTEGER DEFAULT 0,
   access_expires_at TEXT,              -- NULL = unlimited; otherwise UTC expiry
+  referral_code TEXT,                  -- personal invite code (migration 0020, unique index below)
   created_at TEXT DEFAULT (datetime('now'))
 );
 
@@ -243,3 +244,13 @@ CREATE TABLE IF NOT EXISTS access_reminders (
   sent_at TEXT DEFAULT (datetime('now')),
   PRIMARY KEY (user_id, kind, expires_at)
 );
+
+-- Invite links (migration 0020, features.md §53).
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_referral_code ON users(referral_code);
+CREATE TABLE IF NOT EXISTS referrals (
+  invitee_user_id INTEGER PRIMARY KEY REFERENCES users(id),
+  referrer_user_id INTEGER NOT NULL REFERENCES users(id),
+  created_at TEXT DEFAULT (datetime('now')),
+  rewarded_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_referrals_referrer ON referrals(referrer_user_id);

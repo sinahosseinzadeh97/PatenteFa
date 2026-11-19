@@ -34,6 +34,18 @@ export function renderProfileScreen(): string {
       </button>
     </div>
 
+    <section id="profile-invite" class="invite-card" aria-labelledby="profile-invite-title">
+      <span class="section-kicker">لینک دعوت</span>
+      <h2 id="profile-invite-title">دوستت را دعوت کن</h2>
+      <p id="profile-invite-copy" class="invite-copy">در حال آماده‌سازی لینک…</p>
+      <code id="profile-invite-link" class="invite-link" dir="ltr"></code>
+      <div class="invite-actions">
+        <button type="button" class="btn btn-primary" id="btn-invite-share" onclick="App.shareInvite()" disabled>اشتراک‌گذاری در تلگرام</button>
+        <button type="button" class="btn btn-secondary" id="btn-invite-copy" onclick="App.copyInvite()" disabled>کپی لینک</button>
+      </div>
+      <p id="profile-invite-stats" class="invite-stats" aria-live="polite"></p>
+    </section>
+
     <section class="profile-analysis-section" aria-labelledby="profile-analysis-heading">
       <div class="section-heading-row"><div><span class="section-kicker">داده‌های مطالعه</span><h2 id="profile-analysis-heading">تحلیل عملکرد</h2></div></div>
 

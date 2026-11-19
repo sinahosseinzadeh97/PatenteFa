@@ -182,6 +182,7 @@ import { profile } from "./api/profile.js";
 import { tutor } from "./api/tutor.js";
 import { learn } from "./api/learn.js";
 import { readiness } from "./api/readiness.js";
+import { referral } from "./api/referral.js";
 
 api.route("/exam", exam);
 api.route("/translate", translate);
@@ -197,6 +198,7 @@ api.route("/profile", profile);
 api.route("/tutor", tutor);
 api.route("/learn", learn);
 api.route("/readiness", readiness);
+api.route("/referral", referral);
 
 app.route("/api", api);
 
