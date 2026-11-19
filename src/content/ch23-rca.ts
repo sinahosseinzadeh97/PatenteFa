@@ -341,17 +341,18 @@ export const lessonRcaCopertura: Lesson = {
       conceptStep: 1,
     },
     {
-      sourceId: "6643",
-      textIt: "L'assicurazione obbligatoria RCA copre i danni subiti da persone e/o cose che si trovano in aree pubbliche o aperte al pubblico",
+      // replaces #6643 («aree pubbliche…»), which the ministry removed in 2025 (retired-questions.ts)
+      sourceId: "6642",
+      textIt: "L'assicurazione obbligatoria RCA copre i danni subiti dai terzi trasportati se il veicolo è autorizzato al trasporto di persone",
       answer: 1,
       chunks: [
         { it: "L'assicurazione obbligatoria RCA", fa: "بیمه‌ی اجباریِ شخص ثالث" },
-        { it: "copre i danni subiti da persone e/o cose", fa: "خسارت‌هایی را می‌پوشاند که آدم‌ها و/یا اشیا دیده‌اند", verb: "copre ← coprire" },
-        { it: "che si trovano in aree pubbliche o aperte al pubblico", fa: "که در محوطه‌های عمومی یا باز به روی عموم هستند" },
+        { it: "copre i danni subiti dai terzi trasportati", fa: "خسارت‌هایی را می‌پوشاند که سرنشین‌ها دیده‌اند", verb: "copre ← coprire" },
+        { it: "se il veicolo è autorizzato al trasporto di persone", fa: "اگر وسیله اجازه‌ی حملِ آدم داشته باشد", focus: "condition" },
       ],
-      translation: "بیمه‌ی اجباریِ شخص ثالث خسارت‌هایی را می‌پوشاند که آدم‌ها و/یا اشیایی دیده‌اند که در محوطه‌های عمومی یا باز به روی عموم هستند.",
-      why: "درست است (قدم ۱). از ۲۰۲۳ پوشش حتی گسترده‌تر شده، ولی این بخشِ اصلیِ آن است.",
-      rule: `${CAP("122")} c.1, c.1-bis`,
+      translation: "بیمه‌ی اجباریِ شخص ثالث خسارت‌هایی را می‌پوشاند که سرنشین‌ها دیده‌اند، اگر وسیله اجازه‌ی حملِ آدم داشته باشد.",
+      why: "درست است (قدم ۱). سرنشینِ هر وسیله‌ای که اجازه‌ی حملِ آدم دارد هم شخصِ ثالث حساب می‌شود.",
+      rule: CAP("122"),
       conceptStep: 1,
     },
     {

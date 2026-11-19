@@ -3,8 +3,21 @@
  * Typed D1 query helpers for all tables.
  */
 
+import { RETIRED_QUESTIONS } from "../content/retired-questions.js";
 import { addDaysISO, todayLocalISO } from "../lib/srs.js";
 import { unreadDirectionFor, type SupportDirection } from "../lib/support.js";
+
+/**
+ * SQL condition: the question aliased `q` is still in the exam (not in
+ * RETIRED_QUESTIONS). Add it to every query that serves or counts questions.
+ * The ids are inlined, not bound, so callers keep their bound-parameter budget;
+ * they come from code and are checked to be digits.
+ */
+export const NOT_RETIRED = (() => {
+  const ids = RETIRED_QUESTIONS.map((question) => question.sourceId);
+  if (!ids.every((id) => /^\d+$/.test(id))) throw new Error("RETIRED_QUESTIONS sourceIds must be digits");
+  return `COALESCE(q.source_id, '') NOT IN (${ids.map((id) => `'${id}'`).join(",")})`;
+})();
 
 export interface DbUser {
   id: number;
@@ -326,7 +339,7 @@ export async function getAllTopicsWithStats(
            ELSE NULL
          END AS accuracy
        FROM topics t
-       LEFT JOIN questions q ON q.topic_id = t.id
+       LEFT JOIN questions q ON q.topic_id = t.id AND ${NOT_RETIRED}
        LEFT JOIN exam_answers ea
               ON ea.question_id = q.id
              AND ea.user_answer IS NOT NULL
@@ -370,7 +383,7 @@ export async function drawExamQuestions(
     .prepare(
       `SELECT q.* FROM questions q
        JOIN review_queue rv ON rv.question_id = q.id
-       WHERE rv.user_id = ? AND rv.cleared = 0
+       WHERE rv.user_id = ? AND rv.cleared = 0 AND ${NOT_RETIRED}
          AND (rv.next_review_at IS NULL OR rv.next_review_at <= ?)
        ORDER BY rv.next_review_at ASC, rv.wrong_count DESC
        LIMIT ?`
@@ -396,8 +409,8 @@ export async function drawExamQuestions(
     if (respectCooldown) binds.push(userId, `${addDaysISO(todayLocalISO(), -COOLDOWN_DAYS)} 00:00:00`);
     const res = await db
       .prepare(
-        `SELECT * FROM questions
-         WHERE 1=1 ${exclude} ${cooldown}
+        `SELECT * FROM questions q
+         WHERE ${NOT_RETIRED} ${exclude} ${cooldown}
          ORDER BY RANDOM()
          LIMIT ?`
       )
@@ -435,7 +448,7 @@ export async function getQuestionById(
 
 export async function getQuestionCount(db: D1Database): Promise<number> {
   const row = await db
-    .prepare(`SELECT COUNT(*) as cnt FROM questions`)
+    .prepare(`SELECT COUNT(*) as cnt FROM questions q WHERE ${NOT_RETIRED}`)
     .first<{ cnt: number }>();
   return row?.cnt ?? 0;
 }
@@ -888,6 +901,7 @@ export async function getDueReviewQuestions(
       `SELECT q.* FROM questions q
        JOIN review_queue rq ON rq.question_id = q.id
        WHERE rq.user_id = ? AND rq.cleared = 0 AND (rq.next_review_at IS NULL OR rq.next_review_at <= ?)
+         AND ${NOT_RETIRED}
        ORDER BY rq.wrong_count DESC, rq.last_wrong_at DESC`
     )
     .bind(userId, today)
@@ -902,8 +916,10 @@ export async function getPendingReviewCount(
   const today = todayLocalISO();
   const row = await db
     .prepare(
-      `SELECT COUNT(*) as cnt FROM review_queue
-       WHERE user_id = ? AND cleared = 0 AND (next_review_at IS NULL OR next_review_at <= ?)`
+      `SELECT COUNT(*) as cnt FROM review_queue rq
+       JOIN questions q ON q.id = rq.question_id
+       WHERE rq.user_id = ? AND rq.cleared = 0 AND (rq.next_review_at IS NULL OR rq.next_review_at <= ?)
+         AND ${NOT_RETIRED}`
     )
     .bind(userId, today)
     .first<{ cnt: number }>();
@@ -1219,7 +1235,7 @@ export async function drawQuestionsFromTopics(
          WHERE es.user_id = ? AND ea.question_id = q.id
        ) AS last_seen_at
        FROM questions q
-       WHERE q.topic_id IN (${placeholders})
+       WHERE q.topic_id IN (${placeholders}) AND ${NOT_RETIRED}
        ORDER BY last_seen_at IS NOT NULL, last_seen_at ASC, RANDOM()
        LIMIT ?`
     )
@@ -1331,7 +1347,7 @@ export async function getReelsFeedItems(
          NULL AS explanation
        FROM questions q
        LEFT JOIN topics t ON q.topic_id = t.id
-       WHERE NOT EXISTS (
+       WHERE ${NOT_RETIRED} AND NOT EXISTS (
          SELECT 1
          FROM exam_answers ea
          JOIN exam_sessions es ON es.id = ea.session_id
@@ -1438,12 +1454,13 @@ export async function getBankCoverage(
         `SELECT COUNT(DISTINCT ea.question_id) AS seen
          FROM exam_answers ea
          JOIN exam_sessions es ON es.id = ea.session_id
-         WHERE es.user_id = ?`
+         JOIN questions q ON q.id = ea.question_id
+         WHERE es.user_id = ? AND ${NOT_RETIRED}`
       )
       .bind(userId)
       .first<{ seen: number }>(),
     db
-      .prepare(`SELECT COUNT(*) AS total FROM questions`)
+      .prepare(`SELECT COUNT(*) AS total FROM questions q WHERE ${NOT_RETIRED}`)
       .first<{ total: number }>(),
     db
       .prepare(
@@ -1503,7 +1520,7 @@ export async function getNeedsMoreWork(
        JOIN exam_sessions es ON es.id = ea.session_id
        JOIN questions q ON q.id = ea.question_id
        LEFT JOIN topics t ON t.id = q.topic_id
-       WHERE es.user_id = ? AND ea.user_answer IS NOT NULL
+       WHERE es.user_id = ? AND ea.user_answer IS NOT NULL AND ${NOT_RETIRED}
        GROUP BY ea.question_id
        HAVING SUM(CASE WHEN ea.is_correct = 0 THEN 1 ELSE 0 END) >= 2
        ORDER BY wrongCount DESC, wrongRate DESC

@@ -47,18 +47,18 @@ export const reviewPatente: Lesson = {
   ],
   practice: [
     {
-      sourceId: "6135",
-      textIt: "Un autoveicolo per poter circolare deve essere munito della carta di circolazione",
+      // #6135 moved into lesson 1's trap when #6126 was retired; this is the lesson's other unseen question
+      sourceId: "6140",
+      textIt: "Le targhe dei veicoli non devono essere sporche",
       answer: 1,
       chunks: [
-        { it: "Un autoveicolo", fa: "یک خودرو" },
-        { it: "per poter circolare", fa: "برای این‌که بتواند حرکت کند", focus: "reason" },
-        { it: "deve essere munito della carta di circolazione", fa: "باید کارتِ خودرو داشته باشد", verb: "deve ← dovere", focus: "always" },
+        { it: "Le targhe dei veicoli", fa: "پلاک‌های وسایلِ نقلیه" },
+        { it: "non devono essere sporche", fa: "نباید کثیف باشند", verb: "devono ← dovere", focus: "negation" },
       ],
-      translation: "یک خودرو برای این‌که بتواند حرکت کند باید کارتِ خودرو داشته باشد.",
-      why: "درست است (درس ۱). کارتِ خودرو (یا سندِ واحد) شرطِ حرکت است.",
-      rule: `${ART("93")}, ${ART("180")}`,
-      conceptStep: 1,
+      translation: "پلاک‌های وسایلِ نقلیه نباید کثیف باشند.",
+      why: "درست است (درس ۱). پلاکِ کثیف یعنی پلاکِ ناخوانا.",
+      rule: `${ART("100")}; DPR 495/1992 art. 260`,
+      conceptStep: 2,
     },
     {
       sourceId: "6130",
@@ -160,16 +160,16 @@ export const reviewPatente: Lesson = {
       conceptStep: 2,
     },
     {
-      sourceId: "6209",
-      textIt: "La patente di categoria B abilita a condurre gli autocarri di massa massima autorizzata non superiore a 3.500 chilogrammi anche se trainanti un rimorchio leggero (massa fino a 750 chilogrammi)",
+      // replaces #6209 (autocarri), which the ministry removed in 2025 (retired-questions.ts)
+      sourceId: "6202",
+      textIt: "La patente di categoria B abilita a condurre le autovetture, anche se trainanti un rimorchio leggero (massa fino a 750 chilogrammi)",
       answer: 1,
       chunks: [
-        { it: "La patente di categoria B abilita a condurre gli autocarri", fa: "گواهینامه‌ی ردیفِ B اجازه‌ی راندنِ کامیون‌هایی را می‌دهد", verb: "abilita ← abilitare" },
-        { it: "di massa massima autorizzata non superiore a 3.500 chilogrammi", fa: "با حداکثر وزنِ مجازِ نه بیشتر از ۳۵۰۰ کیلو", focus: "limit" },
-        { it: "anche se trainanti un rimorchio leggero (massa fino a 750 chilogrammi)", fa: "حتی اگر یدکِ سبک (تا ۷۵۰ کیلو) بکشند", focus: "condition" },
+        { it: "La patente di categoria B abilita a condurre le autovetture,", fa: "گواهینامه‌ی ردیفِ B اجازه‌ی راندنِ سواری را می‌دهد،", verb: "abilita ← abilitare" },
+        { it: "anche se trainanti un rimorchio leggero (massa fino a 750 chilogrammi)", fa: "حتی اگر یدکِ سبک (تا ۷۵۰ کیلو) بکشد", focus: "condition" },
       ],
-      translation: "گواهینامه‌ی ردیفِ B اجازه‌ی راندنِ کامیون‌هایی با حداکثر وزنِ مجازِ نه بیشتر از ۳۵۰۰ کیلو را می‌دهد، حتی اگر یدکِ سبک (تا ۷۵۰ کیلو) بکشند.",
-      why: "درست است (درس ۵). یدکِ سبک با هر کشنده‌ی تا ۳۵۰۰ کیلو: B.",
+      translation: "گواهینامه‌ی ردیفِ B اجازه‌ی راندنِ سواری را می‌دهد، حتی اگر یدکِ سبک (تا ۷۵۰ کیلو) بکشد.",
+      why: "درست است (درس ۵). سواری با یدکِ سبک (تا ۷۵۰ کیلو): B.",
       rule: `${ART("116")} c.3 lett. f`,
       conceptStep: 1,
     },
@@ -248,16 +248,18 @@ export const reviewPatente: Lesson = {
       conceptStep: 2,
     },
     {
-      sourceId: "6327",
-      textIt: "Guidare sotto l’effetto di sostanze stupefacenti comporta una perdita di punti sulla patente",
+      // replaces #6327 (drugs), which the ministry removed in 2025 (retired-questions.ts)
+      sourceId: "6319",
+      textIt: "L'uso di telefono cellulare senza auricolare o viva voce durante la guida comporta una perdita di punti sulla patente",
       answer: 1,
       chunks: [
-        { it: "Guidare sotto l’effetto di sostanze stupefacenti", fa: "رانندگی زیرِ اثرِ مواد مخدر" },
+        { it: "L'uso di telefono cellulare senza auricolare o viva voce", fa: "استفاده از تلفنِ همراه بی‌هدفون یا بلندگو" },
+        { it: "durante la guida", fa: "هنگامِ رانندگی" },
         { it: "comporta una perdita di punti sulla patente", fa: "امتیازِ گواهینامه را کم می‌کند", verb: "comporta ← comportare" },
       ],
-      translation: "رانندگی زیرِ اثرِ مواد مخدر امتیازِ گواهینامه را کم می‌کند.",
-      why: "درست است (درس ۸). از سنگین‌ترین موارد است؛ تعلیق هم دارد.",
-      rule: "Tabella dei punteggi previsti dall'art. 126-bis (MIT), art. 187",
+      translation: "استفاده از تلفنِ همراه بی‌هدفون یا بلندگو هنگامِ رانندگی امتیازِ گواهینامه را کم می‌کند.",
+      why: "درست است (درس ۸). تلفن در دست هنگامِ رانندگی امتیاز کم می‌کند.",
+      rule: "Tabella dei punteggi previsti dall'art. 126-bis (MIT), art. 173",
       conceptStep: 1,
     },
     {

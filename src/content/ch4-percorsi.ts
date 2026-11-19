@@ -680,17 +680,18 @@ export const lessonPercorsiMisti: Lesson = {
   ],
   practice: [
     {
-      sourceId: "2058",
+      // replaces #2058 («corsia riservata…»), which the ministry removed in 2025 (retired-questions.ts)
+      sourceId: "2057",
       sign: 112,
-      textIt: "Il segnale raffigurato è posto in corrispondenza dell'inizio di una corsia riservata alle biciclette accanto ad un percorso pedonale",
+      textIt: "Il segnale raffigurato è posto in corrispondenza dell'inizio di una pista ciclabile accanto al marciapiede",
       answer: 1,
       chunks: [
         { it: SIGN, fa: SIGN_FA },
         { it: "è posto in corrispondenza dell'inizio", fa: "سرِ شروعِ … نصب شده", verb: "posto ← porre" },
-        { it: "di una corsia riservata alle biciclette", fa: "یک خطِ ویژه‌ی دوچرخه", verb: "riservata ← riservare" },
-        { it: "accanto ad un percorso pedonale", fa: "کنارِ یک مسیرِ پیاده" },
+        { it: "di una pista ciclabile", fa: "یک مسیر ویژه‌ی دوچرخه" },
+        { it: "accanto al marciapiede", fa: "کنارِ پیاده‌رو" },
       ],
-      translation: "تابلوی نشان‌داده‌شده سرِ شروعِ یک خطِ ویژه‌ی دوچرخه کنارِ یک مسیرِ پیاده نصب شده.",
+      translation: "تابلوی نشان‌داده‌شده سرِ شروعِ یک مسیر ویژه‌ی دوچرخه کنارِ پیاده‌رو نصب شده.",
       why: "درست است (قدم ۱). خطِ وسطِ تابلو یعنی دو مسیرِ جدا، کنار هم.",
       rule: "DPR 495/1992 art. 122 c.9 (fig. II.92/a)",
       conceptStep: 1,
