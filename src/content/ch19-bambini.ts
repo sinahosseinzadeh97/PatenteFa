@@ -112,21 +112,21 @@ export const lessonBambini: Lesson = {
     },
     {
       kind: "trap",
-      title: "«1,50 metri» درست، «1,30 metri» غلط",
-      body: "هر دو جمله درباره‌ی قدِ کودک است. یکی مرزِ قانون را می‌گوید، دیگری مرزِ ساختگی:",
+      title: "«omologati» درست، «1,30 metri» غلط",
+      body: "هر دو جمله درباره‌ی سیستمِ نگه‌دارنده‌ی کودک است. یکی قانون را می‌گوید، دیگری یک استثنای ساختگی:",
       examples: [
         {
-          sourceId: "6035",
-          textIt: "I bambini di altezza inferiore a 1,50 metri, quando sono trasportati su una autovettura, devono essere trattenuti da sistemi di ritenuta omologati, adeguati alla loro statura e peso",
+          // replaces #6035 (the 1,50 m statement), which the ministry removed in 2025 (retired-questions.ts)
+          sourceId: "6039",
+          textIt: "I sistemi di ritenuta per bambini devono essere di tipo omologato e mantenuti sempre efficienti",
           answer: 1,
           chunks: [
-            { it: "I bambini di altezza inferiore a 1,50 metri,", fa: "کودکانِ کوتاه‌تر از ۱٫۵۰ متر،", focus: "limit" },
-            { it: "quando sono trasportati su una autovettura,", fa: "وقتی با سواری جابه‌جا می‌شوند،", verb: "sono trasportati ← trasportare" },
-            { it: "devono essere trattenuti da sistemi di ritenuta omologati,", fa: "باید با سیستم‌های نگه‌دارنده‌ی تأییدشده نگه داشته شوند،", verb: "devono ← dovere" },
-            { it: "adeguati alla loro statura e peso", fa: "مناسبِ قد و وزنشان" },
+            { it: "I sistemi di ritenuta per bambini", fa: "سیستم‌های نگه‌دارنده‌ی کودک" },
+            { it: "devono essere di tipo omologato", fa: "باید از نوعِ تأییدشده باشند", verb: "devono ← dovere" },
+            { it: "e mantenuti sempre efficienti", fa: "و همیشه سالم نگه داشته شوند", verb: "mantenuti ← mantenere" },
           ],
-          translation: "کودکانِ کوتاه‌تر از ۱٫۵۰ متر، وقتی با سواری جابه‌جا می‌شوند، باید با سیستم‌های نگه‌دارنده‌ی تأییدشده و مناسبِ قد و وزنشان نگه داشته شوند.",
-          why: "درست است. مرزِ قانون ۱٫۵۰ متر است.",
+          translation: "سیستم‌های نگه‌دارنده‌ی کودک باید از نوعِ تأییدشده باشند و همیشه سالم نگه داشته شوند.",
+          why: "درست است. سیستمِ نگه‌دارنده باید تأییدشده و سالم باشد.",
         },
         {
           sourceId: "6045",
@@ -142,7 +142,7 @@ export const lessonBambini: Lesson = {
           why: "غلط است. ۱٫۳۰ متر در قانون نیست؛ تا ۱٫۵۰ متر سیستمِ نگه‌دارنده لازم است.",
         },
       ],
-      takeaway: "عددِ قد را دقیق بخوان: فقط ۱٫۵۰ متر.",
+      takeaway: "استثنای عددی را باور نکن: «1,30 metri» در قانون نیست.",
       rule: `${CDS_172} c.1`,
     },
   ],

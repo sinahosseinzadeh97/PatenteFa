@@ -269,20 +269,21 @@ export const lessonAutoveicoli: Lesson = {
     {
       kind: "trap",
       title: "تله: «quadricicli a motore»",
-      body: "هر دو جمله درباره‌ی چهارچرخه‌ی موتوری‌اند و هر دو می‌گویند «مجاز است». تابلو فرق دارد.",
+      body: "هر دو جمله درباره‌ی همین تابلوند و هر دو می‌گویند «مجاز است». فقط وسیله فرق دارد.",
       examples: [
         {
-          sourceId: "1444",
-          sign: 71,
-          textIt: "In presenza del segnale raffigurato è consentito il transito ai quadricicli a motore",
+          // replaces #1444 (sign 71, quadricycles), which the ministry removed in 2025 with #1448 (retired-questions.ts)
+          sourceId: "1387",
+          sign: 66,
+          textIt: "In presenza del segnale raffigurato è permesso il transito ai motocicli",
           answer: 1,
           chunks: [
             { it: PRESENZA, fa: PRESENZA_FA },
-            { it: "è consentito il transito", fa: "عبور مجاز است" },
-            { it: "ai quadricicli a motore", fa: "برای چهارچرخه‌های موتوری" },
+            { it: "è permesso il transito", fa: "عبور مجاز است", verb: "permesso ← permettere" },
+            { it: "ai motocicli", fa: "برای موتورسیکلت‌ها" },
           ],
-          translation: "وقتی این تابلو هست، عبور چهارچرخه‌های موتوری مجاز است.",
-          why: "درست است. تابلوی ماشین کشاورزی فقط ماشین کشاورزی را منع می‌کند.",
+          translation: "وقتی این تابلو هست، عبور موتورسیکلت‌ها مجاز است.",
+          why: "درست است. این تابلو موتورسیکلت را منع نمی‌کند.",
         },
         {
           sourceId: "1391",
@@ -298,7 +299,7 @@ export const lessonAutoveicoli: Lesson = {
           why: "غلط است. تابلوی «همه‌ی خودروها» چهارچرخه‌ی موتوری را هم منع می‌کند.",
         },
       ],
-      takeaway: "همان جمله، تابلوی دیگر، جواب دیگر.",
+      takeaway: "همان تابلو، وسیله‌ی دیگر، جواب دیگر.",
     },
   ],
   practice: [

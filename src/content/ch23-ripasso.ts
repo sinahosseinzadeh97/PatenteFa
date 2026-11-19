@@ -249,16 +249,17 @@ export const reviewResponsabilita: Lesson = {
       conceptStep: 2,
     },
     {
-      sourceId: "6656",
-      textIt: "Quando l'assicurazione per la responsabilità civile auto è scaduta di validità si può incorrere nella confisca del veicolo",
-      answer: 1,
+      // #6656 moved into lesson 8's trap when #6655 was retired; this is the lesson's other unseen question
+      sourceId: "6658",
+      textIt: "Quando l'assicurazione per la responsabilità civile auto è scaduta di validità si può utilizzare il veicolo solo sul territorio italiano",
+      answer: 0,
       chunks: [
         { it: QS, fa: QS_FA },
-        { it: "si può incorrere nella confisca del veicolo", fa: "ممکن است خودرو مصادره شود", verb: "si può ← potere" },
+        { it: "si può utilizzare il veicolo solo sul territorio italiano", fa: "می‌شود خودرو را فقط در خاکِ ایتالیا به کار برد", focus: "contrast" },
       ],
-      translation: "وقتی اعتبارِ بیمه‌ی شخص ثالث تمام شده، ممکن است خودرو مصادره شود.",
-      why: "درست است (درس ۸). ماده‌ی ۱۹۳ بندِ ۴.",
-      rule: `${CDS("193")} c.4`,
+      translation: "وقتی اعتبارِ بیمه‌ی شخص ثالث تمام شده، می‌شود خودرو را فقط در خاکِ ایتالیا به کار برد.",
+      why: "غلط است (درس ۸). بی‌بیمه نمی‌شود راند، نه در ایتالیا و نه جای دیگر.",
+      rule: CDS("193"),
       conceptStep: 1,
     },
     {

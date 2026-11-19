@@ -297,20 +297,20 @@ export const lessonSenzaAssicurazione: Lesson = {
     },
     {
       kind: "trap",
-      title: "«in sosta»: پارک هم حساب است؟",
-      body: "هر دو جمله درباره‌ی پارکِ خودروی بی‌بیمه روی جاده‌ی عمومی‌اند. یکی می‌گوید جریمه دارد؛ دیگری می‌گوید مجاز است:",
+      title: "«assicurazione scaduta»: پیامدِ واقعی یا استثنای ساختگی؟",
+      body: "هر دو جمله درباره‌ی خودرویی‌اند که اعتبارِ بیمه‌اش تمام شده. یکی پیامدِ واقعی را می‌گوید؛ دیگری می‌گوید پارکش روی جاده‌ی عمومی مجاز است:",
       examples: [
         {
-          sourceId: "6655",
-          textIt: "Quando l'assicurazione per la responsabilità civile auto è scaduta di validità si incorre in una sanzione se si circola o si lascia in sosta il veicolo sulle strade pubbliche",
+          // replaces #6655 («…sulle strade pubbliche»), which the ministry removed in 2025 (retired-questions.ts)
+          sourceId: "6656",
+          textIt: "Quando l'assicurazione per la responsabilità civile auto è scaduta di validità si può incorrere nella confisca del veicolo",
           answer: 1,
           chunks: [
             { it: QS, fa: QS_FA },
-            { it: "si incorre in una sanzione", fa: "مشمولِ جریمه می‌شوی", verb: "si incorre ← incorrere" },
-            { it: "se si circola o si lascia in sosta il veicolo sulle strade pubbliche", fa: "اگر با خودرو روی جاده‌های عمومی رفت‌وآمد کنی یا آن را پارک کنی", focus: "condition" },
+            { it: "si può incorrere nella confisca del veicolo", fa: "ممکن است خودرو مصادره شود", verb: "si può ← potere" },
           ],
-          translation: "وقتی اعتبارِ بیمه‌ی شخص ثالث تمام شده، اگر با خودرو روی جاده‌های عمومی رفت‌وآمد کنی یا آن را آن‌جا پارک کنی، مشمولِ جریمه می‌شوی.",
-          why: "درست است. پارک هم بخشی از «رفت‌وآمد» است.",
+          translation: "وقتی اعتبارِ بیمه‌ی شخص ثالث تمام شده، ممکن است خودرو مصادره شود.",
+          why: "درست است. ماده‌ی ۱۹۳ بندِ ۴.",
         },
         {
           sourceId: "6659",
@@ -330,15 +330,17 @@ export const lessonSenzaAssicurazione: Lesson = {
   ],
   practice: [
     {
-      sourceId: "6654",
-      textIt: "È vietato utilizzare il veicolo privo di copertura assicurativa sulle strade pubbliche",
-      answer: 1,
+      // replaces #6654 («…sulle strade pubbliche»), which the ministry removed in 2025 (retired-questions.ts)
+      sourceId: "6661",
+      textIt: "Quando l'assicurazione per la responsabilità civile auto è scaduta di validità è possibile continuare ad usare il veicolo, solo se si è disposti a pagare personalmente gli eventuali danni arrecati",
+      answer: 0,
       chunks: [
-        { it: "È vietato utilizzare il veicolo privo di copertura assicurativa", fa: "استفاده از خودروی بی‌پوششِ بیمه ممنوع است", focus: "negation" },
-        { it: "sulle strade pubbliche", fa: "روی جاده‌های عمومی" },
+        { it: QS, fa: QS_FA },
+        { it: "è possibile continuare ad usare il veicolo,", fa: "می‌شود به استفاده از خودرو ادامه داد،", focus: "contrast" },
+        { it: "solo se si è disposti a pagare personalmente gli eventuali danni arrecati", fa: "فقط اگر حاضر باشی خسارت‌هایی را که می‌زنی خودت بدهی", focus: "condition" },
       ],
-      translation: "استفاده از خودروی بی‌پوششِ بیمه روی جاده‌های عمومی ممنوع است.",
-      why: "درست است (قدم ۱). ماده‌ی ۱۹۳.",
+      translation: "وقتی اعتبارِ بیمه‌ی شخص ثالث تمام شده، می‌شود به استفاده از خودرو ادامه داد، فقط اگر حاضر باشی خسارت‌هایی را که می‌زنی خودت بدهی.",
+      why: "غلط است (قدم ۱). بی‌بیمه نمی‌شود راند، حتی با قولِ پرداختِ خسارت. ماده‌ی ۱۹۳.",
       rule: CDS("193"),
       conceptStep: 1,
     },

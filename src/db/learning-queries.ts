@@ -6,7 +6,7 @@
  */
 
 import { todayLocalISO } from "../lib/srs.js";
-import type { DbQuestion } from "./queries.js";
+import { NOT_RETIRED, type DbQuestion } from "./queries.js";
 
 export interface LessonProgressRow {
   lesson_id: string;
@@ -204,7 +204,7 @@ export async function getQuestionsBySourceIds(
   for (const part of chunks(sourceIds)) {
     const result = await db
       .prepare(
-        `SELECT * FROM questions WHERE source_id IN (${part.map(() => "?").join(",")})`
+        `SELECT * FROM questions q WHERE q.source_id IN (${part.map(() => "?").join(",")}) AND ${NOT_RETIRED}`
       )
       .bind(...part)
       .all<DbQuestion>();
@@ -222,7 +222,7 @@ export async function getDueReviewSourceIds(
     .prepare(
       `SELECT q.source_id AS source_id
        FROM review_queue rq JOIN questions q ON q.id = rq.question_id
-       WHERE rq.user_id = ? AND rq.cleared = 0
+       WHERE rq.user_id = ? AND rq.cleared = 0 AND ${NOT_RETIRED}
          AND (rq.next_review_at IS NULL OR rq.next_review_at <= ?)`
     )
     .bind(userId, todayLocalISO())
@@ -260,7 +260,7 @@ export async function getPracticeCandidates(
                     WHERE la.user_id = ? AND la.question_id = q.id
            ) AS seen_in_lesson
          FROM questions q
-         WHERE q.source_id IN (${part.map(() => "?").join(",")})`
+         WHERE q.source_id IN (${part.map(() => "?").join(",")}) AND ${NOT_RETIRED}`
       )
       .bind(userId, userId, today, userId, ...part)
       .all<PracticeCandidate>();

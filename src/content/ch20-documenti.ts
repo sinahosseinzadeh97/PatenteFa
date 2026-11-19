@@ -148,21 +148,21 @@ export const lessonDocumenti: Lesson = {
     },
     {
       kind: "trap",
-      title: "«assicurazione»: شخص ثالث آری، بدنه نه",
-      body: "هر دو جمله درباره‌ی بیمه است. یکی بیمه‌ای را می‌گوید که قانون می‌خواهد، دیگری بیمه‌ای اختیاری را:",
+      title: "«per poter circolare»: کارتِ خودرو آری، بدنه نه",
+      body: "هر دو جمله می‌گویند خودرو «برای این‌که بتواند حرکت کند» چه باید داشته باشد. یکی چیزی را می‌گوید که قانون می‌خواهد، دیگری بیمه‌ای اختیاری را:",
       examples: [
         {
-          sourceId: "6126",
-          textIt: "E' vietato utilizzare un autoveicolo sulle strade pubbliche quando il veicolo non è coperto dall'assicurazione per la responsabilità civile",
+          // replaces #6126 («…sulle strade pubbliche… assicurazione»), which the ministry removed in 2025 (retired-questions.ts)
+          sourceId: "6135",
+          textIt: "Un autoveicolo per poter circolare deve essere munito della carta di circolazione",
           answer: 1,
           chunks: [
-            { it: "E' vietato utilizzare un autoveicolo", fa: "استفاده از خودرو ممنوع است", verb: "è ← essere" },
-            { it: "sulle strade pubbliche", fa: "در جاده‌های عمومی" },
-            { it: "quando il veicolo non è coperto", fa: "وقتی خودرو پوشش ندارد", verb: "è coperto ← coprire", focus: "condition" },
-            { it: "dall'assicurazione per la responsabilità civile", fa: "از بیمه‌ی شخص ثالث" },
+            { it: "Un autoveicolo", fa: "یک خودرو" },
+            { it: "per poter circolare", fa: "برای این‌که بتواند حرکت کند", focus: "reason" },
+            { it: "deve essere munito della carta di circolazione", fa: "باید کارتِ خودرو داشته باشد", verb: "deve ← dovere", focus: "always" },
           ],
-          translation: "استفاده از خودرو در جاده‌های عمومی ممنوع است وقتی خودرو بیمه‌ی شخص ثالث ندارد.",
-          why: "درست است. بیمه‌ی شخص ثالث خسارتی را که به دیگران می‌زنی جبران می‌کند و اجباری است.",
+          translation: "یک خودرو برای این‌که بتواند حرکت کند باید کارتِ خودرو داشته باشد.",
+          why: "درست است. کارتِ خودرو (یا سندِ واحد) شرطِ حرکت است.",
         },
         {
           sourceId: "6137",
@@ -178,7 +178,7 @@ export const lessonDocumenti: Lesson = {
           why: "غلط است. بیمه‌ی بدنه خسارتِ خودِ خودرو را می‌دهد و اختیاری است؛ فقط بیمه‌ی شخص ثالث اجباری است.",
         },
       ],
-      takeaway: "در جمله‌های بیمه بپرس: خسارتِ دیگران (شخص ثالث، اجباری) یا خسارتِ خودِ من (بدنه، اختیاری)؟",
+      takeaway: "بعد از «per poter circolare» بپرس: قانون این را می‌خواهد یا اختیاری است؟ بیمه‌ی شخص ثالث اجباری است، بدنه اختیاری.",
       rule: CDS("193"),
     },
   ],
