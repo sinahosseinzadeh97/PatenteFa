@@ -21,6 +21,10 @@
   function label(x, y, text, cls) {
     return '<text class="rd-label' + (cls ? ' ' + cls : '') + '" x="' + x + '" y="' + y + '">' + text + '</text>';
   }
+  /** A label centred on (x, y), read bottom to top: for vertical braces. */
+  function vlabel(x, y, text) {
+    return '<text class="rd-label rd-label-center" dominant-baseline="central" x="' + x + '" y="' + y + '" transform="rotate(-90 ' + x + ' ' + y + ')">' + text + '</text>';
+  }
   function car(x, y, w, h, cls, dir) {
     var nose = dir === 'left'
       ? 'M' + (x + 7) + ' ' + (y + 3) + ' L' + (x + 2) + ' ' + (y + h / 2) + ' L' + (x + 7) + ' ' + (y + h - 3) + 'Z'
@@ -56,19 +60,24 @@
   }
 
   var SCENES = {
-    street: { h: 220, draw: function() {
-      return rect(0, 0, 340, 220, 'rd-ground') +
-        part('strada', rect(6, 192, 328, 22, 'rd-brace', ' rx="11"') + label(170, 207, '← strada →', 'rd-label-center'), [6, 192, 328, 22]) +
-        part('marciapiede', rect(0, 0, 340, 32, 'rd-walk') + line(0, 32, 340, 32, 'rd-curb') + person(60, 10) + label(250, 20, 'marciapiede', 'rd-label-dark'), [0, 0, 340, 32]) +
+    // strada and carreggiata are wholes, not strips: each gets a vertical brace on the right over everything
+    // it contains (drawn last so it is tappable above the lanes; a part id may appear twice, both light up).
+    street: { h: 182, draw: function() {
+      return rect(0, 0, 340, 182, 'rd-ground') +
+        part('marciapiede', rect(0, 0, 340, 32, 'rd-walk') + line(0, 32, 340, 32, 'rd-curb') + person(60, 10) + label(232, 20, 'marciapiede', 'rd-label-dark'), [0, 0, 340, 32]) +
         part('banchina', rect(0, 32, 340, 14, 'rd-gravel') + rect(0, 140, 340, 14, 'rd-gravel'), [[0, 33, 340, 12], [0, 141, 340, 12]]) +
         part('carreggiata', rect(0, 48, 340, 92, 'rd-asphalt') + line(0, 94, 340, 94, 'rd-dash') +
-          car(206, 112, 40, 18, 'rd-car-other', 'left') + label(8, 134, 'carreggiata'), [0, 48, 340, 92]) +
+          car(206, 112, 40, 18, 'rd-car-other', 'left'), [0, 48, 340, 92]) +
         part('corsia', rect(0, 48, 340, 46, 'rd-clear') + car(60, 62, 40, 18, 'rd-car-you', 'right') + label(8, 60, 'corsia'), [0, 48, 340, 46]) +
         part('margine', line(0, 47, 340, 47, 'rd-line') + line(0, 141, 340, 141, 'rd-line') +
           rect(0, 43, 340, 8, 'rd-clear') + rect(0, 137, 340, 8, 'rd-clear'), [[0, 44, 340, 6], [0, 138, 340, 6]]) +
         part('ciclabile', rect(0, 154, 340, 28, 'rd-bike') + line(0, 154, 340, 154, 'rd-line') +
           '<g class="rd-bike-mark"><circle cx="150" cy="168" r="5"/><circle cx="166" cy="168" r="5"/><path d="M150 168 L157 161 L166 168 M157 161 L160 161"/></g>' +
-          label(250, 172, 'pista ciclabile'), [0, 154, 340, 28]);
+          label(232, 172, 'pista ciclabile'), [0, 154, 340, 28]) +
+        part('carreggiata', rect(300, 50, 16, 88, 'rd-asphalt', ' rx="8"') + rect(300, 50, 16, 88, 'rd-brace', ' rx="8"') +
+          vlabel(308, 94, 'carreggiata'), [300, 50, 16, 88]) +
+        part('strada', rect(320, 2, 16, 178, 'rd-asphalt', ' rx="8"') + rect(320, 2, 16, 178, 'rd-brace', ' rx="8"') +
+          vlabel(328, 91, '← strada →'), [320, 2, 16, 178]);
     } },
 
     lanes: { h: 220, draw: function() {
