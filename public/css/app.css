@@ -1677,6 +1677,21 @@ button:disabled { cursor: not-allowed; }
 .home-primary { padding: 20px; margin-bottom: 14px; border: 1px solid rgb(var(--accent-rgb) / .38); border-radius: var(--radius-lg); background: var(--surface); }
 .home-primary h2 { margin: 7px 0 4px; font-size: 1.28rem; line-height: 1.45; }
 .home-primary p { margin: 0; color: var(--ink-muted); font-size: .8rem; line-height: 1.7; }
+/* Readiness light (features.md §52): the logo's traffic light, lit by data-state. */
+.readiness { grid-column: 1 / -1; display: flex; gap: 12px; align-items: flex-start; padding-bottom: 14px; margin-bottom: 14px; border-bottom: 1px solid var(--border); }
+.readiness-light { display: flex; flex-direction: column; gap: 4px; flex: none; padding: 5px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); }
+.readiness-light .lamp { width: 12px; height: 12px; border-radius: 50%; background: var(--border); opacity: .6; }
+.readiness[data-state="red"] .lamp-red { background: var(--stop); opacity: 1; }
+.readiness[data-state="amber"] .lamp-amber { background: var(--signal); opacity: 1; }
+.readiness[data-state="green"] .lamp-green { background: var(--go); opacity: 1; }
+.readiness-copy { min-width: 0; }
+.readiness .readiness-title { color: var(--ink); font-size: .95rem; font-weight: 700; line-height: 1.6; }
+.readiness .readiness-line { margin-top: 2px; }
+.readiness-chapter { display: inline-flex; align-items: center; min-height: 44px; padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: .8rem; text-align: start; text-decoration: underline; cursor: pointer; }
+.readiness-chapter[hidden] { display: none; }
+.readiness-how { margin-top: 4px; font-size: .78rem; color: var(--ink-muted); }
+.readiness-how summary { min-height: 32px; cursor: pointer; }
+.results-readiness { margin: 8px 0 0; font-size: .85rem; font-weight: 700; }
 .home-start-btn { margin-top: 17px; justify-content: space-between; min-height: 54px; }
 .home-progress { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 18px; }
 .home-metric { min-width: 0; min-height: 78px; padding: 10px 8px; display: flex; align-items: flex-start; gap: 7px; text-align: right; color: var(--ink); background: transparent; border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }

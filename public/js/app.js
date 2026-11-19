@@ -1510,7 +1510,63 @@ App.renderRichText = function(el, text) {
   };
 
   // ── Home ────────────────────────────────────────────────────────────────────
+  // ── Readiness light (features.md §52) ──────────────────────────────────────
+  const READINESS_NAMES = { off: 'خاموش', red: 'قرمز', amber: 'زرد', green: 'سبز' };
+  const faNumber = function(n) { return Number(n).toLocaleString('fa-IR'); };
+
+  App.readinessText = function(r) {
+    const next = r.toNext || {};
+    if (r.state === 'off') {
+      return { title: 'چراغِ آمادگی هنوز خاموشه', line: 'برای روشن شدنش ' + faNumber(next.simulationsNeeded) + ' شبیه‌سازیِ کاملِ دیگه بده، بدونِ کمکِ هوش مصنوعی.' };
+    }
+    const percent = r.display.over ? 'بیش از ۹۵' : r.display.value === 0 ? 'کمتر از ۵' : faNumber(r.display.value);
+    const title = 'چراغت ' + READINESS_NAMES[r.state] + 'ه · تخمینِ قبولیِ امروز: ' + percent + '٪';
+    if (r.state === 'red') {
+      return { title: title, line: 'تو ' + faNumber(r.simulations) + ' آزمونِ آخر ' + faNumber(r.wrong) + ' غلط داشتی. برای زرد شدن باید به ' + faNumber(next.wrongForAmber) + ' یا کمتر برسی.' };
+    }
+    if (r.state === 'amber') {
+      return { title: title, line: 'برای سبز: ۵ قبولیِ پشت‌سرهم با حداکثر ' + faNumber(next.wrongForGreen) + ' غلط در مجموع. الان: ' + faNumber(r.passes) + ' قبولی از ' + faNumber(r.simulations) + '، ' + faNumber(r.wrong) + ' غلط.' };
+    }
+    return { title: title, line: '۵ آزمونِ آخرت رو قبول شدی، با ' + faNumber(r.wrong) + ' غلط در مجموع. همین‌طور ادامه بده.' };
+  };
+
+  App.readinessName = function(stateName) { return READINESS_NAMES[stateName] || ''; };
+
+  App.loadReadiness = async function() {
+    const box = document.getElementById('home-readiness');
+    if (!box) return;
+    const title = document.getElementById('home-readiness-title');
+    const line = document.getElementById('home-readiness-line');
+    const chapterBtn = document.getElementById('home-readiness-chapter');
+    box.setAttribute('aria-busy', 'true');
+    try {
+      const r = await api('GET', '/readiness');
+      const text = App.readinessText(r);
+      box.dataset.state = r.state;
+      title.textContent = text.title;
+      line.textContent = text.line;
+      const chapter = r.weakestChapter;
+      if (chapter && chapter.reviewLessonId) {
+        chapterBtn.textContent = 'بیشترین غلط‌هات: فصل ' + faNumber(chapter.number) + '، ' + chapter.titleFa + ' · مرورِ فصل';
+        chapterBtn.onclick = function() { App.openLesson(chapter.reviewLessonId, undefined, 'home'); };
+        chapterBtn.hidden = false;
+      } else {
+        chapterBtn.hidden = true;
+      }
+    } catch (e) {
+      box.dataset.state = 'error';
+      title.textContent = 'آمادگی الان در دسترس نیست.';
+      line.textContent = '';
+      chapterBtn.hidden = true;
+    } finally {
+      box.removeAttribute('aria-busy');
+    }
+  };
+
   App.loadHome = async function() {
+    // Runs beside /stats; it never delays or breaks the rest of home.
+    App.loadReadiness();
+
     // Show guide modal automatically on first visit
     try {
       if (!localStorage.getItem('patente_guide_seen')) {

@@ -35,6 +35,18 @@ export function renderHomeScreen(): string {
     </section>
 
     <section class="home-primary" aria-labelledby="home-primary-title">
+      <div id="home-readiness" class="readiness" data-state="loading" aria-live="polite">
+        <span class="readiness-light" aria-hidden="true"><i class="lamp lamp-red"></i><i class="lamp lamp-amber"></i><i class="lamp lamp-green"></i></span>
+        <div class="readiness-copy">
+          <p id="home-readiness-title" class="readiness-title">در حال محاسبه‌ی آمادگی…</p>
+          <p id="home-readiness-line" class="readiness-line"></p>
+          <button type="button" id="home-readiness-chapter" class="readiness-chapter" hidden></button>
+          <details class="readiness-how">
+            <summary>این عدد چطور حساب می‌شه؟</summary>
+            <p>فقط ۵ شبیه‌سازیِ کاملِ آخرت حساب می‌شن که بدونِ کمکِ هوش مصنوعی تمومشون کردی: همان ۳۰ سؤال و ۲۰ دقیقه‌ی آزمونِ واقعی، و جوابِ خالی غلط است. شبیه‌سازی سؤال‌هایی را که ۱۴ روزِ اخیر جواب دادی دوباره نمی‌آورد، پس این عدد نشان می‌دهد چه بلدی، نه چه دیروز دیدی. تمرین‌ها و درس‌ها حساب نمی‌شوند. این یک تخمین است، نه قول.</p>
+          </details>
+        </div>
+      </div>
       <div class="home-primary-copy">
         <span class="eyebrow"><svg class="ui-icon"><use href="#i-exam"/></svg> شبیه‌ساز آزمون اصلی</span>
         <h2 id="home-primary-title">آماده‌ای یک آزمون کامل بدهی؟</h2>

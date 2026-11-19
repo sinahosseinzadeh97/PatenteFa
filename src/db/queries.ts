@@ -436,6 +436,44 @@ export async function drawExamQuestions(
   return allQuestions.slice(0, count);
 }
 
+/**
+ * Finished 30-question simulations without AI help, newest first: the only
+ * sessions the readiness light trusts (src/lib/readiness.ts).
+ */
+export async function getUnassistedSimulations(
+  db: D1Database,
+  userId: number,
+  limit: number
+): Promise<{ id: number; wrong_count: number; finished_at: string }[]> {
+  const result = await db
+    .prepare(
+      `SELECT es.id, es.wrong_count, es.finished_at
+       FROM exam_sessions es
+       WHERE es.user_id = ? AND es.mode = 'exam'
+         AND es.finished_at IS NOT NULL AND es.abandoned_at IS NULL AND es.ai_assisted_at IS NULL
+         AND (SELECT COUNT(*) FROM exam_answers ea WHERE ea.session_id = es.id) = 30
+       ORDER BY es.finished_at DESC, es.id DESC
+       LIMIT ?`
+    )
+    .bind(userId, limit)
+    .all<{ id: number; wrong_count: number; finished_at: string }>();
+  return result.results;
+}
+
+/** source_id of every answer in these sessions that was not correct (unanswered counts, as at finish). */
+export async function getWrongSourceIds(db: D1Database, sessionIds: number[]): Promise<string[]> {
+  if (sessionIds.length === 0) return [];
+  const result = await db
+    .prepare(
+      `SELECT q.source_id AS source_id
+       FROM exam_answers ea JOIN questions q ON q.id = ea.question_id
+       WHERE ea.session_id IN (${sessionIds.map(() => "?").join(",")}) AND COALESCE(ea.is_correct, 0) <> 1`
+    )
+    .bind(...sessionIds)
+    .all<{ source_id: string | null }>();
+  return result.results.flatMap((row) => (row.source_id ? [row.source_id] : []));
+}
+
 export async function getQuestionById(
   db: D1Database,
   questionId: number
