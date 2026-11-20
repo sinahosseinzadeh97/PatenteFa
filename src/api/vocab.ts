@@ -68,14 +68,30 @@ vocab.post("/", async (c) => {
 vocab.post("/:id/review", async (c) => {
   const userId: number = c.get("userId" as never);
   const itemId = Number(c.req.param("id"));
-  const body = await c.req.json<{ correct: boolean; currentIntervalDays: number }>();
+  const body = (await c.req.json().catch(() => null)) as {
+    correct?: unknown;
+    currentIntervalDays?: unknown;
+  } | null;
+  const current = body?.currentIntervalDays ?? 1;
 
-  const { intervalDays, nextReviewAt } = nextReview(
-    body.currentIntervalDays ?? 1,
-    body.correct
-  );
+  if (
+    !Number.isSafeInteger(itemId) ||
+    itemId < 1 ||
+    typeof body?.correct !== "boolean" ||
+    typeof current !== "number" ||
+    !Number.isInteger(current) ||
+    current < 1 ||
+    current > 90
+  ) {
+    return c.json({ error: "a boolean correct and an interval of 1–90 days are required" }, 400);
+  }
 
-  await updateVocabSRS(c.env.DB, itemId, intervalDays, nextReviewAt);
+  const { intervalDays, nextReviewAt } = nextReview(current, body.correct);
+
+  // Scoped by owner in SQL: a foreign or missing id changes no row.
+  if (!(await updateVocabSRS(c.env.DB, userId, itemId, intervalDays, nextReviewAt))) {
+    return c.json({ error: "Vocab item not found" }, 404);
+  }
   return c.json({ intervalDays, nextReviewAt });
 });
 

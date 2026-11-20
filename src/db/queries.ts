@@ -1124,18 +1124,21 @@ export async function getDueVocabItems(
   return result.results;
 }
 
+/** Returns false when the item does not exist or belongs to another user. */
 export async function updateVocabSRS(
   db: D1Database,
+  userId: number,
   itemId: number,
   intervalDays: number,
   nextReviewAt: string
-): Promise<void> {
-  await db
+): Promise<boolean> {
+  const result = await db
     .prepare(
-      `UPDATE vocab_items SET interval_days = ?, next_review_at = ? WHERE id = ?`
+      `UPDATE vocab_items SET interval_days = ?, next_review_at = ? WHERE id = ? AND user_id = ?`
     )
-    .bind(intervalDays, nextReviewAt, itemId)
+    .bind(intervalDays, nextReviewAt, itemId, userId)
     .run();
+  return result.meta.changes > 0;
 }
 
 // ── Stats ─────────────────────────────────────────────────────────────────────
