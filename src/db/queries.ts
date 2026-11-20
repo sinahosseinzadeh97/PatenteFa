@@ -2106,6 +2106,18 @@ export async function insertSupportMessage(
     .run();
 }
 
+/** Messages this user sent to support in the last minute, from any source. */
+export async function countRecentInboundSupport(db: D1Database, userId: number): Promise<number> {
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS n FROM support_messages
+       WHERE user_id = ? AND direction = 'in' AND created_at >= datetime('now', '-1 minute')`
+    )
+    .bind(userId)
+    .first<{ n: number }>();
+  return row?.n ?? 0;
+}
+
 /** Oldest first — the thread renders top-to-bottom like a chat. */
 export async function getSupportThread(
   db: D1Database,

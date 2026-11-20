@@ -19,10 +19,12 @@ import {
   countUnreadSupport,
 } from "../db/queries.js";
 import { notifySupportMessage } from "../lib/telegram.js";
-import { normalizeSupportText, SUPPORT_MAX_LEN } from "../lib/support.js";
-
-/** Messages per minute, per user. A support chat is typed by a human. */
-const RATE_LIMIT_PER_MIN = 5;
+import {
+  normalizeSupportText,
+  SUPPORT_MAX_LEN,
+  SUPPORT_MESSAGES_PER_MINUTE,
+  SUPPORT_RATE_LIMITED_TEXT,
+} from "../lib/support.js";
 
 const support = new Hono<{ Bindings: AppEnv }>();
 
@@ -83,8 +85,8 @@ support.post("/", async (c) => {
 
   const rateKey = `support:rate:${resolved.tgUser.id}`;
   const sent = Number((await c.env.KV.get(rateKey)) || 0);
-  if (sent >= RATE_LIMIT_PER_MIN) {
-    return c.json({ error: "پیام‌های زیادی ارسال کرده‌اید. یک دقیقه صبر کنید." }, 429);
+  if (sent >= SUPPORT_MESSAGES_PER_MINUTE) {
+    return c.json({ error: SUPPORT_RATE_LIMITED_TEXT }, 429);
   }
   await c.env.KV.put(rateKey, String(sent + 1), { expirationTtl: 60 });
 

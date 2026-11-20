@@ -25,6 +25,7 @@ import { runAccessReminders } from "./jobs/accessReminder.js";
 import { runNightlyBackup } from "./jobs/nightlyJournalAndBackup.js";
 
 import { notifyAdminNewUserRequest } from "./lib/telegram.js";
+import { firstNoticeInWindow } from "./lib/notice-throttle.js";
 
 // Re-export for use in route files
 export type { AppEnv, AppVariables };
@@ -85,7 +86,7 @@ app.post("/api/request-access", async (c) => {
     dbUser = trial.user ?? dbUser;
     if (trial.started) {
       c.executionCtx.waitUntil(notifyAdminNewUserRequest(
-        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID,
         { telegramUserId: user.id, firstName: user.first_name, username: user.username, funAnswer, trialUntil: dbUser.access_expires_at! }
       ));
     }
@@ -99,10 +100,11 @@ app.post("/api/request-access", async (c) => {
 
   const hasAccess = isAdmin || (dbUser.is_approved === 1 && !isAccessExpired(dbUser.access_expires_at));
 
-  if (!hasAccess) {
+  // One notice an hour per user; the bot's /start has its own key (see handleStart).
+  if (!hasAccess && (await firstNoticeInWindow(c.env.KV, `notice:access:app:${user.id}`))) {
     await notifyAdminNewUserRequest(
       c.env.TELEGRAM_BOT_TOKEN,
-      c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+      c.env.LOG_CHANNEL_ID,
       {
         telegramUserId: user.id,
         firstName: user.first_name,
@@ -153,7 +155,7 @@ api.use("*", async (c, next) => {
     dbUser = trial.user ?? dbUser;
     if (trial.started) {
       c.executionCtx.waitUntil(notifyAdminNewUserRequest(
-        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID,
         { telegramUserId: user.id, firstName: user.first_name, username: user.username, trialUntil: dbUser.access_expires_at! }
       ));
     }

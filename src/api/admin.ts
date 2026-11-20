@@ -137,7 +137,7 @@ admin.post("/users/:id/status", async (c) => {
     trialStarted = trial.started;
     if (trial.started) {
       c.executionCtx.waitUntil(notifyAdminNewUserRequest(
-        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID || "@patente_fa_logs",
+        c.env.TELEGRAM_BOT_TOKEN, c.env.LOG_CHANNEL_ID,
         { telegramUserId: target.telegram_user_id, firstName: target.first_name || "کاربر",
           username: target.username ?? undefined, trialUntil: trial.user!.access_expires_at! }
       ));
