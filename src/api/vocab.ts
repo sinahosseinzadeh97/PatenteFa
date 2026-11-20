@@ -16,6 +16,9 @@ import { nextReview } from "../lib/srs.js";
 
 const vocab = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
 
+/** A word or short phrase; longer input only adds OpenAI tokens. */
+const MAX_TERM_LENGTH = 80;
+
 // GET /api/vocab — list all vocab items for the user
 vocab.get("/", async (c) => {
   const userId: number = c.get("userId" as never);
@@ -31,10 +34,15 @@ vocab.get("/", async (c) => {
 
 // POST /api/vocab/suggest — get a GPT suggestion for a Persian translation
 vocab.post("/suggest", async (c) => {
-  const body = await c.req.json<{ termIt: string }>();
-  if (!body.termIt?.trim()) return c.json({ error: "termIt is required" }, 400);
+  const userId: number = c.get("userId" as never);
+  const body = (await c.req.json().catch(() => null)) as { termIt?: unknown } | null;
+  const termIt = typeof body?.termIt === "string" ? body.termIt.trim() : "";
+  if (!termIt || termIt.length > MAX_TERM_LENGTH) {
+    return c.json({ error: `termIt is required (at most ${MAX_TERM_LENGTH} characters)` }, 400);
+  }
 
-  const suggestion = await suggestVocabTranslation(c.env, body.termIt.trim());
+  // db + userId: logs the call against the user, which is what the AI budget counts.
+  const suggestion = await suggestVocabTranslation(c.env, termIt, c.env.DB, userId);
   return c.json({ suggestion });
 });
 

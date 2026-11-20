@@ -6,7 +6,9 @@
 
 import { Hono } from "hono";
 import { cors } from "hono/cors";
+import { HTTPException } from "hono/http-exception";
 import type { AppEnv, AppVariables } from "./types.js";
+import { AiBudgetExceededError } from "./lib/ai-budget.js";
 import { verifyInitData, isAccessExpired, isPrimaryAdminUser } from "./lib/auth.js";
 import { upsertUser, setUserApproval, startTrialIfEligible, getAccessOfferSettings } from "./db/queries.js";
 import { webhook } from "./bot/webhook.js";
@@ -30,6 +32,20 @@ export type { AppEnv, AppVariables };
 type HonoApp = Hono<{ Bindings: AppEnv; Variables: AppVariables }>;
 
 const app: HonoApp = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
+
+// Any route whose OpenAI call is over the user's budget answers 429; every
+// other error keeps Hono's default handling.
+app.onError((err, c) => {
+  if (err instanceof AiBudgetExceededError) {
+    return c.json(
+      { error: "سقف استفاده از هوش مصنوعی برای شما موقتاً پر شده است. کمی بعد دوباره امتحان کنید.", aiBudgetExceeded: true },
+      429
+    );
+  }
+  if (err instanceof HTTPException) return err.getResponse();
+  console.error(err);
+  return c.text("Internal Server Error", 500);
+});
 
 // ── Global middleware ────────────────────────────────────────────────────────
 app.use("*", cors({ origin: "*", allowMethods: ["GET", "POST", "OPTIONS"] }));
