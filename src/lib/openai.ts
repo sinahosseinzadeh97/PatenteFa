@@ -3,7 +3,10 @@
  * OpenAI API wrapper for translation, explanation, and vocabulary suggestions.
  * Model name comes from env var OPENAI_MODEL (default: gpt-4o-mini).
  * Never used to invent exam questions — only for translation/explanation/vocab.
+ * Every exported call checks the caller's budget first (src/lib/ai-budget.ts).
  */
+
+import { assertAiBudget } from "./ai-budget.js";
 
 export interface TranslationResult {
   translated_text: string;
@@ -127,6 +130,7 @@ export async function translateQuestion(
   existingTranslatedText?: string | null,
   evidenceText?: string
 ): Promise<TranslationResult> {
+  await assertAiBudget(db, userId);
   const answerIt = correctAnswer === 1 ? "VERO" : "FALSO";
   const currentModel = model(env);
   const explanationModel = visionModel(env);
@@ -348,6 +352,7 @@ export async function suggestVocabTranslation(
   db?: D1Database,
   userId?: number
 ): Promise<string> {
+  await assertAiBudget(db, userId);
   const currentModel = model(env);
   const res = await fetch("https://api.openai.com/v1/chat/completions", {
     method: "POST",
@@ -596,6 +601,7 @@ export async function explainTheory(
   sign?: SignAnchor | null,
   evidenceText?: string
 ): Promise<TheoryResult> {
+  await assertAiBudget(db, userId);
   const answerIt = correctAnswer === 1 ? "VERO" : "FALSO";
   // §20.1: image questions escalate to the vision model — see visionModel().
   const currentModel = imageUrl ? visionModel(env) : model(env);
@@ -717,6 +723,7 @@ export async function analyzeGrammar(
   db?: D1Database,
   userId?: number
 ): Promise<GrammarResult> {
+  await assertAiBudget(db, userId);
   const currentModel = model(env);
   const coverageTokens = vocabularyCoverageTokens(textIt);
   const maxTokens = Math.min(2400, Math.max(1200, coverageTokens.length * 55));
@@ -903,6 +910,7 @@ export async function chatWithTutor(
   db?: D1Database,
   userId?: number
 ): Promise<string> {
+  await assertAiBudget(db, userId);
   const currentModel = model(env);
   const answerIt = questionContext.correctAnswer === 1 ? "VERO" : "FALSO";
   const userAnsIt =
