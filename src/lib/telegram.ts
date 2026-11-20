@@ -102,7 +102,7 @@ export function supportCardKeyboard(targetUserId: number): { inline_keyboard: In
  */
 export async function notifySupportMessage(
   token: string,
-  logChannelId: string,
+  logChannelId: string | undefined,
   msg: {
     telegramUserId: number;
     firstName: string;
@@ -111,7 +111,12 @@ export async function notifySupportMessage(
     via: "app" | "telegram";
   }
 ): Promise<void> {
-  const channel = logChannelId || "@patente_fa_logs";
+  // No guessed fallback: a public handle anyone could register would receive user data.
+  if (!logChannelId) {
+    console.error("LOG_CHANNEL_ID is not set; support notice not sent");
+    return;
+  }
+  const channel = logChannelId;
   const usernameSafe = msg.username ? "@" + esc(msg.username) : "ندارد";
   const viaLabel = msg.via === "app" ? "مینی‌اپ" : "چت ربات";
 
@@ -202,17 +207,26 @@ export function formatDateFa(utc: string): string {
   });
 }
 
+/** Leaves room for the notice's own text inside Telegram's 4096-character limit. */
+const FUN_ANSWER_MAX = 1000;
+
 export async function notifyAdminNewUserRequest(
   token: string,
-  logChannelId: string,
+  logChannelId: string | undefined,
   user: { telegramUserId: number; firstName: string; username?: string; funAnswer?: string; trialUntil?: string }
 ): Promise<void> {
-  const channel = logChannelId || "@patente_fa_logs";
+  if (!logChannelId) {
+    console.error("LOG_CHANNEL_ID is not set; access notice not sent");
+    return;
+  }
+  const channel = logChannelId;
   const nameSafe = esc(user.firstName);
   const usernameSafe = user.username ? "@" + esc(user.username) : "ندارد";
-  const answerSafe = user.funAnswer
-    ? esc(user.funAnswer)
-    : "آره خیلی زیاد!";
+  // Telegram rejects a message over 4096 characters, which would drop the whole notice.
+  const answer = user.funAnswer && user.funAnswer.length > FUN_ANSWER_MAX
+    ? user.funAnswer.slice(0, FUN_ANSWER_MAX) + "…"
+    : user.funAnswer;
+  const answerSafe = answer ? esc(answer) : "آره خیلی زیاد!";
   const header = user.trialUntil
     ? `🔔 <b>کاربر جدید به پتنت فارسی پیوست</b>\nدوره آزمایشی ۱۴ روزه تا ${esc(formatDateFa(user.trialUntil))} فعال است.\n\n`
     : `🔔 <b>درخواست دسترسی جدید به پتنت فارسی</b>\n\n`;

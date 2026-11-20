@@ -25,9 +25,11 @@ import {
   getTopicAccuracy,
   getUserByTelegramId,
   insertSupportMessage,
+  countRecentInboundSupport,
 } from "../db/queries.js";
 import { isAccessExpired, isPrimaryAdminUser } from "../lib/auth.js";
-import { normalizeSupportText } from "../lib/support.js";
+import { firstNoticeInWindow } from "../lib/notice-throttle.js";
+import { normalizeSupportText, SUPPORT_MESSAGES_PER_MINUTE, SUPPORT_RATE_LIMITED_TEXT } from "../lib/support.js";
 import { persistThenDeliverSupportReply } from "../lib/support-delivery.js";
 import { applyInviteBonus } from "../db/referral-queries.js";
 import { INVITEE_BONUS_DAYS } from "../lib/referral.js";
@@ -64,8 +66,8 @@ export function isAdminChat(
   telegramUserId: number,
   ctx: Pick<BotContext, "logChannelId" | "allowedIds" | "primaryAdminId">
 ): boolean {
-  const channel = ctx.logChannelId || "@patente_fa_logs";
-  if (String(chatId) === String(channel)) return true;
+  const channel = ctx.logChannelId;
+  if (channel && String(chatId) === String(channel)) return true;
 
   return isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId);
 }
@@ -357,9 +359,14 @@ async function relayPlainText(
   // Customer side — record the message, then surface it in the log channel
   // with a reply affordance.
   const user = await upsertUser(ctx.db, telegramUserId, firstName, username);
+  // Same limit as the Mini App support screen, counted in D1 across both.
+  if ((await countRecentInboundSupport(ctx.db, user.id)) >= SUPPORT_MESSAGES_PER_MINUTE) {
+    await sendMessage(ctx.token, { chat_id: chatId, text: SUPPORT_RATE_LIMITED_TEXT });
+    return;
+  }
   await insertSupportMessage(ctx.db, user.id, "in", text, "telegram");
 
-  await notifySupportMessage(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
+  await notifySupportMessage(ctx.token, ctx.logChannelId, {
     telegramUserId,
     firstName,
     username,
@@ -446,7 +453,7 @@ async function approveAndNotifyTrial(ctx: BotContext, telegramUserId: number): P
   if (user && !isAdminActor(telegramUserId, ctx.allowedIds, ctx.primaryAdminId)) {
     const trial = await startTrialIfEligible(ctx.db, user.id);
     if (trial.started) {
-      await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
+      await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId, {
         telegramUserId, firstName: user.first_name || "کاربر", username: user.username ?? undefined,
         trialUntil: trial.user!.access_expires_at!,
       });
@@ -477,7 +484,7 @@ async function handleStart(
       // before pressing Start is not counted. Upgrade with the Mini App's start_param if that shows up.
       const invited = await applyInviteBonus(ctx.db, dbUser.id, startText);
       dbUser = invited ?? dbUser;
-      await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
+      await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId, {
         telegramUserId, firstName, username, trialUntil: dbUser.access_expires_at!,
       });
       const until = formatDateFa(dbUser.access_expires_at!);
@@ -495,11 +502,14 @@ async function handleStart(
     if (!isAdmin) {
       await setUserApproval(ctx.db, telegramUserId, 0);
     }
-    await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId || "@patente_fa_logs", {
-      telegramUserId,
-      firstName,
-      username,
-    });
+    // Keyed apart from the Mini App's notice, so a typed answer is never swallowed by a /start.
+    if (await firstNoticeInWindow(ctx.kv, `notice:access:start:${telegramUserId}`)) {
+      await notifyAdminNewUserRequest(ctx.token, ctx.logChannelId, {
+        telegramUserId,
+        firstName,
+        username,
+      });
+    }
 
     await sendMessage(ctx.token, {
       chat_id: chatId,

@@ -18,6 +18,12 @@ export type SupportDirection = "in" | "out";
  */
 export const SUPPORT_MAX_LEN = 2000;
 
+/** Messages per minute, per user, in the Mini App and the bot. A support chat is typed by a human. */
+export const SUPPORT_MESSAGES_PER_MINUTE = 5;
+
+/** The reply when a user goes over SUPPORT_MESSAGES_PER_MINUTE. */
+export const SUPPORT_RATE_LIMITED_TEXT = "پیام‌های زیادی ارسال کرده‌اید. یک دقیقه صبر کنید.";
+
 /**
  * Clean a message body coming from a client. Returns null when there is
  * nothing to send — callers reject rather than storing an empty row.

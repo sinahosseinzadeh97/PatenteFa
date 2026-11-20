@@ -18,7 +18,12 @@ async function dumpTable<T>(db: D1Database, table: string): Promise<T[]> {
 }
 
 export async function runNightlyBackup(env: BackupEnv): Promise<void> {
-  const logChannel = env.LOG_CHANNEL_ID || "@patente_fa_logs";
+  const logChannel = env.LOG_CHANNEL_ID;
+  if (!logChannel) {
+    // The dump holds every user's data: never post it to a guessed channel.
+    console.error("LOG_CHANNEL_ID is not set; nightly backup not sent");
+    return;
+  }
   const dateStr = new Date().toISOString().split("T")[0];
   const timestamp = new Date().toISOString();
 
