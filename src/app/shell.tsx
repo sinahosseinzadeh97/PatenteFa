@@ -24,6 +24,7 @@ import { renderProfileScreen } from "./screens/profile.js";
 import { renderSignsScreen } from "./screens/signs.js";
 import { renderSupportScreen } from "./screens/support.js";
 import { renderLessonScreen } from "./screens/lesson.js";
+import { renderGlossaryScreen } from "./screens/glossary.js";
 import {
   renderIconSprite,
   renderLoading,
@@ -56,6 +57,7 @@ function buildScreens(): string {
     renderSignsScreen(),
     renderSupportScreen(),
     renderLessonScreen(),
+    renderGlossaryScreen(),
   ].join("\n");
 }
 
@@ -130,6 +132,7 @@ window.onerror = function(msg, url, line, col, err) {
 <script src="/js/overtaking.js"></script>
 <script src="/js/road.js"></script>
 <script src="/js/learn.js"></script>
+<script src="/js/glossary.js"></script>
 </body>
 </html>`;
 }

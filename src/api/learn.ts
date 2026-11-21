@@ -5,6 +5,7 @@
  * learner from c.get("userId"); nothing here accepts a user id from the client.
  *
  *   GET  /api/learn                          every chapter's route + today's path
+ *   GET  /api/learn/glossary                 chapter 0 word list + which of its terms this user saved
  *   GET  /api/learn/lessons/:lessonId        lesson content + this user's progress
  *   POST /api/learn/lessons/:lessonId/progress   { step }            (monotonic)
  *   POST /api/learn/lessons/:lessonId/answer     { questionId, answer } (first answer wins)
@@ -37,7 +38,8 @@ import {
   recordLessonAnswer,
   saveLessonStep,
 } from "../db/learning-queries.js";
-import { getQuestionById, replaceActiveExamSession } from "../db/queries.js";
+import { GLOSSARY } from "../content/glossary.js";
+import { getQuestionById, getVocabItems, replaceActiveExamSession } from "../db/queries.js";
 import {
   PRACTICE_SET_SIZE,
   assessAnswer,
@@ -52,6 +54,8 @@ import { nextMorningISO } from "../lib/srs.js";
 import { DRY_FRICTION, GRAVITY, REACTION_TIMES_S, SPEEDS_KMH, stoppingTable } from "../lib/stopping.js";
 
 const learn = new Hono<{ Bindings: AppEnv; Variables: AppVariables }>();
+
+const GLOSSARY_TERMS = new Set(GLOSSARY.flatMap((group) => group.terms.map((term) => term.it)));
 
 /** The explorer's numbers, computed once per isolate from the tested model. */
 const STOPPING_MODEL = {
@@ -150,6 +154,15 @@ learn.get("/", async (c) => {
     reviewDue,
     courseCompleted: courseCompleted(completed),
   });
+});
+
+// ── GET /api/learn/glossary ───────────────────────────────────────────────────
+// Chapter 0. Saved terms come from the learner's whole list, not getSavedTerms:
+// its ~260 terms would pass D1's 100 bound-parameter limit.
+learn.get("/glossary", async (c) => {
+  const items = await getVocabItems(c.env.DB, c.get("userId"));
+  const saved = new Set(items.map((item) => item.term_it).filter((term) => GLOSSARY_TERMS.has(term)));
+  return c.json({ groups: GLOSSARY, savedTerms: [...saved] });
 });
 
 // ── GET /api/learn/lessons/:lessonId ──────────────────────────────────────────

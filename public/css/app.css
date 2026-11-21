@@ -2311,6 +2311,16 @@ button.home-metric:hover { border-color: var(--accent); background: var(--accent
 .term-save.is-saved { color: var(--ink-muted); border-style: dashed; opacity: 1; }
 .term-save .ui-icon { width: 16px; height: 16px; }
 
+/* Chapter 0: glossary entry card (topics) and its screen; rows reuse .term-* above */
+.glossary-entry { display: block; width: 100%; margin-bottom: 10px; padding: 0; text-align: start; cursor: pointer; }
+.glossary-entry:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.glossary-entry-hint { color: var(--ink-muted); font-size: .75rem; line-height: 1.7; }
+.glossary-count { margin: -8px 0 14px; color: var(--ink-muted); font-size: .78rem; }
+.glossary-group { margin-bottom: 22px; }
+.glossary-group-title { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0 0 8px; font-size: 1rem; font-weight: 800; }
+.glossary-group-it { color: var(--ink-muted); font-family: 'Public Sans', sans-serif; font-size: .74rem; font-weight: 600; }
+.term-note bdi { font-family: 'Public Sans', sans-serif; }
+
 /* Italian statement, chunk by chunk (LTR, Persian gloss under each chunk). */
 .statement-it { margin: 0; font-family: 'Public Sans', system-ui, sans-serif; font-size: 1.05rem; font-weight: 600; line-height: 1.7; text-align: left; overflow-wrap: anywhere; }
 .chunks { display: flex; flex-wrap: wrap; gap: 6px; margin: 12px 0 0; }

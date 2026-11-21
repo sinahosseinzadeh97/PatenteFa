@@ -253,6 +253,7 @@ App.renderRichText = function(el, text) {
     if (name === 'vocab')   App.loadVocab();
     if (name === 'stats')   App.loadStats();
     if (name === 'signs')   App.loadSigns();
+    if (name === 'glossary' && typeof App.loadGlossary === 'function') App.loadGlossary();
     if (name === 'reels')   App.loadReels();
     if (name === 'admin')   App.loadAdminData();
     if (name === 'profile') App.loadProfile();
@@ -850,7 +851,7 @@ App.renderRichText = function(el, text) {
     try { data = ev.event_data ? JSON.parse(ev.event_data) : {}; } catch (e) {}
     var screenLabels = {
       home: 'خانه', topics: 'فصل‌ها', exam: 'آزمون', results: 'نتیجه',
-      tutor: 'مربی', vocab: 'واژگان', signs: 'تابلوها', stats: 'آمار',
+      tutor: 'مربی', vocab: 'واژگان', signs: 'تابلوها', stats: 'آمار', glossary: 'واژه‌های تخصصی',
       profile: 'پروفایل', support: 'پشتیبانی', reels: 'مرور سریع', admin: 'مدیریت'
     };
     var screen = screenLabels[data.screen] || data.screen || 'نامشخص';
