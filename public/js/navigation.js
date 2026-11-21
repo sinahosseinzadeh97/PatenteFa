@@ -32,6 +32,9 @@ window.App = window.App || {};
     if (currentScreen === 'lesson') {
       return { kind: 'screen', target: state.lessonReturnScreen || 'topics' };
     }
+    if (currentScreen === 'glossary') {
+      return { kind: 'screen', target: 'topics' };
+    }
     if (currentScreen === 'tutor') {
       return { kind: 'screen', target: 'results' };
     }

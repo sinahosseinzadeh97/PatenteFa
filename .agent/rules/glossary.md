@@ -18,6 +18,10 @@ that is a lower class than «آزادراه», and the exam keeps the two apart.
   equivalent («موپد» from *moped*) is not Persian a learner can read.
 - **A term that is not here:** check how `src/content/` already translates it
   (`grep -rn 'it: "<term>"' src/content`), then add a row here in the same change.
+- **Chapter 0** (`src/content/glossary.ts`, the learner-facing word list) also sets headwords for
+  everyday car and road words these tables do not list: `frizione` = کلاچ, `acceleratore` = پدالِ گاز,
+  `cambio` = گیربکس, `cofano` = کاپوت, and so on. Use its `fa` for those. Where both list a term they
+  must agree; `tests/glossary-chapter.test.ts` checks it.
 - **Never write** words are enforced by `tests/glossary.test.ts` over
   `src/content/`. Separate several with «،».
 
