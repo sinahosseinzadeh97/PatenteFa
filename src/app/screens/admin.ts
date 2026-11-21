@@ -102,6 +102,12 @@ export function renderAdminScreen(): string {
           <button type="submit" id="admin-broadcast-send-btn" class="btn btn-primary">ارسال همگانی</button>
         </form>
         <p class="admin-broadcast-hint">پیام با عنوان «📢 اطلاعیه» و دکمه باز کردن اپ می‌رسد. برای پیام به یک نفر، روی گفتگوی او در پایین یا دکمه «پیام» در تب کاربران بزنید.</p>
+        <form class="admin-broadcast-form" onsubmit="App.retractAdminBroadcast(event)">
+          <label for="admin-retract-input" class="visually-hidden">تکه‌ای از متن اطلاعیه‌ای که باید پاک شود</label>
+          <input type="text" id="admin-retract-input" class="support-input" maxlength="200" dir="auto" autocomplete="off" placeholder="پاک کردن اطلاعیه: یک تکه از متنش را اینجا بنویس" />
+          <button type="submit" id="admin-retract-btn" class="btn btn-secondary">پاک کردن اطلاعیه</button>
+        </form>
+        <p class="admin-broadcast-hint">فقط اطلاعیه‌ی سنجاق‌شده و تا ۴۸ ساعت بعد از ارسال پاک می‌شود. اول تعداد را نشان می‌دهد و بعد می‌پرسد.</p>
       </div>
 
       <div class="admin-section-card">

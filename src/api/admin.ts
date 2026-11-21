@@ -30,7 +30,7 @@ import {
 import { getQuestionSource, sourceKey, type SourceQuestion } from '../lib/question-sources.js';
 import { saveReviewedContent } from '../lib/content-quality.js';
 import { checkPrimaryAdmin, isAccessExpired, isPrimaryAdminUser } from "../lib/auth.js";
-import { sendMessage, sendSupportReply, sendAnnouncement, buildMiniAppButton, notifyAdminNewUserRequest, formatDateFa } from "../lib/telegram.js";
+import { sendMessage, sendSupportReply, sendAnnouncement, retractPinnedAnnouncement, type RetractOutcome, buildMiniAppButton, notifyAdminNewUserRequest, formatDateFa } from "../lib/telegram.js";
 import { rewardReferrer } from "../db/referral-queries.js";
 import { REFERRER_REWARD_DAYS } from "../lib/referral.js";
 import type { DbUser } from "../db/queries.js";
@@ -351,6 +351,24 @@ admin.post("/broadcast", async (c) => {
     if (await sendAnnouncement(c.env.TELEGRAM_BOT_TOKEN, u.telegram_user_id, text, c.env.MINI_APP_URL, body.pin === true)) sent++;
   }
   return c.json({ ok: true, total: users.length, sent, failed: users.length - sent });
+});
+
+// POST /api/admin/broadcast/retract — take a sent announcement back from every chat.
+// Finds it as each chat's pinned message (see retractPinnedAnnouncement), so only
+// pinned announcements sent in the last 48 hours can be removed. dryRun only counts.
+admin.post("/broadcast/retract", async (c) => {
+  const body = (await c.req.json().catch(() => ({}))) as { contains?: unknown; dryRun?: unknown };
+  const contains = typeof body.contains === "string" ? body.contains.trim() : "";
+  if (contains.length < 5 || contains.length > 200) {
+    return c.json({ error: "یک تکه از متن اطلاعیه (۵ تا ۲۰۰ نویسه) لازم است." }, 400);
+  }
+  const dryRun = body.dryRun === true;
+  const users = (await getAllUsers(c.env.DB)).filter((u) => u.is_approved !== -1);
+  const counts: Record<RetractOutcome, number> = { matched: 0, deleted: 0, expired: 0, none: 0, failed: 0 };
+  for (const u of users) {
+    counts[await retractPinnedAnnouncement(c.env.TELEGRAM_BOT_TOKEN, u.telegram_user_id, contains, dryRun)]++;
+  }
+  return c.json({ ok: true, dryRun, total: users.length, ...counts });
 });
 
 // GET /api/admin/users/:id/activity

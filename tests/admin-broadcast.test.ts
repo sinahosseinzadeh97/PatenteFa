@@ -103,6 +103,69 @@ test("broadcast to all reaches everyone except blocked users and reports failure
   assert.ok(!calls.some((c) => c.method === "pinChatMessage"), "no pin unless asked");
 });
 
+const NOW = Math.floor(Date.now() / 1000);
+const HEADER = "📢 اطلاعیه پتنت فارسی\n\n";
+const SLIP = "Here's the same text with emoji added:";
+// What each chat has pinned. 1002: the slip to take back. 1003: an older, correct
+// announcement. 1004: nothing. Admin: the slip, but sent 3 days ago (past Telegram's 48 h).
+const PINNED: Record<number, { message_id: number; date: number; text: string }> = {
+  [ADMIN_ID]: { message_id: 9, date: NOW - 3 * 86400, text: `${HEADER}${SLIP}\n\n---\n🆕 فصل ۰` },
+  1002: { message_id: 51, date: NOW - 3600, text: `${HEADER}${SLIP}\n\n---\n🆕 فصل ۰` },
+  1003: { message_id: 40, date: NOW - 3600, text: `${HEADER}جلسه فردا` },
+};
+
+async function retract(body: object) {
+  const calls: { method: string; chat_id: number; message_id?: number }[] = [];
+  const realFetch = globalThis.fetch;
+  globalThis.fetch = (async (url: string, init: RequestInit) => {
+    const method = String(url).split("/").pop()!;
+    const payload = JSON.parse(String(init.body));
+    calls.push({ method, ...payload });
+    const result = method === "getChat" ? { id: payload.chat_id, pinned_message: PINNED[payload.chat_id] } : true;
+    return new Response(JSON.stringify({ ok: true, result }), { status: 200 });
+  }) as typeof fetch;
+  try {
+    const res = await worker.fetch(
+      new Request("https://example.test/api/admin/broadcast/retract", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-Telegram-InitData": signedInitData(ADMIN_ID) },
+        body: JSON.stringify(body),
+      }),
+      env(),
+      executionCtx
+    );
+    return { status: res.status, json: (await res.json()) as Record<string, unknown>, calls };
+  } finally {
+    globalThis.fetch = realFetch;
+  }
+}
+
+test("retract dry run counts the pinned announcement without deleting anything", async () => {
+  const { status, json, calls } = await retract({ contains: SLIP, dryRun: true });
+
+  assert.equal(status, 200);
+  assert.deepEqual(json, { ok: true, dryRun: true, total: 4, matched: 1, deleted: 0, expired: 1, none: 2, failed: 0 });
+  assert.deepEqual(calls.map((c) => c.chat_id), [ADMIN_ID, 1002, 1003, 1004], "every user but the blocked one is checked");
+  assert.ok(!calls.some((c) => c.method === "deleteMessage"));
+});
+
+test("retract deletes only the pinned announcement that contains the text, within 48 hours", async () => {
+  const { json, calls } = await retract({ contains: SLIP });
+
+  assert.deepEqual(json, { ok: true, dryRun: false, total: 4, matched: 0, deleted: 1, expired: 1, none: 2, failed: 0 });
+  assert.deepEqual(
+    calls.filter((c) => c.method === "deleteMessage").map((c) => [c.chat_id, c.message_id]),
+    [[1002, 51]],
+    "the older announcement in 1003 and the expired one in the admin's chat stay"
+  );
+});
+
+test("retract refuses a text too short to identify one announcement", async () => {
+  const { status, calls } = await retract({ contains: " ab " });
+  assert.equal(status, 400);
+  assert.equal(calls.length, 0);
+});
+
 test("broadcast rejects empty text and unknown audiences without sending", async () => {
   assert.equal((await broadcast({ text: "   ", audience: "all" })).status, 400);
   const bad = await broadcast({ text: "سلام", audience: "everyone" });

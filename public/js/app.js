@@ -622,6 +622,31 @@ App.renderRichText = function(el, text) {
     }
   };
 
+  App.retractAdminBroadcast = async function(e) {
+    e.preventDefault();
+    var input = document.getElementById('admin-retract-input');
+    var btn = document.getElementById('admin-retract-btn');
+    var contains = input ? input.value.trim() : '';
+    if (contains.length < 5) { App.toast('یک تکه از متن اطلاعیه را بنویس (حداقل ۵ نویسه).'); return; }
+    if (btn) { btn.disabled = true; btn.textContent = 'در حال جستجو…'; }
+    try {
+      var found = await api('POST', '/admin/broadcast/retract', { contains: contains, dryRun: true });
+      if (!found.matched) {
+        App.toast('اطلاعیه‌ی سنجاق‌شده‌ای با این متن پیدا نشد' + (found.expired ? ' (' + found.expired + ' مورد بیش از ۴۸ ساعت پیش ارسال شده)' : '') + '.');
+        return;
+      }
+      if (!window.confirm('این اطلاعیه در چتِ ' + found.matched + ' کاربر پیدا شد. از همه پاک شود؟ برگشت ندارد.')) return;
+      if (btn) btn.textContent = 'در حال پاک کردن…';
+      var res = await api('POST', '/admin/broadcast/retract', { contains: contains });
+      input.value = '';
+      App.toast('از ' + res.deleted + ' چت پاک شد' + (res.failed ? ' · ' + res.failed + ' ناموفق' : ''));
+    } catch (err) {
+      App.toast('پاک کردن اطلاعیه ناموفق بود.');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = 'پاک کردن اطلاعیه'; }
+    }
+  };
+
   // ── Support inbox (admin side) ──────────────────────────────────────────────
   App.renderAdminSupport = function(threads, unreadTotal) {
     var box = document.getElementById('admin-support-threads');
