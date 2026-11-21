@@ -156,6 +156,49 @@ export async function sendSupportReply(
   });
 }
 
+const ANNOUNCEMENT_TITLE = "اطلاعیه پتنت فارسی";
+/** Telegram lets a bot delete its own message only within 48 hours of sending it. */
+const DELETE_WINDOW_S = 48 * 60 * 60;
+
+export type RetractOutcome = "none" | "expired" | "matched" | "deleted" | "failed";
+
+/**
+ * Takes back an announcement from one chat. Broadcasts do not store message ids,
+ * so the announcement is found as the chat's pinned message: an unpinned one
+ * cannot be found. Only a pinned announcement whose text contains `contains` is
+ * touched. `dryRun` reports "matched" instead of deleting.
+ */
+export async function retractPinnedAnnouncement(
+  token: string,
+  telegramUserId: number,
+  contains: string,
+  dryRun: boolean
+): Promise<RetractOutcome> {
+  const call = (method: string, body: object) =>
+    fetch(`https://api.telegram.org/bot${token}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    }).then((res) => res.json().catch(() => null));
+  try {
+    const chat = (await call("getChat", { chat_id: telegramUserId })) as
+      | { ok?: boolean; result?: { pinned_message?: { message_id: number; date: number; text?: string } } }
+      | null;
+    if (!chat?.ok) return "failed";
+    const pinned = chat.result?.pinned_message;
+    if (!pinned?.text?.startsWith(`📢 ${ANNOUNCEMENT_TITLE}`) || !pinned.text.includes(contains)) return "none";
+    if (Date.now() / 1000 - pinned.date >= DELETE_WINDOW_S) return "expired";
+    if (dryRun) return "matched";
+    const deleted = (await call("deleteMessage", { chat_id: telegramUserId, message_id: pinned.message_id })) as { ok?: boolean } | null;
+    if (deleted?.ok) return "deleted";
+    console.error("Telegram announcement delete failed:", telegramUserId);
+    return "failed";
+  } catch (error) {
+    console.error("Telegram announcement retract transport failed:", error);
+    return "failed";
+  }
+}
+
 /**
  * Admin announcement. Pinning keeps it as a banner at the top of the user's
  * bot chat, which is what makes it hard to miss. sendMessage() only returns a
@@ -174,7 +217,7 @@ export async function sendAnnouncement(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         chat_id: telegramUserId,
-        text: `📢 <b>اطلاعیه پتنت فارسی</b>\n\n${esc(text)}`,
+        text: `📢 <b>${ANNOUNCEMENT_TITLE}</b>\n\n${esc(text)}`,
         parse_mode: "HTML",
         reply_markup: buildMiniAppButton("🚗 باز کردن پتنت فارسی", miniAppUrl),
       }),
